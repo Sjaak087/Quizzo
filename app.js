@@ -1,5 +1,7 @@
 import {auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, ref, get, set, update, remove, push, onValue} from "./firebase.js";
 
+window.__quizzoStarted = true;
+
 const $=s=>document.querySelector(s),A=$("#app"),COL=["r","b","y","g"],SYM=["▲","◆","●","■"];
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const arr=x=>Array.isArray(x)?x:Object.values(x||{});
@@ -14,7 +16,9 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(t&
 function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey=""}
 
 /* ---------- Auth ---------- */
-onAuthStateChanged(auth,u=>{user=u;home()});
+let authReady=false;
+onAuthStateChanged(auth,u=>{authReady=true;user=u;home()});
+setTimeout(()=>{if(!authReady)A.innerHTML='<div class="center"><div class="card"><h2>Geen verbinding met Firebase</h2>Controleer je internet en of een adblocker Firebase blokkeert. Zet ook in Firebase Authentication "E-mail/wachtwoord" aan. Open F12 > Console voor de exacte fout.</div></div>'},8000);
 function authView(){
  const reg=mode=="reg";
  A.innerHTML=`<div class="center"><h1 class="logo">Quizzo!</h1><form id="af" class="card"><h2>${reg?"Account maken":"Inloggen"}</h2>

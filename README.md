@@ -8,7 +8,7 @@ Kahoot-achtige quizsite met Firebase (Auth + Realtime Database). Puur statisch, 
 3. Realtime Database > Rules > plak de inhoud van `database.rules.json` en klik op Publish.
 
 ## 2. Op GitHub zetten
-1. Maak een nieuwe repository en upload **alle** bestanden en mappen uit deze map (`index.html`, `css/`, `js/`, `.nojekyll`).
+1. Maak een nieuwe repository en upload **alle** bestanden uit deze zip naar de hoofdmap (`index.html`, `style.css`, `app.js`, `firebase.js`, `.nojekyll`).
 2. Repository > Settings > Pages > Source: **Deploy from a branch** > branch `main` en map `/ (root)` > Save.
 3. Na ongeveer een minuut staat de site op `https://JOUWNAAM.github.io/REPONAAM/`.
 
