@@ -1,0 +1,7 @@
+{
+  "rules": {
+    "users":   { "$uid":  { ".read": "auth != null", ".write": "auth.uid === $uid" } },
+    "quizzes": { "$uid":  { ".read": "auth.uid === $uid", ".write": "auth.uid === $uid" } },
+    "games":   { "$code": { ".read": "auth != null", ".write": "auth != null" } }
+  }
+}
