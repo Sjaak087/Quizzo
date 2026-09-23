@@ -20,31 +20,30 @@ const enc=new TextEncoder(),hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).
 async function hashPw(pw,salt){const k=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveBits"]);
  return hex(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:enc.encode(salt),iterations:100000},k,256))}
 const mailKey=e=>e.toLowerCase().replace(/\./g,",");
+const userKey=n=>encodeURIComponent(n.toLowerCase()).replace(/\./g,"%2E");
 function login(key,name,email){user={uid:key,displayName:name,email};localStorage.setItem("quizzo_user",JSON.stringify(user));home()}
 try{user=JSON.parse(localStorage.getItem("quizzo_user"))}catch(e){user=null}
 setTimeout(home,0);
 function authView(){
  const reg=mode=="reg";
  A.innerHTML=`<div class="center"><h1 class="logo">Quizzo!</h1><form id="af" class="card"><h2>${reg?"Account maken":"Inloggen"}</h2>
- ${reg?'<input name="u" placeholder="Gebruikersnaam" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_\\-]{3,20}" title="3-20 tekens: letters, cijfers, _ en -">':""}
+ ${reg?'<input name="u" placeholder="Gebruikersnaam" required minlength="2" maxlength="30">':""}
  <input name="e" type="${reg?"email":"text"}" placeholder="${reg?"E-mailadres":"Gebruikersnaam of e-mailadres"}" required>
  <input name="p" type="password" placeholder="Wachtwoord (minimaal 6 tekens)" required minlength="6">
  <button class="btn b">${reg?"Registreren":"Inloggen"}</button>
  <a class="link" data-a="mode">${reg?"Heb je al een account? Inloggen":"Nog geen account? Registreren"}</a></form></div>`;
  $("#af").onsubmit=async ev=>{ev.preventDefault();const f=new FormData(ev.target),id=f.get("e").trim(),pw=f.get("p"),btn=ev.target.querySelector("button");btn.disabled=true;
   try{
-   if(reg){const name=f.get("u").trim(),key=name.toLowerCase();
-    if(!/^[A-Za-z0-9_-]{3,20}$/.test(name))throw "Gebruikersnaam: 3-20 tekens, alleen letters, cijfers, _ en -.";
+   if(reg){const name=f.get("u").trim(),key=userKey(name);
+    if(name.length<2)throw "Gebruikersnaam: minimaal 2 tekens.";
     if((await get(ref(db,"users/"+key))).exists())throw "Deze gebruikersnaam is al bezet.";
     if((await get(ref(db,"emails/"+mailKey(id)))).exists())throw "Dit e-mailadres is al in gebruik.";
     const salt=hex(crypto.getRandomValues(new Uint8Array(16)));
     await set(ref(db,"users/"+key),{username:name,email:id,salt,hash:await hashPw(pw,salt),created:Date.now()});
     await set(ref(db,"emails/"+mailKey(id)),key);
     login(key,name,id)}
-   else{let key=id.toLowerCase();
-    if(id.includes("@"))key=(await get(ref(db,"emails/"+mailKey(id)))).val()||"";
-    if(!/^[a-z0-9_-]{3,20}$/.test(key))key="";
-    const u=key&&(await get(ref(db,"users/"+key))).val();
+   else{let key=userKey(id),u=(await get(ref(db,"users/"+key))).val();
+    if(!u&&id.includes("@")){key=(await get(ref(db,"emails/"+mailKey(id)))).val()||"";u=key?(await get(ref(db,"users/"+key))).val():null}
     if(!u||u.hash!==await hashPw(pw,u.salt))throw "Gebruikersnaam of wachtwoord klopt niet.";
     login(key,u.username,u.email)}
   }catch(err){toast(typeof err=="string"?err:em(err));btn.disabled=false}}}
