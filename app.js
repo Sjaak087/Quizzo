@@ -1,4 +1,4 @@
-import {auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, ref, get, set, update, remove, push, onValue} from "./firebase.js";
+import {db, ref, get, set, update, remove, push, onValue} from "./firebase.js";
 
 window.__quizzoStarted = true;
 
@@ -15,25 +15,41 @@ const act={};
 document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(t&&!t.disabled)act[t.dataset.a]?.(t.dataset,t)});
 function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey=""}
 
-/* ---------- Auth ---------- */
-let authReady=false;
-onAuthStateChanged(auth,u=>{authReady=true;user=u;home()});
-setTimeout(()=>{if(!authReady)A.innerHTML='<div class="center"><div class="card"><h2>Geen verbinding met Firebase</h2>Controleer je internet en of een adblocker Firebase blokkeert. Zet ook in Firebase Authentication "E-mail/wachtwoord" aan. Open F12 > Console voor de exacte fout.</div></div>'},8000);
+/* ---------- Accounts (opgeslagen in de Realtime Database, zonder Firebase Authentication) ---------- */
+const enc=new TextEncoder(),hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
+async function hashPw(pw,salt){const k=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveBits"]);
+ return hex(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:enc.encode(salt),iterations:100000},k,256))}
+const mailKey=e=>e.toLowerCase().replace(/\./g,",");
+function login(key,name,email){user={uid:key,displayName:name,email};localStorage.setItem("quizzo_user",JSON.stringify(user));home()}
+try{user=JSON.parse(localStorage.getItem("quizzo_user"))}catch(e){user=null}
+setTimeout(home,0);
 function authView(){
  const reg=mode=="reg";
  A.innerHTML=`<div class="center"><h1 class="logo">Quizzo!</h1><form id="af" class="card"><h2>${reg?"Account maken":"Inloggen"}</h2>
- ${reg?'<input name="u" placeholder="Gebruikersnaam" required minlength="3" maxlength="20">':""}
- <input name="e" type="email" placeholder="E-mailadres" required>
+ ${reg?'<input name="u" placeholder="Gebruikersnaam" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_\\-]{3,20}" title="3-20 tekens: letters, cijfers, _ en -">':""}
+ <input name="e" type="${reg?"email":"text"}" placeholder="${reg?"E-mailadres":"Gebruikersnaam of e-mailadres"}" required>
  <input name="p" type="password" placeholder="Wachtwoord (minimaal 6 tekens)" required minlength="6">
  <button class="btn b">${reg?"Registreren":"Inloggen"}</button>
  <a class="link" data-a="mode">${reg?"Heb je al een account? Inloggen":"Nog geen account? Registreren"}</a></form></div>`;
- $("#af").onsubmit=async ev=>{ev.preventDefault();const f=new FormData(ev.target),e=f.get("e").trim(),p=f.get("p");
-  try{if(reg){const u=f.get("u").trim(),c=await createUserWithEmailAndPassword(auth,e,p);
-    await updateProfile(c.user,{displayName:u});
-    await set(ref(db,"users/"+c.user.uid),{username:u,email:e}).catch(()=>toast("Account gemaakt, maar profiel niet opgeslagen (database-regels?)"));
-    home()}else await signInWithEmailAndPassword(auth,e,p)}catch(err){toast(em(err))}}}
+ $("#af").onsubmit=async ev=>{ev.preventDefault();const f=new FormData(ev.target),id=f.get("e").trim(),pw=f.get("p"),btn=ev.target.querySelector("button");btn.disabled=true;
+  try{
+   if(reg){const name=f.get("u").trim(),key=name.toLowerCase();
+    if(!/^[A-Za-z0-9_-]{3,20}$/.test(name))throw "Gebruikersnaam: 3-20 tekens, alleen letters, cijfers, _ en -.";
+    if((await get(ref(db,"users/"+key))).exists())throw "Deze gebruikersnaam is al bezet.";
+    if((await get(ref(db,"emails/"+mailKey(id)))).exists())throw "Dit e-mailadres is al in gebruik.";
+    const salt=hex(crypto.getRandomValues(new Uint8Array(16)));
+    await set(ref(db,"users/"+key),{username:name,email:id,salt,hash:await hashPw(pw,salt),created:Date.now()});
+    await set(ref(db,"emails/"+mailKey(id)),key);
+    login(key,name,id)}
+   else{let key=id.toLowerCase();
+    if(id.includes("@"))key=(await get(ref(db,"emails/"+mailKey(id)))).val()||"";
+    if(!/^[a-z0-9_-]{3,20}$/.test(key))key="";
+    const u=key&&(await get(ref(db,"users/"+key))).val();
+    if(!u||u.hash!==await hashPw(pw,u.salt))throw "Gebruikersnaam of wachtwoord klopt niet.";
+    login(key,u.username,u.email)}
+  }catch(err){toast(typeof err=="string"?err:em(err));btn.disabled=false}}}
 act.mode=()=>{mode=mode=="reg"?"login":"reg";authView()};
-act.out=()=>signOut(auth);
+act.out=()=>{localStorage.removeItem("quizzo_user");user=null;home()};
 
 /* ---------- Home ---------- */
 function home(){

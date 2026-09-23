@@ -3,9 +3,8 @@
 Kahoot-achtige quizsite met Firebase (Auth + Realtime Database). Puur statisch, dus geschikt voor GitHub Pages.
 
 ## 1. Firebase instellen
-1. Firebase Console > Authentication > Sign-in method > zet **E-mail/wachtwoord** aan.
-2. Authentication > Settings > Authorized domains > voeg `JOUWNAAM.github.io` toe.
-3. Realtime Database > Rules > plak de inhoud van `database.rules.json` en klik op Publish.
+Firebase Authentication is **niet** nodig: accounts worden door de site zelf in de Realtime Database opgeslagen (wachtwoord als gezouten hash, nooit als tekst).
+1. Realtime Database > Rules > plak de inhoud van `database.rules.json` en klik op Publish.
 
 ## 2. Op GitHub zetten
 1. Maak een nieuwe repository en upload **alle** bestanden uit deze zip naar de hoofdmap (`index.html`, `style.css`, `app.js`, `firebase.js`, `.nojekyll`).

@@ -1,7 +1,8 @@
 {
   "rules": {
-    "users":   { "$uid":  { ".read": "auth != null", ".write": "auth.uid === $uid" } },
-    "quizzes": { "$uid":  { ".read": "auth.uid === $uid", ".write": "auth.uid === $uid" } },
-    "games":   { "$code": { ".read": "auth != null", ".write": "auth != null" } }
+    "users":   { "$u":    { ".read": true, ".write": "!data.exists()" } },
+    "emails":  { "$e":    { ".read": true, ".write": "!data.exists()" } },
+    "quizzes": { "$u":    { ".read": true, ".write": true } },
+    "games":   { "$code": { ".read": true, ".write": true } }
   }
 }
