@@ -78,7 +78,7 @@ act.enter=async()=>{const n=$("#nm").value.trim();if(!n)return toast("Vul een na
  const s=await get(ref(db,"games/"+joinCode)).catch(()=>null);if(!s?.exists()||s.val().state!="lobby")return toast("Deze quiz is niet meer beschikbaar."),home();
  await set(ref(db,`games/${joinCode}/players/${user.uid}`),{name:n,score:0}).catch(e=>toast(em(e)));run(joinCode,false)};
 act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz eerst een naam.");
- Q={title:n,questions:[newQ()]};QID=null;SEL=0;editorView()};
+ Q={title:n,questions:[]};QID=null;SEL=-1;editorView()};
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
  Q={title:v.title,questions:arr(v.questions).map(q=>({...q,a:arr(q.a)}))};QID=d.id;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
@@ -91,15 +91,16 @@ function editorView(){
  A.innerHTML=`<header class="ed"><input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn()}
 function side(){
- $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}"><small>${i+1} ${q.type=="tf"?"Waar/niet waar":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}</div>${Q.questions.length>1?`<button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button>`:""}</div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
+ $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}"><small>${i+1} ${q.type=="tf"?"Waar/niet waar":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
 function mainQ(){
  const q=Q.questions[SEL];
+ if(!q)return $("#main").innerHTML=`<div class="empty"><div class="big-msg">Nog geen vragen</div><p>Voeg je eerste vraag toe.</p><button class="btn b" data-a="newq">+ Vraag toevoegen</button></div>`;
  $("#main").innerHTML=`<input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
  <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><label>Punten voor goed antwoord<input type="number" min="0" data-f="points" value="${q.points}"></label></div>
  <div class="agrid ${q.type=="tf"?"tf":""}">${q.type=="tf"?q.a.map((t,i)=>`<div class="ans ${["g","r"][i]}"><span>${["✓","✗"][i]}</span><em>${esc(t)}</em><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join(""):q.a.map((t,i)=>`<div class="ans ${COL[i]}"><span>${SYM[i]}</span><input data-f="a" data-i="${i}" placeholder="Antwoord ${"ABCD"[i]}" value="${esc(t)}"><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join("")}</div>
  <p style="color:var(--ink)">Selecteer het rondje bij het goede antwoord.</p>`}
 const saveBtn=()=>{const b=$("#sv");if(b)b.disabled=!valid()};
-document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)return;const q=Q.questions[SEL];
+document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)return;const q=Q.questions[SEL];if(!q&&f!="title")return;
  if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="time"||f=="points")q[f]=t.value===""?NaN:+t.value;
  else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;
  side();saveBtn()});
