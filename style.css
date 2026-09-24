@@ -72,3 +72,5 @@ textarea:focus{outline:3px solid var(--b)}
 .mh .btn,#logc .btn{width:auto}#logc{margin-top:14px}
 .urow{border:2px solid #e2e2e2;border-radius:8px;padding:12px 14px;margin-bottom:10px;cursor:pointer}.urow:hover{border-color:var(--b)}
 .urow small,#logc small{display:block;color:#777;font-weight:600}.ubody{white-space:pre-wrap;font-weight:600;line-height:1.5}
+
+.agrid.tf{grid-template-columns:1fr 1fr}
