@@ -179,7 +179,7 @@ act.uopen=d=>{const u=UPD[d.id];if(!u)return;
 act.ulist=()=>showLog();
 
 act.admin=()=>{A.innerHTML=`<header><b class="logo s">Sitebeheer</b><button class="btn w sm" data-a="back">Terug</button></header><main id="ac" class="wrap">Laden...</main>`;adminBody()};
-act.back=()=>home();
+act.back=()=>{ADM=null;EDITU=null;sessionStorage.removeItem("quizzo_adm");home()};
 async function adminBody(){const c=$("#ac");if(!c)return;let has;
  try{has=await get(ref(db,"admin/salt"))}catch(e){return c.innerHTML=`<div class="card narrow">Geen toegang tot de database. Controleer of de nieuwe database-regels zijn gepubliceerd.</div>`}
  if(!has.exists()){EDITU=null;return c.innerHTML=`<div class="card narrow"><h2>Beheerder instellen</h2><p>Stel het e-mailadres en wachtwoord voor sitebeheer in. Dit kan maar één keer.</p><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord (minimaal 6 tekens)"><input id="ap2" type="password" placeholder="Herhaal wachtwoord"><button class="btn g" data-a="asetup">Instellen</button></div>`}
