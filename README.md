@@ -13,3 +13,8 @@ Firebase Authentication is **niet** nodig: accounts worden door de site zelf in 
 
 Open de site altijd via die https-link. Dubbelklikken op `index.html` werkt niet, want Firebase Auth werkt niet vanaf `file://`.
 Lokaal testen kan met `python3 -m http.server` en dan `http://localhost:8000`.
+
+## Sitebeheer en updatelog
+- Klik op je accountnaam > Sitebeheer. De eerste keer stel je daar het e-mailadres en wachtwoord van de beheerder in (doe dit meteen na het online zetten, want de eerste die het instelt is de beheerder).
+- Daarna kun je updates toevoegen, aanpassen en verwijderen. Iedereen ziet ze via het knopje naast de accountnaam.
+- Publiceer eerst de nieuwe `database.rules.json`, anders krijg je "Geen toegang".

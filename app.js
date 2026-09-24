@@ -12,7 +12,7 @@ function toast(m){const t=document.createElement("div");t.className="toast";t.te
 const errs={"auth/email-already-in-use":"Dit e-mailadres is al in gebruik.","auth/invalid-credential":"E-mail of wachtwoord klopt niet.","auth/weak-password":"Wachtwoord moet minstens 6 tekens zijn.","auth/invalid-email":"Dit e-mailadres is ongeldig.","PERMISSION_DENIED":"Geen toegang: controleer de database-regels."};
 const em=e=>errs[e.code]||errs[(e.message||"").match(/PERMISSION_DENIED/)?.[0]]||e.code||e.message;
 const act={};
-document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(t&&!t.disabled)act[t.dataset.a]?.(t.dataset,t)});
+document.addEventListener("click",e=>{if(!e.target.closest('[data-a="menu"]'))$("#menu")?.remove();const t=e.target.closest("[data-a]");if(t&&!t.disabled)act[t.dataset.a]?.(t.dataset,t)});
 function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey=""}
 
 /* ---------- Accounts (opgeslagen in de Realtime Database, zonder Firebase Authentication) ---------- */
@@ -48,12 +48,12 @@ function authView(){
     login(key,u.username,u.email)}
   }catch(err){toast(typeof err=="string"?err:em(err));btn.disabled=false}}}
 act.mode=()=>{mode=mode=="reg"?"login":"reg";authView()};
-act.out=()=>{localStorage.removeItem("quizzo_user");user=null;home()};
+act.out=()=>{localStorage.removeItem("quizzo_user");sessionStorage.removeItem("quizzo_adm");ADM=null;user=null;home()};
 
 /* ---------- Home ---------- */
 function home(){
  cleanup();Q=null;joinCode=null;if(!user)return authView();
- A.innerHTML=`<header><b class="logo s">Quizzo!</b><span>${esc(user.displayName||user.email)} <button class="btn w sm" data-a="out">Uitloggen</button></span></header>
+ A.innerHTML=`<header><b class="logo s">Quizzo!</b><span class="hr"><button class="btn w sm ib" data-a="log" title="Updatelog" aria-label="Updatelog">📢</button><button class="btn w sm" data-a="menu">${esc(user.displayName||user.email)} ▾</button></span></header>
  <nav class="tabs">${[["join","Quiz joinen"],["make","Quiz maken"],["mine","Gemaakte quizzen"]].map(([k,l])=>`<button data-a="tab" data-k="${k}" class="${tab==k?"on":""}">${l}</button>`).join("")}</nav><main id="tc" class="wrap"></main>`;
  tabView()}
 act.tab=d=>{tab=d.k;joinCode=null;home()};
@@ -154,3 +154,57 @@ function paint(){
   else if(G.state=="board")h=`<div class="center"><div class="big-msg">Plek ${rank}</div><div>${me?.score||0} punten</div></div>`;
   else h=`<div class="center"><div class="big-msg">${rank<=3?["🥇","🥈","🥉"][rank-1]:""} Plek ${rank}</div><div>${me?.score||0} punten</div><p>Wachten tot de host afsluit...</p></div>`}
  A.innerHTML=h;tick()}
+
+/* ---------- Menu, updatelog en sitebeheer ---------- */
+let ADM=sessionStorage.getItem("quizzo_adm"),EDITU=null,UPD={},LOGL=[];
+const pad=n=>String(n).padStart(2,"0"),fd=d=>String(d).split("-").reverse().join("-");
+const nowDT=()=>{const d=new Date();return{date:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,time:`${pad(d.getHours())}:${pad(d.getMinutes())}`}};
+async function loadUpdates(){const v=(await get(ref(db,"updates"))).val()||{};UPD=v;
+ return Object.entries(v).map(([id,u])=>({id,...u})).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))}
+/* Schrijven als beheerder: het bewijs (_proof) gaat mee in dezelfde schrijfactie en wordt daarna weer gewist. */
+async function priv(paths){await remove(ref(db,"_proof")).catch(()=>{});
+ try{await update(ref(db),{_proof:ADM,...paths})}finally{await remove(ref(db,"_proof")).catch(()=>{})}}
+const adminFail=()=>{ADM=null;sessionStorage.removeItem("quizzo_adm");toast("Geen toegang. Log opnieuw in als beheerder.");adminBody()};
+
+act.menu=()=>{const old=$("#menu");if(old)return old.remove();const m=document.createElement("div");m.id="menu";m.className="menu";
+ m.innerHTML=`<button data-a="admin">⚙ Sitebeheer</button><hr><button data-a="out">Uitloggen</button>`;$(".hr").append(m)};
+
+act.log=async()=>{act.closem();const m=document.createElement("div");m.className="modal";
+ m.innerHTML=`<div class="card wide"><div class="mh"><h2>Updatelog</h2><button class="btn w sm" data-a="closem">Sluiten</button></div><div id="logc">Laden...</div></div>`;document.body.append(m);
+ let l;try{l=await loadUpdates()}catch(e){$("#logc").textContent="Kon de updates niet laden.";return toast(em(e))}showLog(l)};
+function showLog(l){if(l)LOGL=l;const c=$("#logc");if(!c)return;
+ c.innerHTML=LOGL.length?LOGL.map(u=>`<div class="urow" data-a="uopen" data-id="${u.id}"><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div>`).join(""):"Nog geen updates."}
+act.uopen=d=>{const u=UPD[d.id];if(!u)return;
+ $("#logc").innerHTML=`<button class="btn w sm" data-a="ulist">← Terug</button><h2 style="margin-top:14px">${esc(u.title)}</h2><small>${fd(u.date)} · ${esc(u.time)}</small><p class="ubody">${esc(u.body)}</p>`};
+act.ulist=()=>showLog();
+
+act.admin=()=>{A.innerHTML=`<header><b class="logo s">Sitebeheer</b><button class="btn w sm" data-a="back">Terug</button></header><main id="ac" class="wrap">Laden...</main>`;adminBody()};
+act.back=()=>home();
+async function adminBody(){const c=$("#ac");if(!c)return;let has;
+ try{has=await get(ref(db,"admin/salt"))}catch(e){return c.innerHTML=`<div class="card narrow">Geen toegang tot de database. Controleer of de nieuwe database-regels zijn gepubliceerd.</div>`}
+ if(!has.exists()){EDITU=null;return c.innerHTML=`<div class="card narrow"><h2>Beheerder instellen</h2><p>Stel het e-mailadres en wachtwoord voor sitebeheer in. Dit kan maar één keer.</p><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord (minimaal 6 tekens)"><input id="ap2" type="password" placeholder="Herhaal wachtwoord"><button class="btn g" data-a="asetup">Instellen</button></div>`}
+ if(!ADM)return c.innerHTML=`<div class="card narrow"><h2>Inloggen voor sitebeheer</h2><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord"><button class="btn b" data-a="alogin">Inloggen</button></div>`;
+ const l=await loadUpdates().catch(()=>[]),e=EDITU&&UPD[EDITU],n=nowDT();
+ c.innerHTML=`<div class="card wide" style="margin:0 auto"><h2>${e?"Update aanpassen":"Nieuwe update"}</h2><input id="ut" maxlength="80" placeholder="Titel" value="${esc(e?.title)}"><div class="opts"><label>Datum<input id="ud" type="date" value="${e?e.date:n.date}"></label><label>Tijd<input id="uh" type="time" value="${e?e.time:n.time}"></label></div><textarea id="ub" rows="6" placeholder="Beschrijving">${esc(e?.body)}</textarea><button class="btn g" data-a="usave">${e?"Wijzigingen opslaan":"Update plaatsen"}</button>${e?'<button class="btn w" data-a="ucancel">Annuleren</button>':""}</div>
+ <h2 style="margin-top:28px">Alle updates</h2>${l.map(u=>`<div class="qcard"><div><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div><div><button class="btn b sm" data-a="uedit" data-id="${u.id}">Aanpassen</button> <button class="btn r sm" data-a="udel" data-id="${u.id}">Verwijderen</button></div></div>`).join("")||"Nog geen updates."}`}
+act.asetup=async()=>{const e=$("#ae").value.trim().toLowerCase(),p=$("#ap").value;
+ if(!/^\S+@\S+\.\S+$/.test(e))return toast("Vul een geldig e-mailadres in.");
+ if(p.length<6)return toast("Wachtwoord: minimaal 6 tekens.");
+ if(p!==$("#ap2").value)return toast("De wachtwoorden zijn niet gelijk.");
+ const salt=hex(crypto.getRandomValues(new Uint8Array(16))),hash=await hashPw(p,salt);
+ try{await set(ref(db,"admin"),{email:e,salt,hash})}catch(err){toast("Het beheerdersaccount bestaat al of de database-regels zijn niet bijgewerkt.");return adminBody()}
+ ADM=hash;sessionStorage.setItem("quizzo_adm",hash);toast("Beheerder ingesteld!");adminBody()};
+act.alogin=async()=>{const e=$("#ae").value.trim().toLowerCase(),p=$("#ap").value;
+ try{const [se,ss]=await Promise.all([get(ref(db,"admin/email")),get(ref(db,"admin/salt"))]);
+  if(se.val()!==e)throw 0;const h=await hashPw(p,ss.val());ADM=h;await priv({adminPing:Date.now()});
+  sessionStorage.setItem("quizzo_adm",h);adminBody()}catch(err){ADM=null;toast("E-mailadres of wachtwoord klopt niet.")}};
+act.usave=async()=>{const t=$("#ut").value.trim(),d=$("#ud").value,h=$("#uh").value,b=$("#ub").value.trim();
+ if(!t||!d||!h||!b)return toast("Vul titel, datum, tijd en beschrijving in.");
+ const id=EDITU||push(ref(db,"updates")).key;
+ try{await priv({["updates/"+id]:{title:t,date:d,time:h,body:b}})}catch(e){return adminFail()}
+ EDITU=null;toast("Update opgeslagen!");adminBody()};
+act.uedit=d=>{EDITU=d.id;adminBody();scrollTo(0,0)};
+act.ucancel=()=>{EDITU=null;adminBody()};
+act.udel=async d=>{if(!confirm("Deze update verwijderen?"))return;
+ try{await priv({["updates/"+d.id]:null})}catch(e){return adminFail()}
+ if(EDITU==d.id)EDITU=null;adminBody()};

@@ -3,6 +3,19 @@
     "users":   { "$u":    { ".read": true, ".write": "!data.exists()" } },
     "emails":  { "$e":    { ".read": true, ".write": "!data.exists()" } },
     "quizzes": { "$u":    { ".read": true, ".write": true } },
-    "games":   { "$code": { ".read": true, ".write": true } }
+    "games":   { "$code": { ".read": true, ".write": true } },
+
+    "admin": {
+      ".write": "!data.exists()",
+      "salt":  { ".read": true },
+      "email": { ".read": true },
+      "hash":  { ".read": false }
+    },
+    "_proof":    { ".write": true },
+    "adminPing": { ".write": "!root.child('_proof').exists() && newData.parent().child('_proof').val() === root.child('admin/hash').val()" },
+    "updates": {
+      ".read": true,
+      "$id": { ".write": "!root.child('_proof').exists() && newData.parent().parent().child('_proof').val() === root.child('admin/hash').val()" }
+    }
   }
 }
