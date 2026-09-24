@@ -118,3 +118,7 @@ button.ans:hover{filter:brightness(1.1);transform:translateY(-2px)}
  .modal{align-items:flex-end;padding:0}.modal .card{border-radius:14px 14px 0 0;max-width:none}
 }
 @media(max-width:380px){.big .ans{font-size:16px}.logo{font-size:38px}}
+
+/* ---- Vraagtitel groot in beeld bij de host ---- */
+.qhead{font-size:clamp(26px,5.2vw,64px);line-height:1.15;padding:36px 28px;min-height:22vh;display:flex;align-items:center;justify-content:center;text-align:center;word-break:break-word;margin-bottom:22px}
+@media(max-width:700px){.qhead{padding:22px 16px;min-height:14vh;font-size:clamp(24px,7vw,40px)}}
