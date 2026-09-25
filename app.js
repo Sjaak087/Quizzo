@@ -127,7 +127,7 @@ act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
 const INTRO_MS=5000;
 const randomCode=async()=>{let code;do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());return code};
-const createGame=async(qz,gameMode)=>{const code=await randomCode();const data={host:user.uid,mode:gameMode,state:"lobby",q:0,quiz:{title:qz.title,questions:qz.questions}};if(gameMode=="solo")data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
+const createGame=async(qz,gameMode)=>{const code=await randomCode();const solo=gameMode=="solo";const data={host:user.uid,mode:gameMode,state:solo?"countdown":"lobby",q:0,countdownStartedAt:solo?now():null,startedAt:null,quiz:{title:qz.title,questions:qz.questions}};if(solo)data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
 act.host=async d=>{try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
 act.playhost=async d=>{act.closem();act.host(d)};
 act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"solo");run(code,true)}catch(e){toast(em(e))}};
