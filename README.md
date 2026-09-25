@@ -1,11 +1,14 @@
 # Quizzo
 
-Deze versie bevat de quizflow voor solo en multiplayer, gesynchroniseerde vraagtimers, vraag-startanimaties en mobiele spelerweergave.
+Deze versie bevat solo en multiplayer, gesynchroniseerde vraagtimers, vraag-startanimaties, mobiele spelerweergave, vaste puntentelling en een nieuw inhoudstype **Dia**.
 
 Nieuw in deze versie:
-- Iedere nieuwe vraag start standaard met 1000 punten.
-- Per vraag is de knop **Dubbele punten** beschikbaar.
-- Bij dubbele punten krijgen goede antwoorden 2× de ingestelde punten.
-- Tijdens de vraag-startanimatie verschijnt bij 2× punten eerst een korte 2×-punten animatie, daarna de vraagtitel.
-- De vraagtitel blijft onderdeel van de volledige vraag-startintro van 5 seconden; bij 2× punten begint deze na de korte bonusintro.
-- Leaderboards tellen nieuwe punten zichtbaar op en tonen een animatie wanneer een speler een plek stijgt.
+- Goede antwoorden leveren altijd **1000 punten** op; het aantal punten is niet meer aanpasbaar in de editor.
+- **Dubbele punten** maakt van 1000 punten 2000 punten voor een goed antwoord.
+- Bij 2× punten verschijnt eerst een korte **2× PUNTEN**-animatie en daarna de vraagtitel in de 5-secondenintro.
+- Een **Dia** bevat een titel en informatie, heeft geen antwoorden en geeft geen punten.
+- Een Dia wordt op het scherm van de host én op dat van spelers getoond.
+- Een Dia heeft een instelbare schermduur en gaat daarna automatisch naar de **tussenstand**.
+- De editor heeft een visuele vraagtypekiezer met duidelijke kaarten, iconen en uitleg voor **Quizvraag**, **Waar of niet waar** en **Dia**.
+- Oude quizdata met een afwijkend puntenaantal wordt bij bewerken en spelen automatisch genormaliseerd naar 1000 punten.
+- Leaderboards tonen nieuwe punten met een optelanimatie en een zichtbare rank-up animatie.

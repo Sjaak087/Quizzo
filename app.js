@@ -81,7 +81,7 @@ act.enter=async()=>{const n=$("#nm").value.trim();if(!n)return toast("Vul een na
 act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz eerst een naam.");
  Q={title:n,questions:[]};QID=null;SEL=-1;editorView()};
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
- Q={title:v.title,questions:arr(v.questions).map(q=>({...q,a:arr(q.a),points:Number.isInteger(q.points)?q.points:1000,doublePoints:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
+ Q={title:v.title,questions:arr(v.questions).map(q=>({...q,a:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
 
 act.play=async d=>{
@@ -92,44 +92,50 @@ act.play=async d=>{
 };
 
 /* ---------- Editor ---------- */
-const newQ=(type="quiz")=>type=="tf"?{type:"tf",text:"",time:20,points:1000,doublePoints:false,a:["Waar","Niet waar"],correct:-1}:{type:"quiz",text:"",time:20,points:1000,doublePoints:false,a:["","","",""],correct:-1};
-const qOk=q=>q.text.trim()&&q.a.every(x=>x.trim())&&q.correct>=0&&q.time>=5&&q.time<=120&&q.points>=0&&Number.isInteger(q.time)&&Number.isInteger(q.points);
+const newQ=(type="quiz")=>type=="tf"?{type:"tf",text:"",time:20,points:1000,doublePoints:false,a:["Waar","Niet waar"],correct:-1}:type=="dia"?{type:"dia",text:"",info:"",time:10,points:1000,doublePoints:false,a:[],correct:-1}:{type:"quiz",text:"",time:20,points:1000,doublePoints:false,a:["","","",""],correct:-1};
+const qOk=q=>q.type==="dia"?q.text.trim()&&q.info.trim()&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.text.trim()&&q.a.every(x=>x.trim())&&q.correct>=0&&q.time>=5&&q.time<=120&&Number.isInteger(q.time);
 const valid=()=>Q.title.trim()&&Q.questions.length&&Q.questions.every(qOk);
 function editorView(){
  A.innerHTML=`<header class="ed"><input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn()}
 function side(){
- $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}"><small>${i+1} ${q.type=="tf"?"Waar/niet waar":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
+ $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}"><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
 function mainQ(){
  const q=Q.questions[SEL];
  if(!q)return $("#main").innerHTML=`<div class="empty"><div class="big-msg">Nog geen vragen</div><p>Voeg je eerste vraag toe.</p><button class="btn b" data-a="newq">+ Vraag toevoegen</button></div>`;
- $("#main").innerHTML=`<input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
- <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><label>Punten voor goed antwoord (standaard 1000)<input type="number" min="0" data-f="points" value="${q.points??1000}"></label><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
- <div class="agrid ${q.type=="tf"?"tf":""}">${q.type=="tf"?q.a.map((t,i)=>`<div class="ans ${["g","r"][i]}"><span>${["✓","✗"][i]}</span><em>${esc(t)}</em><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join(""):q.a.map((t,i)=>`<div class="ans ${COL[i]}"><span>${SYM[i]}</span><input data-f="a" data-i="${i}" placeholder="Antwoord ${"ABCD"[i]}" value="${esc(t)}"><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join("")}</div>
- <p style="color:var(--ink)">Selecteer het rondje bij het goede antwoord.</p>`}
+ if(q.type==="dia"){$("#main").innerHTML=`<div class="slide-editor card"><div class="type-badge dia">🖼️ DIA</div><input class="qbig" data-f="text" placeholder="Titel van de dia" value="${esc(q.text)}"><textarea class="qinfo" data-f="info" rows="8" placeholder="Schrijf hier de informatie die je wilt laten zien...">${esc(q.info||"")}</textarea><div class="opts"><label>Duur van de dia (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label></div><div class="slide-preview"><div class="slide-kicker">DIA</div><h2>${esc(q.text)||"Jouw titel"}</h2><p>${esc(q.info)||"Jouw informatie verschijnt hier."}</p></div></div>`;return}
+ $("#main").innerHTML=`<div class="type-badge ${q.type==="tf"?"tf":"quiz"}">${q.type==="tf"?"✓ ✗ WAAR OF NIET WAAR":"▲ QUIZVRAAG"}</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
+ <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Altijd 1000 punten</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
+ <div class="agrid ${q.type==="tf"?"tf":""}">${q.type==="tf"?q.a.map((t,i)=>`<div class="ans ${["g","r"][i]}"><span>${["✓","✗"][i]}</span><em>${esc(t)}</em><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join(""):q.a.map((t,i)=>`<div class="ans ${COL[i]}"><span>${SYM[i]}</span><input data-f="a" data-i="${i}" placeholder="Antwoord ${"ABCD"[i]}" value="${esc(t)}"><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join("")}</div>
+ <p style="color:var(--ink)">Selecteer het rondje bij het goede antwoord. <b>Punten zijn altijd 1000.</b></p>`}
 const saveBtn=()=>{const b=$("#sv");if(b)b.disabled=!valid()};
 document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)return;const q=Q.questions[SEL];if(!q&&f!="title")return;
- if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="time"||f=="points")q[f]=t.value===""?NaN:+t.value;
+ if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="info")q.info=t.value;else if(f=="time")q.time=t.value===""?NaN:+t.value;
  else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;
  side();saveBtn()});
 act.sel=d=>{SEL=+d.i;side();mainQ()};
 act.dq=d=>{Q.questions.splice(+d.i,1);SEL=Math.min(SEL,Q.questions.length-1);side();mainQ();saveBtn()};
-act.newq=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card"><h2>Kies een vraagtype</h2><button class="btn b" data-a="addq">▲ Quizvraag</button><button class="btn g" data-a="addtf">✓ ✗ Waar of niet waar</button><button class="btn w" data-a="closem">Annuleren</button></div>`;document.body.append(m)};
+act.newq=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card type-picker"><div class="picker-head"><div><span class="eyebrow">NIEUWE INHOUD</span><h2>Kies een vraagtype</h2><p>Maak je quiz afwisselend met vragen en informatieve dia's.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div><div class="type-grid">
+  <button class="type-option blue" data-a="addq"><span class="type-art"><span class="art-shape">▲</span><span class="art-shape small">◆</span><span class="art-shape tiny">●</span></span><span class="type-name">Quizvraag</span><span class="type-desc">4 antwoorden • 1000 punten • snel spelen</span><span class="type-chip">QUIZ</span></button>
+  <button class="type-option green" data-a="addtf"><span class="type-art tf-art"><span>✓</span><span>✕</span></span><span class="type-name">Waar of niet waar</span><span class="type-desc">2 keuzes • 1000 punten • simpel en snel</span><span class="type-chip">WAAR / NIET WAAR</span></button>
+  <button class="type-option purple" data-a="adddia"><span class="type-art dia-art">🖼️</span><span class="type-name">Dia</span><span class="type-desc">Titel + informatie • geen antwoord • geen punten</span><span class="type-chip">DIA</span></button>
+ </div></div>`;document.body.append(m)};
 act.closem=()=>document.querySelector(".modal")?.remove();
 const addQ=t=>{act.closem();Q.questions.push(newQ(t));SEL=Q.questions.length-1;side();mainQ();saveBtn()};
 act.addq=()=>addQ("quiz");
 act.addtf=()=>addQ("tf");
-act.double=()=>{const q=Q.questions[SEL];if(!q)return;q.doublePoints=!q.doublePoints;mainQ();side()};
+act.adddia=()=>addQ("dia");
+act.double=()=>{const q=Q.questions[SEL];if(!q||q.type==="dia")return;q.doublePoints=!q.doublePoints;mainQ();side()};
 act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){Q=null;tab="mine";home()}};
 act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.uid)).key;
- try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),questions:Q.questions,updated:Date.now()})}catch(e){return toast(em(e))}
+ try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
  Q=null;tab="mine";home();toast("Quiz opgeslagen!")};
 
 /* ---------- Game ---------- */
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
 const INTRO_MS=5000,DOUBLE_BONUS_INTRO_MS=1200;
 const randomCode=async()=>{let code;do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());return code};
-const createGame=async(qz,gameMode)=>{const code=await randomCode();const solo=gameMode=="solo";const data={host:user.uid,mode:gameMode,state:solo?"countdown":"lobby",q:0,countdownStartedAt:solo?serverTimestamp():null,startedAt:null,quiz:{title:qz.title,questions:qz.questions}};if(solo)data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
+const createGame=async(qz,gameMode)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,info:q.info||""}));const data={host:user.uid,mode:gameMode,state:solo?"countdown":"lobby",q:0,countdownStartedAt:solo?serverTimestamp():null,startedAt:null,quiz:{title:qz.title,questions}};if(solo)data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
 act.host=async d=>{try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
 act.playhost=async d=>{act.closem();act.host(d)};
 act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"solo");run(code,true)}catch(e){toast(em(e))}};
@@ -137,13 +143,20 @@ function run(code,host){cleanup();CODE=code;HOST=host;
  unsub=onValue(ref(db,"games/"+code),s=>{G=s.val();if(!G){if(!host&&CODE)toast("De quiz is afgesloten.");return home()}paint()});
  timer=setInterval(tick,250)}
 const QS=()=>arr(G.quiz.questions).map(q=>({...q,a:arr(q.a)})),P=()=>Object.entries(G.players||{}).map(([id,p])=>({id,...p}));
-const ANS=()=>G.answers?.[G.q]||{},pointsFor=q=>(Number.isFinite(+q.points)?+q.points:1000)*(q.doublePoints?2:1),introDuration=q=>INTRO_MS+(q.doublePoints?DOUBLE_BONUS_INTRO_MS:0),end=()=>G.startedAt+QS()[G.q].time*1000,introEnd=()=>G.countdownStartedAt+introDuration(QS()[G.q]);
+const ANS=()=>G.answers?.[G.q]||{},pointsFor=q=>q.type==="dia"?0:1000*(q.doublePoints?2:1),introDuration=q=>INTRO_MS+(q.type!=="dia"&&q.doublePoints?DOUBLE_BONUS_INTRO_MS:0),end=()=>G.startedAt+QS()[G.q].time*1000,introEnd=()=>G.countdownStartedAt+introDuration(QS()[G.q]),isSlide=()=>QS()[G.q]?.type==="dia";
 function tick(){
  if(!G)return;
  if(G.state=="countdown"){
   const qIntro=QS()[G.q],dur=introDuration(qIntro),ms=introEnd()-now(),el=$("#introTm");if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
   const b=$("#introBar");if(b)b.style.width=Math.max(0,Math.min(100,ms/dur*100))+"%";
-  if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"question",startedAt:serverTimestamp()}).catch(e=>toast(em(e))).finally(()=>busy=false)}
+  if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:isSlide()?"slide":"question",startedAt:serverTimestamp()}).catch(e=>toast(em(e))).finally(()=>busy=false)}
+  return;
+ }
+ if(G.state==="slide"){
+  const q=QS()[G.q],ms=end()-now(),el=$("#slideTm");
+  if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
+  const b=$("#slideBar");if(b)b.style.width=Math.max(0,Math.min(100,ms/(q.time*10)*100))+"%";
+  if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"board"}).catch(e=>toast(em(e))).finally(()=>busy=false)}
   return;
  }
  if(G.state!="question")return;
@@ -156,7 +169,7 @@ async function reveal(){if(busy)return;busy=true;const q=QS()[G.q];
  await update(ref(db,"games/"+CODE),u)}
 act.start=()=>update(ref(db,"games/"+CODE),{state:"countdown",q:0,countdownStartedAt:serverTimestamp(),startedAt:null});
 act.next=()=>{
- if(G.state=="reveal")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"board"}):update(ref(db,"games/"+CODE),{state:"end"});
+ if(G.state=="reveal"||G.state=="slide")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"board"}):update(ref(db,"games/"+CODE),{state:"end"});
  if(G.state=="board")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"countdown",q:G.q+1,countdownStartedAt:serverTimestamp(),startedAt:null}):update(ref(db,"games/"+CODE),{state:"end"});
 };
 act.close=()=>remove(ref(db,"games/"+CODE));
@@ -179,7 +192,7 @@ function boardRows(list){
   return `<div class="row lb-row${cls}"><span><b class="lb-rank">${rank}</b> ${esc(p.name)}${delta>0?`<span class="rank-up">↑ ${delta}</span>`:""}</span><span class="lb-score" data-from="${from[p.id]??p.score??0}" data-to="${p.score||0}">${from[p.id]??p.score??0}</span></div>`}).join("")}
 
 function paint(){
- if(G.state!="reveal"&&G.state!="countdown")busy=false;
+ if(G.state!="reveal"&&G.state!="countdown"&&G.state!="slide")busy=false;
  const key=[G.state,G.q,P().length,HOST?Object.keys(ANS()).length:ANS()[user.uid]?1:0].join();if(key==lastKey)return;
  const prevState=lastPaintState,prevScores={...scoreSnapshot},prevRanks={...rankSnapshot};
  lastKey=key;lastPaintState=G.state;
@@ -187,12 +200,14 @@ function paint(){
  if(G.state==="reveal"&&prevState==="question")boardAnim={from:prevScores,ranks:prevRanks};
  const q=G.state=="lobby"?null:QS()[G.q],me=G.players?.[user.uid],rank=sorted().findIndex(p=>p.id==user.uid)+1,SOLO=G.mode=="solo";
  const tiles=(cls,rev)=>q.a.map((t,i)=>{const n=Object.values(ANS()).filter(a=>a.c==i).length;return `<div class="ans ${cols(q)[i]} ${rev&&i!=q.correct?"dim":""}"><span>${rev&&i==q.correct?"✓":syms(q)[i]}</span><em>${esc(t)}</em>${rev?`<span class="n">${n}</span>`:""}</div>`}).join("");
- const countdown=(showTitle)=>`<div class="stage countdown-screen${q.doublePoints?" has-double":""}">${q.doublePoints?'<div class="double-bonus-pop">2× PUNTEN</div>':""}<div class="countdown-title ${q.doublePoints?"after-bonus":""}">${showTitle?esc(q.text):"Kijk naar de host zijn scherm"}</div><div class="countdown-layout"><div class="countdown-copy">Vraag start in...</div><div class="countdown-number" id="introTm">${q.doublePoints?"6":"5"}</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`;
+ const countdown=(showTitle)=>q.type==="dia"?`<div class="stage countdown-screen dia-countdown"><div class="dia-intro-card"><span class="eyebrow">DIA START</span><div class="dia-intro-title">${esc(q.text)}</div><div class="dia-intro-info">${esc(q.info||"")}</div></div><div class="countdown-layout"><div class="countdown-copy">Dia start in...</div><div class="countdown-number" id="introTm">5</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`:`<div class="stage countdown-screen${q.doublePoints?" has-double":""}">${q.doublePoints?'<div class="double-bonus-pop">2× PUNTEN</div>':""}<div class="countdown-title ${q.doublePoints?"after-bonus":""}">${showTitle?esc(q.text):"Kijk naar de host zijn scherm"}</div><div class="countdown-layout"><div class="countdown-copy">Vraag start in...</div><div class="countdown-number" id="introTm">${q.doublePoints?"6":"5"}</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`;
+ const slideView=()=>`<div class="stage slide-view"><div class="slide-card"><div class="slide-kicker">DIA</div><h1>${esc(q.text)}</h1><div class="slide-info">${esc(q.info||"")}</div></div><div class="slide-timer"><div class="tcirc" id="slideTm">${q.time}</div><div class="countdown-copy">Op scherm</div></div><div class="tbar"><div id="slideBar"></div></div></div>`;
  const phoneSuccess=(buttonLabel="")=>`<div class="full ${me?.ok?"ok":"no"} phone-result"><div class="stage"><div class="result-icon">${me?.ok?"✓":"✕"}</div><div class="big-msg">${me?.ok?"Goed gedaan!":"Helaas!"}</div><div class="result-points">${me?.ok?`+${pointsFor(q)} punten`:"Geen punten"}</div><p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
  let h="";
  if(HOST&&!SOLO){
   if(G.state=="lobby")h=`<div class="stage"><h2>${esc(G.quiz.title)}</h2><div>Ga naar <b>Quiz joinen</b> en vul de code in</div><div class="code">${CODE}</div><div><b>${P().length}</b> spelers</div><div class="chips">${P().map(p=>`<span>${esc(p.name)}</span>`).join("")||"Wachten op spelers..."}</div><button class="btn g" data-a="start" ${P().length?"":"disabled"}>Quiz starten</button> <button class="btn w" data-a="close">Annuleren</button></div>`;
   else if(G.state=="countdown")h=countdown(true);
+  else if(G.state=="slide")h=slideView();
   else if(G.state=="question")h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="hbar"><div class="tcirc" id="tm"></div><div class="cnt">${Object.keys(ANS()).length}<small>antwoorden</small></div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles()}</div></div>`;
   else if(G.state=="reveal"){const ps=P();h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles("",true)}</div><div class="two"><div><h3>Goed ✓</h3>${ps.filter(p=>p.ok).map(p=>esc(p.name)).join(", ")||"Niemand"}</div><div><h3>Fout ✗</h3>${ps.filter(p=>!p.ok).map(p=>esc(p.name)).join(", ")||"Niemand"}</div></div><button class="btn b" data-a="next">Volgende</button></div>`}
   else if(G.state=="board")h=`<div class="stage leaderboard"><h1>Tussenstand</h1>${boardRows(sorted().slice(0,5))}<button class="btn b" data-a="next">Volgende vraag</button></div>`;
@@ -200,13 +215,14 @@ function paint(){
  }else{
   if(G.state=="lobby")h=`<div class="center"><div class="big-msg">Je zit erin, ${esc(me?.name)}!</div><p>Wachten tot de host het spel start</p></div>`;
   else if(G.state=="countdown")h=countdown(true);
+  else if(G.state=="slide")h=slideView();
   else if(G.state=="question")h=ANS()[user.uid]?`<div class="center"><div class="big-msg">Antwoord verstuurd</div>Wachten op de uitslag...</div>`:`<div class="stage answer-screen"><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Kies je antwoord":"Kijk naar de host zijn scherm"}</div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${q.a.map((t,i)=>`<button class="ans ${cols(q)[i]}" data-a="ans" data-i="${i}"><span>${syms(q)[i]}</span><em>${esc(t)}</em></button>`).join("")}</div></div>`;
   else if(G.state=="reveal")h=phoneSuccess(SOLO?(G.q+1<QS().length?"Naar tussenstand":"Resultaat bekijken"):"");
   else if(G.state=="board")h=SOLO?`<div class="center leaderboard solo-board"><h1>Tussenstand</h1>${boardRows(sorted())}<button class="btn b" data-a="next">Volgende vraag</button></div>`:`<div class="center"><div class="big-msg">Plek ${rank}</div><div>${me?.score||0} punten</div></div>`;
   else if(SOLO)h=`<div class="center leaderboard solo-board"><div class="big-msg">Quiz voltooid 🎉</div>${boardRows(sorted())}<button class="btn r" data-a="close">Terug naar mijn quizzen</button></div>`;
   else h=`<div class="center"><div class="big-msg">${rank<=3?["🥇","🥈","🥉"][rank-1]:""} Plek ${rank}</div><div>${me?.score||0} punten</div><p>Wachten tot de host afsluit...</p></div>`}
  A.innerHTML=h;
- if(G.state==="countdown"&&q.doublePoints){setTimeout(()=>$(".countdown-title.after-bonus")?.classList.add("title-live"),DOUBLE_BONUS_INTRO_MS)}
+ if(G.state==="countdown"&&q.type!=="dia"&&q.doublePoints){setTimeout(()=>$(".countdown-title.after-bonus")?.classList.add("title-live"),DOUBLE_BONUS_INTRO_MS)}
  if(G.state==="board"||G.state==="end")setTimeout(animateLeaderboard,20);
  scoreSnapshot=currentScoreMap();rankSnapshot=rankMap(scoreSnapshot);
  if(G.state==="board")boardAnim=null;
