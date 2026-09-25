@@ -6,4 +6,4 @@ const firebaseConfig = {apiKey:"AIzaSyBcMZBiCtxDsIl57QYYa75G_VIzfnHIF9k",authDom
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app, "https://quiz-website-d4a8a-default-rtdb.europe-west1.firebasedatabase.app");
 
-export {ref, get, set, update, remove, push, onValue} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+export {ref, get, set, update, remove, push, onValue, serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
