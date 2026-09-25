@@ -99,7 +99,7 @@ function editorView(){
  A.innerHTML=`<header class="ed"><input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn()}
 function side(){
- $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}"><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
+ $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
 function mainQ(){
  const q=Q.questions[SEL];
  if(!q)return $("#main").innerHTML=`<div class="empty"><div class="big-msg">Nog geen vragen</div><p>Voeg je eerste vraag toe.</p><button class="btn b" data-a="newq">+ Vraag toevoegen</button></div>`;
@@ -115,6 +115,18 @@ document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)r
  side();saveBtn()});
 act.sel=d=>{SEL=+d.i;side();mainQ()};
 act.dq=d=>{Q.questions.splice(+d.i,1);SEL=Math.min(SEL,Q.questions.length-1);side();mainQ();saveBtn()};
+let dragIndex=-1;
+document.addEventListener("dragstart",e=>{const t=e.target.closest("[data-drag-index]");if(!t||!Q)return;dragIndex=+t.dataset.dragIndex;t.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(dragIndex))});
+document.addEventListener("dragend",e=>{e.target.closest("[data-drag-index]")?.classList.remove("dragging");dragIndex=-1;document.querySelectorAll("[data-drag-index].drag-over").forEach(x=>x.classList.remove("drag-over"))});
+document.addEventListener("dragover",e=>{const t=e.target.closest("[data-drag-index]");if(!t||!Q||dragIndex<0)return;e.preventDefault();document.querySelectorAll("[data-drag-index].drag-over").forEach(x=>x.classList.remove("drag-over"));t.classList.add("drag-over")});
+document.addEventListener("dragleave",e=>{const t=e.target.closest("[data-drag-index]");if(t&&!t.contains(e.relatedTarget))t.classList.remove("drag-over")});
+document.addEventListener("drop",e=>{const t=e.target.closest("[data-drag-index]");if(!t||!Q||dragIndex<0)return;e.preventDefault();const to=+t.dataset.dragIndex;if(dragIndex===to)return;const moved=Q.questions.splice(dragIndex,1)[0];Q.questions.splice(to,0,moved);SEL=Q.questions.indexOf(moved);side();mainQ();saveBtn();dragIndex=-1});
+let pointerDrag={active:false,start:-1,target:-1,timer:null};
+const clearPointerDrag=()=>{if(pointerDrag.timer)clearTimeout(pointerDrag.timer);document.querySelectorAll(".thumb.pointer-drag,.thumb.drag-over").forEach(x=>x.classList.remove("pointer-drag","drag-over"));pointerDrag={active:false,start:-1,target:-1,timer:null}};
+document.addEventListener("pointerdown",e=>{const h=e.target.closest(".drag-handle"),t=h?.closest("[data-drag-index]");if(!h||!t||!Q)return;const start=+t.dataset.dragIndex;pointerDrag={active:false,start,target:-1,timer:setTimeout(()=>{pointerDrag.active=true;t.classList.add("pointer-drag");try{t.setPointerCapture(e.pointerId)}catch(_){}} ,180)} });
+document.addEventListener("pointermove",e=>{if(pointerDrag.start<0)return;if(!pointerDrag.timer&&!pointerDrag.active)return;const t=document.elementFromPoint(e.clientX,e.clientY)?.closest?.("[data-drag-index]");if(!t||!Q)return;if(!pointerDrag.active)return;pointerDrag.target=+t.dataset.dragIndex;document.querySelectorAll(".thumb.drag-over").forEach(x=>x.classList.remove("drag-over"));if(pointerDrag.target!==pointerDrag.start)t.classList.add("drag-over")});
+document.addEventListener("pointerup",e=>{if(pointerDrag.start<0){clearPointerDrag();return}if(pointerDrag.active&&pointerDrag.target>=0&&pointerDrag.target!==pointerDrag.start&&Q){const from=pointerDrag.start,to=pointerDrag.target,moved=Q.questions.splice(from,1)[0];Q.questions.splice(to,0,moved);SEL=Q.questions.indexOf(moved);side();mainQ();saveBtn()}clearPointerDrag()});
+document.addEventListener("pointercancel",clearPointerDrag);
 act.newq=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card type-picker"><div class="picker-head"><div><span class="eyebrow">NIEUWE INHOUD</span><h2>Kies een vraagtype</h2><p>Maak je quiz afwisselend met vragen en informatieve dia's.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div><div class="type-grid">
   <button class="type-option blue" data-a="addq"><span class="type-art"><span class="art-shape">▲</span><span class="art-shape small">◆</span><span class="art-shape tiny">●</span></span><span class="type-name">Quizvraag</span><span class="type-desc">4 antwoorden • 1000 punten • snel spelen</span><span class="type-chip">QUIZ</span></button>
   <button class="type-option green" data-a="addtf"><span class="type-art tf-art"><span>✓</span><span>✕</span></span><span class="type-name">Waar of niet waar</span><span class="type-desc">2 keuzes • 1000 punten • simpel en snel</span><span class="type-chip">WAAR / NIET WAAR</span></button>
@@ -133,9 +145,9 @@ act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.
 
 /* ---------- Game ---------- */
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
-const INTRO_MS=5000,DOUBLE_BONUS_INTRO_MS=1200;
+const INTRO_MS=5000,DOUBLE_BONUS_INTRO_MS=2500;
 const randomCode=async()=>{let code;do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());return code};
-const createGame=async(qz,gameMode)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,info:q.info||""}));const data={host:user.uid,mode:gameMode,state:solo?"countdown":"lobby",q:0,countdownStartedAt:solo?serverTimestamp():null,startedAt:null,quiz:{title:qz.title,questions}};if(solo)data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
+const createGame=async(qz,gameMode)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,questions}};if(solo)data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
 act.host=async d=>{try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
 act.playhost=async d=>{act.closem();act.host(d)};
 act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"solo");run(code,true)}catch(e){toast(em(e))}};
@@ -147,9 +159,14 @@ const ANS=()=>G.answers?.[G.q]||{},pointsFor=q=>q.type==="dia"?0:1000*(q.doubleP
 function tick(){
  if(!G)return;
  if(G.state=="countdown"){
-  const qIntro=QS()[G.q],dur=introDuration(qIntro),ms=introEnd()-now(),el=$("#introTm");if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
+  const qIntro=QS()[G.q];
+  if(qIntro?.type==="dia"){
+   if(HOST&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"slide",countdownStartedAt:null,startedAt:serverTimestamp()}).catch(e=>toast(em(e))).finally(()=>busy=false)}
+   return;
+  }
+  const dur=introDuration(qIntro),ms=introEnd()-now(),el=$("#introTm");if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
   const b=$("#introBar");if(b)b.style.width=Math.max(0,Math.min(100,ms/dur*100))+"%";
-  if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:isSlide()?"slide":"question",startedAt:serverTimestamp()}).catch(e=>toast(em(e))).finally(()=>busy=false)}
+  if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"question",startedAt:serverTimestamp()}).catch(e=>toast(em(e))).finally(()=>busy=false)}
   return;
  }
  if(G.state==="slide"){
@@ -167,10 +184,18 @@ async function reveal(){if(busy)return;busy=true;const q=QS()[G.q];
  const ans=(await get(ref(db,`games/${CODE}/answers/${G.q}`))).val()||{},u={state:"reveal"};
  P().forEach(p=>{const a=ans[p.id],ok=!!a&&a.c===q.correct&&a.t<=end()+1500;u[`players/${p.id}/ok`]=ok;if(ok)u[`players/${p.id}/score`]=(p.score||0)+pointsFor(q)});
  await update(ref(db,"games/"+CODE),u)}
-act.start=()=>update(ref(db,"games/"+CODE),{state:"countdown",q:0,countdownStartedAt:serverTimestamp(),startedAt:null});
+act.start=()=>{const q=QS()[0];return q?.type==="dia"?update(ref(db,"games/"+CODE),{state:"slide",q:0,countdownStartedAt:null,startedAt:serverTimestamp()}):update(ref(db,"games/"+CODE),{state:"countdown",q:0,countdownStartedAt:serverTimestamp(),startedAt:null})};
 act.next=()=>{
- if(G.state=="reveal"||G.state=="slide")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"board"}):update(ref(db,"games/"+CODE),{state:"end"});
- if(G.state=="board")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"countdown",q:G.q+1,countdownStartedAt:serverTimestamp(),startedAt:null}):update(ref(db,"games/"+CODE),{state:"end"});
+ if(G.state==="slide")return update(ref(db,"games/"+CODE),{state:"board"});
+ if(G.state==="reveal")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"board"}):update(ref(db,"games/"+CODE),{state:"end"});
+ if(G.state=="board"){
+  const ni=G.q+1;
+  if(ni>=QS().length)return update(ref(db,"games/"+CODE),{state:"end"});
+  const nq=QS()[ni];
+  return nq.type==="dia"
+   ?update(ref(db,"games/"+CODE),{state:"slide",q:ni,countdownStartedAt:null,startedAt:serverTimestamp()})
+   :update(ref(db,"games/"+CODE),{state:"countdown",q:ni,countdownStartedAt:serverTimestamp(),startedAt:null});
+ }
 };
 act.close=()=>remove(ref(db,"games/"+CODE));
 act.ans=d=>{if(G.state!="question"||now()>end()||ANS()[user.uid])return;set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{c:+d.i,t:now()})};
@@ -200,7 +225,7 @@ function paint(){
  if(G.state==="reveal"&&prevState==="question")boardAnim={from:prevScores,ranks:prevRanks};
  const q=G.state=="lobby"?null:QS()[G.q],me=G.players?.[user.uid],rank=sorted().findIndex(p=>p.id==user.uid)+1,SOLO=G.mode=="solo";
  const tiles=(cls,rev)=>q.a.map((t,i)=>{const n=Object.values(ANS()).filter(a=>a.c==i).length;return `<div class="ans ${cols(q)[i]} ${rev&&i!=q.correct?"dim":""}"><span>${rev&&i==q.correct?"✓":syms(q)[i]}</span><em>${esc(t)}</em>${rev?`<span class="n">${n}</span>`:""}</div>`}).join("");
- const countdown=(showTitle)=>q.type==="dia"?`<div class="stage countdown-screen dia-countdown"><div class="dia-intro-card"><span class="eyebrow">DIA START</span><div class="dia-intro-title">${esc(q.text)}</div><div class="dia-intro-info">${esc(q.info||"")}</div></div><div class="countdown-layout"><div class="countdown-copy">Dia start in...</div><div class="countdown-number" id="introTm">5</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`:`<div class="stage countdown-screen${q.doublePoints?" has-double":""}">${q.doublePoints?'<div class="double-bonus-pop">2× PUNTEN</div>':""}<div class="countdown-title ${q.doublePoints?"after-bonus":""}">${showTitle?esc(q.text):"Kijk naar de host zijn scherm"}</div><div class="countdown-layout"><div class="countdown-copy">Vraag start in...</div><div class="countdown-number" id="introTm">${q.doublePoints?"6":"5"}</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`;
+ const countdown=(showTitle)=>q.type==="dia"?`<div class="stage countdown-screen dia-countdown"><div class="dia-intro-card"><span class="eyebrow">DIA START</span><div class="dia-intro-title">${esc(q.text)}</div><div class="dia-intro-info">${esc(q.info||"")}</div></div><div class="countdown-layout"><div class="countdown-copy">Dia start in...</div><div class="countdown-number" id="introTm">5</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`:`<div class="stage countdown-screen${q.doublePoints?" has-double":""}">${q.doublePoints?'<div class="double-bonus-pop">2× PUNTEN</div>':""}<div class="countdown-title ${q.doublePoints?"after-bonus":""}">${showTitle?esc(q.text):"Kijk naar de host zijn scherm"}</div><div class="countdown-layout"><div class="countdown-copy">Vraag start in...</div><div class="countdown-number" id="introTm">${q.doublePoints?"8":"5"}</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`;
  const slideView=()=>`<div class="stage slide-view"><div class="slide-card"><div class="slide-kicker">DIA</div><h1>${esc(q.text)}</h1><div class="slide-info">${esc(q.info||"")}</div></div><div class="slide-timer"><div class="tcirc" id="slideTm">${q.time}</div><div class="countdown-copy">Op scherm</div></div><div class="tbar"><div id="slideBar"></div></div></div>`;
  const phoneSuccess=(buttonLabel="")=>`<div class="full ${me?.ok?"ok":"no"} phone-result"><div class="stage"><div class="result-icon">${me?.ok?"✓":"✕"}</div><div class="big-msg">${me?.ok?"Goed gedaan!":"Helaas!"}</div><div class="result-points">${me?.ok?`+${pointsFor(q)} punten`:"Geen punten"}</div><p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
  let h="";
