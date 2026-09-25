@@ -81,7 +81,7 @@ act.enter=async()=>{const n=$("#nm").value.trim();if(!n)return toast("Vul een na
 act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz eerst een naam.");
  Q={title:n,questions:[]};QID=null;SEL=-1;editorView()};
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
- Q={title:v.title,questions:arr(v.questions).map(q=>({...q,a:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
+ Q={title:v.title,questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
 
 act.play=async d=>{
@@ -92,18 +92,22 @@ act.play=async d=>{
 };
 
 /* ---------- Editor ---------- */
-const newQ=(type="quiz")=>type=="tf"?{type:"tf",text:"",time:20,points:1000,doublePoints:false,a:["Waar","Niet waar"],correct:-1}:type=="dia"?{type:"dia",text:"",info:"",time:10,points:1000,doublePoints:false,a:[],correct:-1}:{type:"quiz",text:"",time:20,points:1000,doublePoints:false,a:["","","",""],correct:-1};
-const qOk=q=>q.type==="dia"?q.text.trim()&&q.info.trim()&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.text.trim()&&q.a.every(x=>x.trim())&&q.correct>=0&&q.time>=5&&q.time<=120&&Number.isInteger(q.time);
+const newQ=(type="quiz")=>type==="tf"?{type:"tf",text:"",time:20,points:1000,doublePoints:false,a:["Waar","Niet waar"],correct:-1}:type==="dia"?{type:"dia",text:"",info:"",time:10,points:1000,doublePoints:false,a:[],correct:-1}:type==="typing"?{type:"typing",text:"",time:20,points:1000,doublePoints:false,a:[""],correct:-1}:{type:"quiz",text:"",time:20,points:1000,doublePoints:false,a:["","","",""],correct:-1};
+const qOk=q=>q.type==="dia"?q.text.trim()&&q.info.trim()&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.type==="typing"?q.text.trim()&&q.a.some(x=>x.trim())&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.text.trim()&&q.a.every(x=>x.trim())&&q.correct>=0&&q.time>=5&&q.time<=120&&Number.isInteger(q.time);
 const valid=()=>Q.title.trim()&&Q.questions.length&&Q.questions.every(qOk);
 function editorView(){
  A.innerHTML=`<header class="ed"><input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn()}
 function side(){
- $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
+ $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":q.type=="typing"?"Typen":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
 function mainQ(){
  const q=Q.questions[SEL];
  if(!q)return $("#main").innerHTML=`<div class="empty"><div class="big-msg">Nog geen vragen</div><p>Voeg je eerste vraag toe.</p><button class="btn b" data-a="newq">+ Vraag toevoegen</button></div>`;
  if(q.type==="dia"){$("#main").innerHTML=`<div class="slide-editor card"><div class="type-badge dia">🖼️ DIA</div><input class="qbig" data-f="text" placeholder="Titel van de dia" value="${esc(q.text)}"><textarea class="qinfo" data-f="info" rows="8" placeholder="Schrijf hier de informatie die je wilt laten zien...">${esc(q.info||"")}</textarea><div class="opts"><label>Duur van de dia (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label></div><div class="slide-preview"><div class="slide-kicker">DIA</div><h2>${esc(q.text)||"Jouw titel"}</h2><p>${esc(q.info)||"Jouw informatie verschijnt hier."}</p></div></div>`;return}
+ if(q.type==="typing"){$("#main").innerHTML=`<div class="type-badge typing">⌨️ TYPEN</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
+ <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Altijd 1000 punten</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
+ <div class="typing-answers card"><div class="typing-answer-head"><div><b>Goede antwoorden</b><small>Hoofdletters en leestekens worden genegeerd.</small></div><button class="btn b sm" data-a="addtypeanswer">+ Antwoord toevoegen</button></div><div class="typing-answer-list">${q.a.map((t,i)=>`<div class="typing-answer-row"><span class="typing-index">${i+1}</span><input data-f="a" data-i="${i}" maxlength="160" placeholder="Goed antwoord ${i+1}" value="${esc(t)}"><button class="btn w sm icon-btn" data-a="deltypeanswer" data-i="${i}" ${q.a.length<=1?"disabled":""} aria-label="Antwoord verwijderen">×</button></div>`).join("")}</div></div>
+ <p class="typing-help">Elke ingevulde regel telt als een goed antwoord. Je kunt onbeperkt mogelijke antwoorden toevoegen. <b>Punten zijn altijd 1000.</b></p>`;return}
  $("#main").innerHTML=`<div class="type-badge ${q.type==="tf"?"tf":"quiz"}">${q.type==="tf"?"✓ ✗ WAAR OF NIET WAAR":"▲ QUIZVRAAG"}</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
  <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Altijd 1000 punten</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
  <div class="agrid ${q.type==="tf"?"tf":""}">${q.type==="tf"?q.a.map((t,i)=>`<div class="ans ${["g","r"][i]}"><span>${["✓","✗"][i]}</span><em>${esc(t)}</em><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join(""):q.a.map((t,i)=>`<div class="ans ${COL[i]}"><span>${SYM[i]}</span><input data-f="a" data-i="${i}" placeholder="Antwoord ${"ABCD"[i]}" value="${esc(t)}"><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join("")}</div>
@@ -132,12 +136,16 @@ act.newq=()=>{const m=document.createElement("div");m.className="modal";m.innerH
   <button class="type-option green" data-a="addtf"><span class="type-art tf-art"><span>✓</span><span>✕</span></span><span class="type-name">Waar of niet waar</span><span class="type-desc">2 keuzes • 1000 punten • simpel en snel</span><span class="type-chip">WAAR / NIET WAAR</span></button>
   <button class="type-option purple" data-a="adddia"><span class="type-art dia-art">🖼️</span><span class="type-name">Dia</span><span class="type-desc">Titel + informatie • geen antwoord • geen punten</span><span class="type-chip">DIA</span></button>
  </div></div>`;document.body.append(m)};
+  <button class="type-option orange" data-a="addtyping"><span class="type-art typing-art">⌨️</span><span class="type-name">Typen</span><span class="type-desc">Speler typt woord of zin • 1000 punten • zoveel goede antwoorden als je wilt</span><span class="type-chip">TYPEN</span></button>
 act.closem=()=>document.querySelector(".modal")?.remove();
 const addQ=t=>{act.closem();Q.questions.push(newQ(t));SEL=Q.questions.length-1;side();mainQ();saveBtn()};
 act.addq=()=>addQ("quiz");
 act.addtf=()=>addQ("tf");
 act.adddia=()=>addQ("dia");
+act.addtyping=()=>addQ("typing");
 act.double=()=>{const q=Q.questions[SEL];if(!q||q.type==="dia")return;q.doublePoints=!q.doublePoints;mainQ();side()};
+act.addtypeanswer=()=>{const q=Q.questions[SEL];if(!q||q.type!=="typing")return;q.a.push("");mainQ();setTimeout(()=>document.querySelector('.typing-answer-row:last-child input')?.focus(),0);saveBtn()};
+act.deltypeanswer=d=>{const q=Q.questions[SEL];if(!q||q.type!=="typing"||q.a.length<=1)return;q.a.splice(+d.i,1);mainQ();saveBtn()};
 act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){Q=null;tab="mine";home()}};
 act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.uid)).key;
  try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
@@ -155,7 +163,9 @@ function run(code,host){cleanup();CODE=code;HOST=host;
  unsub=onValue(ref(db,"games/"+code),s=>{G=s.val();if(!G){if(!host&&CODE)toast("De quiz is afgesloten.");return home()}paint()});
  timer=setInterval(tick,250)}
 const QS=()=>arr(G.quiz.questions).map(q=>({...q,a:arr(q.a)})),P=()=>Object.entries(G.players||{}).map(([id,p])=>({id,...p}));
-const ANS=()=>G.answers?.[G.q]||{},pointsFor=q=>q.type==="dia"?0:1000*(q.doublePoints?2:1),introDuration=q=>INTRO_MS+(q.type!=="dia"&&q.doublePoints?DOUBLE_BONUS_INTRO_MS:0),end=()=>G.startedAt+QS()[G.q].time*1000,introEnd=()=>G.countdownStartedAt+introDuration(QS()[G.q]),isSlide=()=>QS()[G.q]?.type==="dia";
+const ANS=()=>G.answers?.[G.q]||{},pointsFor=q=>q.type==="dia"?0:1000*(q.doublePoints?2:1),introDuration=q=>INTRO_MS+(q.type!=="dia"&&q.doublePoints?DOUBLE_BONUS_INTRO_MS:0),end=()=>G.startedAt+QS()[G.q].time*1000,introEnd=()=>G.countdownStartedAt+introDuration(QS()[G.q]),isSlide=()=>QS()[G.q]?.type==="dia",isTyping=()=>QS()[G.q]?.type==="typing";
+const normalizeAnswer=v=>String(v??"").normalize("NFKC").toLocaleLowerCase("nl-NL").replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
+const typingCorrect=(q,a)=>{const value=normalizeAnswer(a?.v??a?.value??"");return !!value&&q.a.some(x=>normalizeAnswer(x)===value)};
 const setTimerBar=(el,ratio)=>{
  if(!el)return;
  const r=Math.max(0,Math.min(1,ratio));
@@ -191,7 +201,7 @@ function tick(){
  if(HOST&&(ms<=0||(P().length&&Object.keys(ANS()).length>=P().length)))reveal()}
 async function reveal(){if(busy)return;busy=true;const q=QS()[G.q];
  const ans=(await get(ref(db,`games/${CODE}/answers/${G.q}`))).val()||{},u={state:"reveal"};
- P().forEach(p=>{const a=ans[p.id],ok=!!a&&a.c===q.correct&&a.t<=end()+1500;u[`players/${p.id}/ok`]=ok;if(ok)u[`players/${p.id}/score`]=(p.score||0)+pointsFor(q)});
+ P().forEach(p=>{const a=ans[p.id];const ok=q.type==="typing"?!!a&&a.t<=end()+1500&&typingCorrect(q,a):!!a&&a.c===q.correct&&a.t<=end()+1500;u[`players/${p.id}/ok`]=ok;if(ok)u[`players/${p.id}/score`]=(p.score||0)+pointsFor(q)});
  await update(ref(db,"games/"+CODE),u)}
 act.start=()=>{const q=QS()[0];return q?.type==="dia"?update(ref(db,"games/"+CODE),{state:"slide",q:0,countdownStartedAt:null,startedAt:serverTimestamp()}):update(ref(db,"games/"+CODE),{state:"countdown",q:0,countdownStartedAt:serverTimestamp(),startedAt:null})};
 act.next=()=>{
@@ -207,7 +217,9 @@ act.next=()=>{
  }
 };
 act.close=()=>remove(ref(db,"games/"+CODE));
-act.ans=d=>{if(G.state!="question"||now()>end()||ANS()[user.uid])return;set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{c:+d.i,t:now()})};
+act.ans=d=>{if(G.state!="question"||now()>end()||ANS()[user.uid])return;const q=QS()[G.q];if(q.type==="typing")return act.typingSubmit();set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{c:+d.i,t:now()})};
+act.typingSubmit=()=>{if(G.state!=="question"||now()>end()||ANS()[user.uid]||!isTyping())return;const input=$("#typingInput");const value=input?.value?.trim()||"";if(!value)return toast("Typ eerst een antwoord in.");set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{v:value,t:now()})};
+document.addEventListener("submit",e=>{if(e.target?.id==="typingForm"){e.preventDefault();act.typingSubmit()}});
 const sorted=()=>P().sort((a,b)=>(b.score||0)-(a.score||0));
 function rankMap(scores){return Object.fromEntries(P().sort((a,b)=>(scores[b.id]??(b.score||0))-(scores[a.id]??(a.score||0))).map((p,i)=>[p.id,i+1]))}
 function currentScoreMap(){return Object.fromEntries(P().map(p=>[p.id,p.score||0]))}
@@ -233,7 +245,7 @@ function paint(){
  const currentScores=currentScoreMap();
  if(G.state==="reveal"&&prevState==="question")boardAnim={from:prevScores,ranks:prevRanks};
  const q=G.state=="lobby"?null:QS()[G.q],me=G.players?.[user.uid],rank=sorted().findIndex(p=>p.id==user.uid)+1,SOLO=G.mode=="solo";
- const tiles=(cls,rev)=>q.a.map((t,i)=>{const n=Object.values(ANS()).filter(a=>a.c==i).length;return `<div class="ans ${cols(q)[i]} ${rev&&i!=q.correct?"dim":""}"><span>${rev&&i==q.correct?"✓":syms(q)[i]}</span><em>${esc(t)}</em>${rev?`<span class="n">${n}</span>`:""}</div>`}).join("");
+ const tiles=(cls,rev)=>{if(q.type==="typing"){const answered=Object.values(ANS()).filter(a=>a?.v!=null).length;return `<div class="typing-host-panel"><div class="typing-host-icon">⌨️</div><div><h2>${rev?"Goede antwoorden":"Typen"}</h2><p>${rev?q.a.filter(x=>x.trim()).map(x=>`<span class="accepted-chip">${esc(x)}</span>`).join(""):`Spelers typen zelf een woord of zin.`}</p><small>${answered} antwoord${answered===1?"":"en"}</small></div></div>`;}return q.a.map((t,i)=>{const n=Object.values(ANS()).filter(a=>a.c==i).length;return `<div class="ans ${cols(q)[i]} ${rev&&i!=q.correct?"dim":""}"><span>${rev&&i==q.correct?"✓":syms(q)[i]}</span><em>${esc(t)}</em>${rev?`<span class="n">${n}</span>`:""}</div>`}).join("")};
  const countdown=(showTitle)=>q.type==="dia"?`<div class="stage countdown-screen dia-countdown"><div class="dia-intro-card"><span class="eyebrow">DIA START</span><div class="dia-intro-title">${esc(q.text)}</div><div class="dia-intro-info">${esc(q.info||"")}</div></div><div class="countdown-layout"><div class="countdown-copy">Dia start in...</div><div class="countdown-number" id="introTm">5</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`:`<div class="stage countdown-screen${q.doublePoints?" has-double":""}">${q.doublePoints?'<div class="double-bonus-pop">2× PUNTEN</div>':""}<div class="countdown-title ${q.doublePoints?"after-bonus":""}">${showTitle?esc(q.text):"Kijk naar de host zijn scherm"}</div><div class="countdown-layout"><div class="countdown-copy">Vraag start in...</div><div class="countdown-number" id="introTm">${q.doublePoints?"8":"5"}</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`;
  const slideView=()=>`<div class="stage slide-view"><div class="slide-card"><div class="slide-kicker">DIA</div><h1>${esc(q.text)}</h1><div class="slide-info">${esc(q.info||"")}</div></div><div class="slide-timer"><div class="tcirc" id="slideTm">${q.time}</div><div class="countdown-copy">Op scherm</div></div><div class="tbar"><div id="slideBar"></div></div></div>`;
  const phoneSuccess=(buttonLabel="")=>`<div class="full ${me?.ok?"ok":"no"} phone-result"><div class="stage"><div class="result-icon">${me?.ok?"✓":"✕"}</div><div class="big-msg">${me?.ok?"Goed gedaan!":"Helaas!"}</div><div class="result-points">${me?.ok?`+${pointsFor(q)} punten`:"Geen punten"}</div><p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
@@ -250,7 +262,7 @@ function paint(){
   if(G.state=="lobby")h=`<div class="center"><div class="big-msg">Je zit erin, ${esc(me?.name)}!</div><p>Wachten tot de host het spel start</p></div>`;
   else if(G.state=="countdown")h=countdown(true);
   else if(G.state=="slide")h=slideView();
-  else if(G.state=="question")h=ANS()[user.uid]?`<div class="center"><div class="big-msg">Antwoord verstuurd</div>Wachten op de uitslag...</div>`:`<div class="stage answer-screen"><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Kies je antwoord":"Kijk naar de host zijn scherm"}</div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${q.a.map((t,i)=>`<button class="ans ${cols(q)[i]}" data-a="ans" data-i="${i}"><span>${syms(q)[i]}</span><em>${esc(t)}</em></button>`).join("")}</div></div>`;
+  else if(G.state=="question")h=ANS()[user.uid]?`<div class="center"><div class="big-msg">Antwoord verstuurd</div>Wachten op de uitslag...</div>`:q.type==="typing"?`<div class="stage answer-screen typing-player"><div class="typing-question"><div class="typing-kicker">⌨️ TYPEN</div><h1>${esc(q.text)}</h1><p>Typ het antwoord zo goed mogelijk.</p></div><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Typ je antwoord":"Typ je antwoord"}</div></div><div class="tbar"><div id="tb"></div></div><form id="typingForm" class="typing-form"><input id="typingInput" autocomplete="off" maxlength="160" placeholder="Typ hier je antwoord..." autofocus><button class="btn g typing-submit" type="submit">Antwoord versturen</button></form><p class="typing-note">Hoofdletters en leestekens maken niet uit.</p></div>`:`<div class="stage answer-screen"><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Kies je antwoord":"Kijk naar de host zijn scherm"}</div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${q.a.map((t,i)=>`<button class="ans ${cols(q)[i]}" data-a="ans" data-i="${i}"><span>${syms(q)[i]}</span><em>${esc(t)}</em></button>`).join("")}</div></div>`;
   else if(G.state=="reveal")h=phoneSuccess(SOLO?(G.q+1<QS().length?"Naar tussenstand":"Resultaat bekijken"):"");
   else if(G.state=="board")h=SOLO?`<div class="center leaderboard solo-board"><h1>Tussenstand</h1>${boardRows(sorted())}<button class="btn b" data-a="next">Volgende vraag</button></div>`:`<div class="center"><div class="big-msg">Plek ${rank}</div><div>${me?.score||0} punten</div></div>`;
   else if(SOLO)h=`<div class="center leaderboard solo-board"><div class="big-msg">Quiz voltooid 🎉</div>${boardRows(sorted())}<button class="btn r" data-a="close">Terug naar mijn quizzen</button></div>`;

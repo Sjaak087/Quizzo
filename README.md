@@ -9,6 +9,7 @@ Nieuw in deze versie:
 - Een **Dia** bevat een titel en informatie, heeft geen antwoorden en geeft geen punten.
 - Een Dia wordt op het scherm van de host én op dat van spelers getoond.
 - Een Dia heeft een instelbare schermduur en gaat daarna automatisch naar de **tussenstand**.
-- De editor heeft een visuele vraagtypekiezer met duidelijke kaarten, iconen en uitleg voor **Quizvraag**, **Waar of niet waar** en **Dia**.
+- De editor heeft een visuele vraagtypekiezer met duidelijke kaarten, iconen en uitleg voor **Quizvraag**, **Waar of niet waar**, **Dia** en **Typen**.
+- **Typen** laat spelers een woord of zin invoeren. Je kunt zoveel geldige antwoorden toevoegen als je wilt; hoofdletters, leestekens en extra spaties worden bij de controle genegeerd.
 - Oude quizdata met een afwijkend puntenaantal wordt bij bewerken en spelen automatisch genormaliseerd naar 1000 punten.
 - Leaderboards tonen nieuwe punten met een optelanimatie en een zichtbare rank-up animatie.
