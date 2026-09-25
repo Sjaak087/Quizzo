@@ -1,26 +1,11 @@
-# Quizzo!
+# Quizzo
 
-Kahoot-achtige quizsite met Firebase (Auth + Realtime Database). Puur statisch, dus geschikt voor GitHub Pages.
+Deze versie bevat de quizflow voor solo en multiplayer, gesynchroniseerde vraagtimers, vraag-startanimaties en mobiele spelerweergave.
 
-## 1. Firebase instellen
-Firebase Authentication is **niet** nodig: accounts worden door de site zelf in de Realtime Database opgeslagen (wachtwoord als gezouten hash, nooit als tekst).
-1. Realtime Database > Rules > plak de inhoud van `database.rules.json` en klik op Publish.
-
-## 2. Op GitHub zetten
-1. Maak een nieuwe repository en upload **alle** bestanden uit deze zip naar de hoofdmap (`index.html`, `style.css`, `app.js`, `firebase.js`, `.nojekyll`).
-2. Repository > Settings > Pages > Source: **Deploy from a branch** > branch `main` en map `/ (root)` > Save.
-3. Na ongeveer een minuut staat de site op `https://JOUWNAAM.github.io/REPONAAM/`.
-
-Open de site altijd via die https-link. Dubbelklikken op `index.html` werkt niet, want Firebase Auth werkt niet vanaf `file://`.
-Lokaal testen kan met `python3 -m http.server` en dan `http://localhost:8000`.
-
-## Spelmodi
-- Bij **Gemaakte quizzen** staat nu **Spelen**. Daarmee kies je tussen **Alleen spelen** en **Multiplayer hosten**.
-- Elke vraag krijgt vóór de start een countdown van 5 seconden. Op het hostscherm verschijnt de vraagtekst; op multiplayer-telefoons staat **Kijk naar het scherm**.
-- Tijdens multiplayer-vragen tonen telefoons alleen de antwoorden, zonder de vraagtekst.
-- Na de laatste vraag wordt de gewone tussenstand overgeslagen; daarna volgt direct het eindscherm/podium.
-
-## Sitebeheer en updatelog
-- Klik op je accountnaam > Sitebeheer. De eerste keer stel je daar het e-mailadres en wachtwoord van de beheerder in (doe dit meteen na het online zetten, want de eerste die het instelt is de beheerder).
-- Daarna kun je updates toevoegen, aanpassen en verwijderen. Iedereen ziet ze via het knopje naast de accountnaam.
-- Publiceer eerst de nieuwe `database.rules.json`, anders krijg je "Geen toegang".
+Nieuw in deze versie:
+- Iedere nieuwe vraag start standaard met 1000 punten.
+- Per vraag is de knop **Dubbele punten** beschikbaar.
+- Bij dubbele punten krijgen goede antwoorden 2× de ingestelde punten.
+- Tijdens de vraag-startanimatie verschijnt bij 2× punten eerst een korte 2×-punten animatie, daarna de vraagtitel.
+- De vraagtitel blijft onderdeel van de volledige vraag-startintro van 5 seconden; bij 2× punten begint deze na de korte bonusintro.
+- Leaderboards tellen nieuwe punten zichtbaar op en tonen een animatie wanneer een speler een plek stijgt.
