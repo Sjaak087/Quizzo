@@ -156,29 +156,38 @@ function run(code,host){cleanup();CODE=code;HOST=host;
  timer=setInterval(tick,250)}
 const QS=()=>arr(G.quiz.questions).map(q=>({...q,a:arr(q.a)})),P=()=>Object.entries(G.players||{}).map(([id,p])=>({id,...p}));
 const ANS=()=>G.answers?.[G.q]||{},pointsFor=q=>q.type==="dia"?0:1000*(q.doublePoints?2:1),introDuration=q=>INTRO_MS+(q.type!=="dia"&&q.doublePoints?DOUBLE_BONUS_INTRO_MS:0),end=()=>G.startedAt+QS()[G.q].time*1000,introEnd=()=>G.countdownStartedAt+introDuration(QS()[G.q]),isSlide=()=>QS()[G.q]?.type==="dia";
+const setTimerBar=(el,ratio)=>{
+ if(!el)return;
+ const r=Math.max(0,Math.min(1,ratio));
+ el.style.width=(r*100)+"%";
+ el.classList.remove("timer-warn","timer-danger");
+ if(r<=0.22)el.classList.add("timer-danger");
+ else if(r<=0.5)el.classList.add("timer-warn");
+};
 function tick(){
  if(!G)return;
- if(G.state=="countdown"){
+ if(G.state==="countdown"){
   const qIntro=QS()[G.q];
   if(qIntro?.type==="dia"){
    if(HOST&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"slide",countdownStartedAt:null,startedAt:serverTimestamp()}).catch(e=>toast(em(e))).finally(()=>busy=false)}
    return;
   }
   const dur=introDuration(qIntro),ms=introEnd()-now(),el=$("#introTm");if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
-  const b=$("#introBar");if(b)b.style.width=Math.max(0,Math.min(100,ms/dur*100))+"%";
+  const b=$("#introBar");setTimerBar(b,ms/dur);
   if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"question",startedAt:serverTimestamp()}).catch(e=>toast(em(e))).finally(()=>busy=false)}
   return;
  }
  if(G.state==="slide"){
   const q=QS()[G.q],ms=end()-now(),el=$("#slideTm");
   if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
-  const b=$("#slideBar");if(b)b.style.width=Math.max(0,Math.min(100,ms/(q.time*10)*100))+"%";
+  const b=$("#slideBar");setTimerBar(b,ms/(q.time*1000));
   if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"board"}).catch(e=>toast(em(e))).finally(()=>busy=false)}
   return;
  }
  if(G.state!="question")return;
  const q=QS()[G.q],ms=end()-now(),el=$("#tm");
- if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));const b=$("#tb");if(b)b.style.width=Math.max(0,ms/(q.time*10))+"%";
+ if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
+ const b=$("#tb");setTimerBar(b,ms/(q.time*1000));
  if(HOST&&(ms<=0||(P().length&&Object.keys(ANS()).length>=P().length)))reveal()}
 async function reveal(){if(busy)return;busy=true;const q=QS()[G.q];
  const ans=(await get(ref(db,`games/${CODE}/answers/${G.q}`))).val()||{},u={state:"reveal"};
