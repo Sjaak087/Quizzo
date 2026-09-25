@@ -135,8 +135,8 @@ act.newq=()=>{const m=document.createElement("div");m.className="modal";m.innerH
   <button class="type-option blue" data-a="addq"><span class="type-art"><span class="art-shape">▲</span><span class="art-shape small">◆</span><span class="art-shape tiny">●</span></span><span class="type-name">Quizvraag</span><span class="type-desc">4 antwoorden • 1000 punten • snel spelen</span><span class="type-chip">QUIZ</span></button>
   <button class="type-option green" data-a="addtf"><span class="type-art tf-art"><span>✓</span><span>✕</span></span><span class="type-name">Waar of niet waar</span><span class="type-desc">2 keuzes • 1000 punten • simpel en snel</span><span class="type-chip">WAAR / NIET WAAR</span></button>
   <button class="type-option purple" data-a="adddia"><span class="type-art dia-art">🖼️</span><span class="type-name">Dia</span><span class="type-desc">Titel + informatie • geen antwoord • geen punten</span><span class="type-chip">DIA</span></button>
- </div></div>`;document.body.append(m)};
   <button class="type-option orange" data-a="addtyping"><span class="type-art typing-art">⌨️</span><span class="type-name">Typen</span><span class="type-desc">Speler typt woord of zin • 1000 punten • zoveel goede antwoorden als je wilt</span><span class="type-chip">TYPEN</span></button>
+ </div></div>`;document.body.append(m)};
 act.closem=()=>document.querySelector(".modal")?.remove();
 const addQ=t=>{act.closem();Q.questions.push(newQ(t));SEL=Q.questions.length-1;side();mainQ();saveBtn()};
 act.addq=()=>addQ("quiz");
