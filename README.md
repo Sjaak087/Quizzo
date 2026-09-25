@@ -14,6 +14,12 @@ Firebase Authentication is **niet** nodig: accounts worden door de site zelf in 
 Open de site altijd via die https-link. Dubbelklikken op `index.html` werkt niet, want Firebase Auth werkt niet vanaf `file://`.
 Lokaal testen kan met `python3 -m http.server` en dan `http://localhost:8000`.
 
+## Spelmodi
+- Bij **Gemaakte quizzen** staat nu **Spelen**. Daarmee kies je tussen **Alleen spelen** en **Multiplayer hosten**.
+- Elke vraag krijgt vóór de start een countdown van 5 seconden. Op het hostscherm verschijnt de vraagtekst; op multiplayer-telefoons staat **Kijk naar het scherm**.
+- Tijdens multiplayer-vragen tonen telefoons alleen de antwoorden, zonder de vraagtekst.
+- Na de laatste vraag wordt de gewone tussenstand overgeslagen; daarna volgt direct het eindscherm/podium.
+
 ## Sitebeheer en updatelog
 - Klik op je accountnaam > Sitebeheer. De eerste keer stel je daar het e-mailadres en wachtwoord van de beheerder in (doe dit meteen na het online zetten, want de eerste die het instelt is de beheerder).
 - Daarna kun je updates toevoegen, aanpassen en verwijderen. Iedereen ziet ze via het knopje naast de accountnaam.

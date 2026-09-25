@@ -68,7 +68,7 @@ async function tabView(){
   c.innerHTML="Laden...";
   const s=await get(ref(db,"quizzes/"+user.uid)).catch(e=>(toast(em(e)),null)),v=s?.val()||{},ids=Object.keys(v);
   c.innerHTML=ids.length?ids.map(id=>`<div class="qcard"><div><b>${esc(v[id].title)}</b><small>${arr(v[id].questions).length} vragen</small></div><div>
-   <button class="btn g sm" data-a="host" data-id="${id}">Hosten</button> <button class="btn b sm" data-a="edit" data-id="${id}">Bewerken</button> <button class="btn r sm" data-a="delq" data-id="${id}">Verwijderen</button></div></div>`).join("")
+   <button class="btn b sm" data-a="play" data-id="${id}">Spelen</button> <button class="btn g sm" data-a="host" data-id="${id}">Hosten</button> <button class="btn w sm" data-a="edit" data-id="${id}">Bewerken</button> <button class="btn r sm" data-a="delq" data-id="${id}">Verwijderen</button></div></div>`).join("")
   :`<div class="card narrow">Je hebt nog geen quizzen. Ga naar "Quiz maken" om te beginnen.</div>`}}
 act.check=async()=>{const c=$("#code").value.trim();if(!c)return;
  const s=await get(ref(db,"games/"+c)).catch(e=>(toast(em(e)),null));if(!s)return;
@@ -82,6 +82,13 @@ act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz e
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
  Q={title:v.title,questions:arr(v.questions).map(q=>({...q,a:arr(q.a)}))};QID=d.id;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
+
+act.play=async d=>{
+ const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();if(!qz)return toast("Deze quiz kon niet worden geladen.");
+ const m=document.createElement("div");m.className="modal";
+ m.innerHTML=`<div class="card mode-card"><h2>${esc(qz.title)}</h2><p>Kies hoe je deze quiz wilt spelen.</p><button class="btn b" data-a="solo" data-id="${d.id}">👤 Alleen spelen</button><button class="btn g" data-a="playhost" data-id="${d.id}">🎮 Multiplayer hosten</button><button class="btn w" data-a="closem">Annuleren</button></div>`;
+ document.body.append(m)
+};
 
 /* ---------- Editor ---------- */
 const newQ=(type="quiz")=>type=="tf"?{type:"tf",text:"",time:20,points:1000,a:["Waar","Niet waar"],correct:-1}:{type:"quiz",text:"",time:20,points:1000,a:["","","",""],correct:-1};
@@ -118,44 +125,63 @@ act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.
 
 /* ---------- Game ---------- */
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
-act.host=async d=>{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();let code;
- do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());
- await set(ref(db,"games/"+code),{host:user.uid,state:"lobby",q:0,quiz:{title:qz.title,questions:qz.questions}}).catch(e=>toast(em(e)));run(code,true)};
+const INTRO_MS=5000;
+const randomCode=async()=>{let code;do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());return code};
+const createGame=async(qz,gameMode)=>{const code=await randomCode();const data={host:user.uid,mode:gameMode,state:"lobby",q:0,quiz:{title:qz.title,questions:qz.questions}};if(gameMode=="solo")data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
+act.host=async d=>{try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
+act.playhost=async d=>{act.closem();act.host(d)};
+act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"solo");run(code,true)}catch(e){toast(em(e))}};
 function run(code,host){cleanup();CODE=code;HOST=host;
  unsub=onValue(ref(db,"games/"+code),s=>{G=s.val();if(!G){if(!host&&CODE)toast("De quiz is afgesloten.");return home()}paint()});
  timer=setInterval(tick,250)}
 const QS=()=>arr(G.quiz.questions).map(q=>({...q,a:arr(q.a)})),P=()=>Object.entries(G.players||{}).map(([id,p])=>({id,...p}));
-const ANS=()=>G.answers?.[G.q]||{},end=()=>G.startedAt+QS()[G.q].time*1000;
-function tick(){if(!G||G.state!="question")return;const q=QS()[G.q],ms=end()-now(),el=$("#tm");
+const ANS=()=>G.answers?.[G.q]||{},end=()=>G.startedAt+QS()[G.q].time*1000,introEnd=()=>G.countdownStartedAt+INTRO_MS;
+function tick(){
+ if(!G)return;
+ if(G.state=="countdown"){
+  const ms=introEnd()-now(),el=$("#introTm");if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
+  const b=$("#introBar");if(b)b.style.width=Math.max(0,Math.min(100,ms/INTRO_MS*100))+"%";
+  if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"question",startedAt:now()}).catch(e=>toast(em(e))).finally(()=>busy=false)}
+  return;
+ }
+ if(G.state!="question")return;
+ const q=QS()[G.q],ms=end()-now(),el=$("#tm");
  if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));const b=$("#tb");if(b)b.style.width=Math.max(0,ms/(q.time*10))+"%";
  if(HOST&&(ms<=0||(P().length&&Object.keys(ANS()).length>=P().length)))reveal()}
 async function reveal(){if(busy)return;busy=true;const q=QS()[G.q];
  const ans=(await get(ref(db,`games/${CODE}/answers/${G.q}`))).val()||{},u={state:"reveal"};
  P().forEach(p=>{const a=ans[p.id],ok=!!a&&a.c===q.correct&&a.t<=end()+1500;u[`players/${p.id}/ok`]=ok;if(ok)u[`players/${p.id}/score`]=(p.score||0)+q.points});
  await update(ref(db,"games/"+CODE),u)}
-act.start=()=>update(ref(db,"games/"+CODE),{state:"question",q:0,startedAt:now()});
-act.next=()=>{if(G.state=="reveal")return update(ref(db,"games/"+CODE),{state:"board"});
- if(G.q+1<QS().length)update(ref(db,"games/"+CODE),{state:"question",q:G.q+1,startedAt:now()});else update(ref(db,"games/"+CODE),{state:"end"})};
+act.start=()=>update(ref(db,"games/"+CODE),{state:"countdown",q:0,countdownStartedAt:now(),startedAt:null});
+act.next=()=>{
+ if(G.state=="reveal")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"board"}):update(ref(db,"games/"+CODE),{state:"end"});
+ if(G.state=="board")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"countdown",q:G.q+1,countdownStartedAt:now(),startedAt:null}):update(ref(db,"games/"+CODE),{state:"end"});
+};
 act.close=()=>remove(ref(db,"games/"+CODE));
-act.ans=d=>{if(now()>end()||ANS()[user.uid])return;set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{c:+d.i,t:now()})};
+act.ans=d=>{if(G.state!="question"||now()>end()||ANS()[user.uid])return;set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{c:+d.i,t:now()})};
 const sorted=()=>P().sort((a,b)=>(b.score||0)-(a.score||0));
 function paint(){
- if(G.state!="question")busy=false;
+ if(G.state!="reveal"&&G.state!="countdown")busy=false;
  const key=[G.state,G.q,P().length,HOST?Object.keys(ANS()).length:ANS()[user.uid]?1:0].join();if(key==lastKey)return;lastKey=key;
- const q=G.state=="lobby"?null:QS()[G.q],me=G.players?.[user.uid],rank=sorted().findIndex(p=>p.id==user.uid)+1;
+ const q=G.state=="lobby"?null:QS()[G.q],me=G.players?.[user.uid],rank=sorted().findIndex(p=>p.id==user.uid)+1,SOLO=G.mode=="solo";
  const tiles=(cls,rev)=>q.a.map((t,i)=>{const n=Object.values(ANS()).filter(a=>a.c==i).length;return `<div class="ans ${cols(q)[i]} ${rev&&i!=q.correct?"dim":""}"><span>${rev&&i==q.correct?"✓":syms(q)[i]}</span><em>${esc(t)}</em>${rev?`<span class="n">${n}</span>`:""}</div>`}).join("");
+ const countdown=(showTitle)=>`<div class="stage countdown-screen"><div class="countdown-title">${showTitle?esc(q.text):"Kijk naar het scherm"}</div><div class="countdown-layout"><div class="countdown-copy">Vraag start in...</div><div class="countdown-number" id="introTm">5</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`;
+ const phoneSuccess=(buttonLabel="")=>`<div class="full ${me?.ok?"ok":"no"} phone-result"><div class="stage"><div class="result-icon">${me?.ok?"✓":"✕"}</div><div class="big-msg">${me?.ok?"Goed gedaan!":"Helaas!"}</div><div class="result-points">${me?.ok?`+${q.points} punten`:"Geen punten"}</div><p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
  let h="";
- if(HOST){
+ if(HOST&&!SOLO){
   if(G.state=="lobby")h=`<div class="stage"><h2>${esc(G.quiz.title)}</h2><div>Ga naar <b>Quiz joinen</b> en vul de code in</div><div class="code">${CODE}</div><div><b>${P().length}</b> spelers</div><div class="chips">${P().map(p=>`<span>${esc(p.name)}</span>`).join("")||"Wachten op spelers..."}</div><button class="btn g" data-a="start" ${P().length?"":"disabled"}>Quiz starten</button> <button class="btn w" data-a="close">Annuleren</button></div>`;
-  else if(G.state=="question")h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="hbar"><div class="tcirc" id="tm"></div><div class="cnt">${Object.keys(ANS()).length}<small>antwoorden</small></div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?'tf':''}">${tiles()}</div></div>`;
-  else if(G.state=="reveal"){const ps=P();h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="agrid big ${q.type=='tf'?'tf':''}">${tiles("",true)}</div><div class="two"><div><h3>Goed ✓</h3>${ps.filter(p=>p.ok).map(p=>esc(p.name)).join(", ")||"Niemand"}</div><div><h3>Fout ✗</h3>${ps.filter(p=>!p.ok).map(p=>esc(p.name)).join(", ")||"Niemand"}</div></div><button class="btn b" data-a="next">Volgende</button></div>`}
-  else if(G.state=="board")h=`<div class="stage"><h1>Tussenstand</h1>${sorted().slice(0,5).map((p,i)=>`<div class="row"><span>${i+1}. ${esc(p.name)}</span><span>${p.score||0}</span></div>`).join("")}<button class="btn b" data-a="next">${G.q+1<QS().length?"Volgende vraag":"Naar het podium"}</button></div>`;
+  else if(G.state=="countdown")h=countdown(true);
+  else if(G.state=="question")h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="hbar"><div class="tcirc" id="tm"></div><div class="cnt">${Object.keys(ANS()).length}<small>antwoorden</small></div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles()}</div></div>`;
+  else if(G.state=="reveal"){const ps=P();h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles("",true)}</div><div class="two"><div><h3>Goed ✓</h3>${ps.filter(p=>p.ok).map(p=>esc(p.name)).join(", ")||"Niemand"}</div><div><h3>Fout ✗</h3>${ps.filter(p=>!p.ok).map(p=>esc(p.name)).join(", ")||"Niemand"}</div></div><button class="btn b" data-a="next">Volgende</button></div>`}
+  else if(G.state=="board")h=`<div class="stage leaderboard"><h1>Tussenstand</h1>${sorted().slice(0,5).map((p,i)=>`<div class="row"><span>${i+1}. ${esc(p.name)}</span><span>${p.score||0}</span></div>`).join("")}<button class="btn b" data-a="next">Volgende vraag</button></div>`;
   else{const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn">${esc(t[i].name)}<small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Quiz afsluiten</button></div>`}
  }else{
   if(G.state=="lobby")h=`<div class="center"><div class="big-msg">Je zit erin, ${esc(me?.name)}!</div>Wachten tot de host start...</div>`;
-  else if(G.state=="question")h=ANS()[user.uid]?`<div class="center"><div class="big-msg">Antwoord verstuurd</div>Wachten op de anderen...</div>`:`<div class="stage"><div class="hbar"><div class="tcirc" id="tm"></div><b>${esc(q.text)}</b></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?'tf':''}">${q.a.map((t,i)=>`<button class="ans ${cols(q)[i]}" data-a="ans" data-i="${i}"><span>${syms(q)[i]}</span><em>${esc(t)}</em></button>`).join("")}</div></div>`;
-  else if(G.state=="reveal")h=`<div class="full ${me?.ok?"ok":"no"}"><div class="stage"><div class="big-msg">${me?.ok?"Goed! ✓":"Fout ✗"}</div>${me?.ok?`+${q.points} punten`:"Geen punten"}<p>Totaal: ${me?.score||0}</p></div></div>`;
-  else if(G.state=="board")h=`<div class="center"><div class="big-msg">Plek ${rank}</div><div>${me?.score||0} punten</div></div>`;
+  else if(G.state=="countdown")h=countdown(SOLO);
+  else if(G.state=="question")h=ANS()[user.uid]?`<div class="center"><div class="big-msg">Antwoord verstuurd</div>Wachten op de uitslag...</div>`:`<div class="stage answer-screen"><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Kies je antwoord":"Kies een antwoord"}</div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${q.a.map((t,i)=>`<button class="ans ${cols(q)[i]}" data-a="ans" data-i="${i}"><span>${syms(q)[i]}</span><em>${esc(t)}</em></button>`).join("")}</div></div>`;
+  else if(G.state=="reveal")h=phoneSuccess(SOLO?(G.q+1<QS().length?"Naar tussenstand":"Resultaat bekijken"):"");
+  else if(G.state=="board")h=SOLO?`<div class="center leaderboard solo-board"><h1>Tussenstand</h1>${sorted().map((p,i)=>`<div class="row"><span>${i+1}. ${esc(p.name)}</span><span>${p.score||0}</span></div>`).join("")}<button class="btn b" data-a="next">Volgende vraag</button></div>`:`<div class="center"><div class="big-msg">Plek ${rank}</div><div>${me?.score||0} punten</div></div>`;
+  else if(SOLO)h=`<div class="center leaderboard solo-board"><div class="big-msg">Quiz voltooid 🎉</div>${sorted().map((p,i)=>`<div class="row"><span>${i+1}. ${esc(p.name)}</span><span>${p.score||0}</span></div>`).join("")}<button class="btn r" data-a="close">Terug naar mijn quizzen</button></div>`;
   else h=`<div class="center"><div class="big-msg">${rank<=3?["🥇","🥈","🥉"][rank-1]:""} Plek ${rank}</div><div>${me?.score||0} punten</div><p>Wachten tot de host afsluit...</p></div>`}
  A.innerHTML=h;tick()}
 
