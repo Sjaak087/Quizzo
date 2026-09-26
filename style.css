@@ -346,3 +346,19 @@ body.has-theme-scene>#app{position:relative!important;z-index:2!important;backgr
 body.has-theme-scene #app>*{position:relative;}
 body.has-theme-scene header,body.has-theme-scene .tabs{z-index:3!important;}
 body.has-theme-scene .modal{z-index:50!important;}
+/* V23: restore the original Quizzo Klassiek purple everywhere when no custom theme is selected. */
+html, body { background-color:#46178f; }
+body.theme-classic {
+  background:#46178f !important;
+  background-image:radial-gradient(circle at 10% 8%,#6e35cc 0,transparent 38%),radial-gradient(circle at 92% 88%,#8e3be4 0,transparent 40%),linear-gradient(135deg,#321066,#641f9e) !important;
+  background-attachment:fixed !important;
+}
+body.theme-classic #main,
+body.theme-classic .edw,
+body.theme-classic .wrap,
+body.theme-classic .stage,
+body.theme-classic .center {
+  background:transparent !important;
+}
+#quizzo-theme-scene { display:none; }
+body.has-theme-scene #quizzo-theme-scene { display:block; }
