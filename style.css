@@ -433,3 +433,14 @@ body.theme-volcano{background-color:#5e2018!important;background-image:url("them
 body.theme-study{background-color:#806044!important;background-image:url("themes/study.svg")!important;}
 .theme-choice-thumb{display:block!important;width:100%!important;height:132px!important;object-fit:cover!important;background:#eee!important;}
 @media(max-width:700px){.theme-choice-thumb{height:148px!important}.theme-choice{min-height:205px!important;}}
+
+/* v19: the SVG theme is the actual page canvas. Keep editor/game surfaces transparent so the scene is visible. */
+body[class*="theme-"]{background-color:#222!important;background-repeat:no-repeat!important;background-position:center center!important;background-size:cover!important;background-attachment:fixed!important;}
+body[class*="theme-"]::before,body[class*="theme-"]::after{display:none!important;}
+body[class*="theme-"] .edw,body[class*="theme-"] #main,body[class*="theme-"] .wrap,body[class*="theme-"] .tabs{background:transparent!important;}
+body[class*="theme-"] .edw{min-height:calc(100vh - 62px);}
+body[class*="theme-"] .stage,body[class*="theme-"] .center{background:transparent!important;}
+body[class*="theme-"] .theme-strip{background:rgba(0,0,0,.22)!important;}
+.theme-choice-thumb{display:block!important;width:100%!important;height:150px!important;object-fit:cover!important;object-position:center!important;background:#111!important;}
+.theme-choice-thumb[alt]{font-weight:800;}
+@media(max-width:700px){body[class*="theme-"] .edw{min-height:auto}.theme-choice-thumb{height:165px!important;}}
