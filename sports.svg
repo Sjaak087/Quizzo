@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="sports-bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#8fd2ff"/><stop offset=".56" stop-color="#4a9ce7"/><stop offset="1" stop-color="#1e4b81"/></linearGradient>
+<linearGradient id="sports-hill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff" stop-opacity=".92"/><stop offset="1" stop-color="#cfd8e6" stop-opacity=".95"/></linearGradient>
+<linearGradient id="sports-shadow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#000" stop-opacity=".04"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>
+<filter id="sports-soft"><feGaussianBlur stdDeviation="18"/></filter>
+<filter id="sports-shadow"><feDropShadow dx="0" dy="14" stdDeviation="10" flood-opacity=".18"/></filter></defs>
+<rect width="1440" height="900" fill="url(#sports-bg)"/>
+<rect y="540" width="1440" height="360" fill="#2d7b4a"/><path d="M720 540 V900 M200 540 V900 M1240 540 V900" stroke="#fff" stroke-width="8" opacity=".6"/><path d="M0 700 H1440" stroke="#fff" stroke-width="8" opacity=".6"/><circle cx="720" cy="720" r="120" fill="none" stroke="#fff" stroke-width="8" opacity=".6"/>
+<path d="M0 470 H1440" stroke="#b7d3ea" stroke-width="70"/><path d="M0 420 Q280 340 550 430 T1100 420 T1440 430 L1440 500 L0 500Z" fill="#d9e4ed"/><rect x="540" y="80" width="360" height="120" rx="18" fill="#1f2c3d" stroke="#95a8bc" stroke-width="8"/><text x="720" y="158" font-family="Arial" text-anchor="middle" font-size="70" font-weight="900" fill="#fff">SCORE</text><circle cx="300" cy="710" r="58" fill="#fff"/><path d="M300 652 L340 685 L325 735 L275 735 L260 685Z" fill="#333"/><circle cx="1160" cy="730" r="58" fill="#f28a2d"/><path d="M1115 700 Q1160 680 1200 715 M1120 740 Q1160 720 1195 755" stroke="#7b3213" stroke-width="7" fill="none"/>
+</svg>

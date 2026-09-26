@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="football-bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#97d0f3"/><stop offset=".56" stop-color="#6bbf75"/><stop offset="1" stop-color="#2f7b49"/></linearGradient>
+<linearGradient id="football-hill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff" stop-opacity=".92"/><stop offset="1" stop-color="#cfd8e6" stop-opacity=".95"/></linearGradient>
+<linearGradient id="football-shadow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#000" stop-opacity=".04"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>
+<filter id="football-soft"><feGaussianBlur stdDeviation="18"/></filter>
+<filter id="football-shadow"><feDropShadow dx="0" dy="14" stdDeviation="10" flood-opacity=".18"/></filter></defs>
+<rect width="1440" height="900" fill="url(#football-bg)"/>
+<path d="M0 470 Q250 350 500 470 T1000 460 T1440 470 L1440 900 L0 900Z" fill="#32874f"/><path d="M0 560 H1440 M720 470 V900 M0 800 H1440" stroke="#fff" stroke-width="8" opacity=".75"/><circle cx="720" cy="680" r="100" fill="none" stroke="#fff" stroke-width="8"/>
+<g><rect x="110" y="540" width="70" height="150" fill="none" stroke="#fff" stroke-width="12"/><path d="M180 540 l70 35 v115" fill="none" stroke="#fff" stroke-width="9" opacity=".7"/></g><g><rect x="1260" y="540" width="70" height="150" fill="none" stroke="#fff" stroke-width="12"/><path d="M1330 540 l70 35 v115" fill="none" stroke="#fff" stroke-width="9" opacity=".7"/></g><g transform="translate(720 730)"><path d="M0 -48 L46 -15 L28 40 L-28 40 L-46 -15Z" fill="#fff" stroke="#222" stroke-width="5"/><path d="M0 -48 L0 -18 M46 -15 L20 -5 M28 40 L12 12 M-28 40 L-12 12 M-46 -15 L-20 -5" stroke="#222" stroke-width="5"/></g>
+</svg>

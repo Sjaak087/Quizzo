@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="gaming-bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#90d7ff"/><stop offset=".56" stop-color="#9a79e8"/><stop offset="1" stop-color="#3c2a6a"/></linearGradient>
+<linearGradient id="gaming-hill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff" stop-opacity=".92"/><stop offset="1" stop-color="#cfd8e6" stop-opacity=".95"/></linearGradient>
+<linearGradient id="gaming-shadow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#000" stop-opacity=".04"/><stop offset="1" stop-color="#000" stop-opacity=".28"/></linearGradient>
+<filter id="gaming-soft"><feGaussianBlur stdDeviation="18"/></filter>
+<filter id="gaming-shadow"><feDropShadow dx="0" dy="14" stdDeviation="10" flood-opacity=".18"/></filter></defs>
+<rect width="1440" height="900" fill="url(#gaming-bg)"/>
+<path d="M0 560 Q240 400 500 560 T1020 540 T1440 560 L1440 900 L0 900Z" fill="#55a775"/><path d="M0 720 Q250 590 520 720 T1040 700 T1440 720 L1440 900 L0 900Z" fill="#7d59d2"/>
+<g filter="url(#gaming-shadow)"><path d="M135.0 280 Q230 220 325.0 280 L290 370 L170 370Z" fill="#8662db"/><path d="M135.0 280 Q230 225 325.0 280" fill="none" stroke="#9ce37d" stroke-width="28"/></g><g filter="url(#gaming-shadow)"><path d="M580.0 200 Q690 140 800.0 200 L750 290 L630 290Z" fill="#8662db"/><path d="M580.0 200 Q690 145 800.0 200" fill="none" stroke="#9ce37d" stroke-width="28"/></g><g filter="url(#gaming-shadow)"><path d="M1080.0 310 Q1170 250 1260.0 310 L1230 400 L1110 400Z" fill="#8662db"/><path d="M1080.0 310 Q1170 255 1260.0 310" fill="none" stroke="#9ce37d" stroke-width="28"/></g><g transform="translate(680 570)" filter="url(#gaming-shadow)"><path d="M-190 55 Q-165 -70 -70 -65 H70 Q165 -70 190 55 Q190 115 125 120 L80 65 H-80 L-125 120 Q-190 115 -190 55Z" fill="#f7f7f7"/><circle cx="-100" cy="5" r="18" fill="#58a5ff"/><circle cx="-25" cy="5" r="18" fill="#ef5d83"/><path d="M70 -2 h55 M97 -29 v55" stroke="#555" stroke-width="10" stroke-linecap="round"/></g>
+</svg>

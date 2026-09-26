@@ -1,20 +1,13 @@
-# Quizzo – GitHub Pages
+# Quizzo
 
-Deze versie bevat de Quizzo-app en alle bestanden die de browser nodig heeft.
+Quizzo is a browser-based quiz app with Firebase Realtime Database support.
+
+## v16
+- Quizzo Klassiek stays exactly as the existing purple Quizzo style.
+- The other 24 themes now use original, hand-built vector/3D-inspired scenes in `themes/*.svg`.
+- Theme scenes are responsive and fill the complete screen behind the editor, host and player UI.
+- Theme picker thumbnails use the same scene artwork.
+- All existing gameplay features remain in place (Solo/Multiplayer, Dia, Typen, fixed 1000-point questions, double points, millisecond scoring, leaderboard animations, question reordering, settings).
 
 ## GitHub Pages
-Upload **de inhoud van deze map** naar de hoofdmap van je GitHub Pages-repository, zodat deze bestanden direct naast elkaar staan:
-
-- `index.html`
-- `app.js`
-- `firebase.js`
-- `style.css`
-- `database.rules.json`
-- `.nojekyll`
-
-Open daarna de echte GitHub Pages-link (niet het zipbestand of een voorbeeldweergave).
-
-De nieuwste versie bevat ook het vraagtype Typen, Dia, dubbele punten, gesynchroniseerde timers, drag-and-drop voor vragen en leaderboard-animaties.
-
-
-Punten voor goede antwoorden starten op maximaal 1000 en dalen lineair op basis van de exacte milliseconde waarop het antwoord is ingestuurd. Het uiteindelijke aantal blijft een heel getal. Met dubbele punten wordt dat berekende aantal daarna verdubbeld.
+Keep `index.html`, `app.js`, `firebase.js`, `style.css`, `database.rules.json`, `.nojekyll`, and the `themes/` folder in the repository root.
