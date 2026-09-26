@@ -1,4 +1,5 @@
 import {db, ref, get, set, update, remove, push, onValue, serverTimestamp} from "./firebase.js";
+import {THEME_SVG} from "./theme-assets.js";
 
 window.__quizzoStarted = true;
 
@@ -34,7 +35,10 @@ const THEMES={
 };
 const themeIds=Object.keys(THEMES);
 const safeTheme=t=>themeIds.includes(t)?t:"classic";
-function themeAsset(id, ext="svg"){return new URL(`./themes/${id}.${ext}`,document.baseURI).href}
+function themeAsset(id, ext="svg"){
+  if(ext==="svg" && THEME_SVG[id]) return THEME_SVG[id];
+  return new URL(`./themes/${id}.${ext}`,document.baseURI).href;
+}
 function ensureThemeScene(){
  let scene=document.getElementById("quizzo-theme-scene");
  if(!scene){
@@ -196,7 +200,7 @@ act.settings=()=>{
  const current=safeTheme(Q.theme);
  m.innerHTML=`<div class="card settings-card"><div class="picker-head"><div><span class="eyebrow">QUIZ INSTELLINGEN</span><h2>Instellingen</h2><p>Pas de naam en het uiterlijk van je quiz aan.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div>
  <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" data-f="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
- <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" src="themes/${id}.svg" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async" onerror="this.onerror=null;this.src='./themes/${id}.png'"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
+ <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" src="${themeAsset(id,"svg")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
  <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
  document.body.append(m);
 };

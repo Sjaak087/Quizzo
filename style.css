@@ -328,3 +328,21 @@ body.has-theme-scene .modal{z-index:20;}
 /* No opaque canvas/background should cover the scene. */
 body.has-theme-scene .edw,body.has-theme-scene #main,body.has-theme-scene .stage,body.has-theme-scene .center,body.has-theme-scene .wrap{background:transparent!important;}
 @media(max-width:700px){#quizzo-theme-scene{object-position:center center;}}
+
+/* v22: guaranteed inline theme scene. The SVG content is embedded in theme-assets.js,
+   so GitHub Pages cannot fail to render the real illustrated scene because of asset paths. */
+html,body{background:transparent!important;}
+body.has-theme-scene{isolation:isolate!important;background:transparent!important;overflow-x:hidden;}
+#quizzo-theme-scene{
+  position:fixed!important;
+  top:0!important;left:0!important;right:0!important;bottom:0!important;
+  width:100%!important;height:100%!important;height:100dvh!important;
+  min-width:100%!important;min-height:100%!important;
+  display:block!important;visibility:visible!important;opacity:1!important;
+  object-fit:cover!important;object-position:center center!important;
+  z-index:0!important;pointer-events:none!important;
+}
+body.has-theme-scene>#app{position:relative!important;z-index:2!important;background:transparent!important;}
+body.has-theme-scene #app>*{position:relative;}
+body.has-theme-scene header,body.has-theme-scene .tabs{z-index:3!important;}
+body.has-theme-scene .modal{z-index:50!important;}
