@@ -86,7 +86,7 @@ function toast(m){const t=document.createElement("div");t.className="toast";t.te
 const errs={"auth/email-already-in-use":"Dit e-mailadres is al in gebruik.","auth/invalid-credential":"E-mail of wachtwoord klopt niet.","auth/weak-password":"Wachtwoord moet minstens 6 tekens zijn.","auth/invalid-email":"Dit e-mailadres is ongeldig.","PERMISSION_DENIED":"Geen toegang: controleer de database-regels."};
 const em=e=>errs[e.code]||errs[(e.message||"").match(/PERMISSION_DENIED/)?.[0]]||e.code||e.message;
 const act={};
-document.addEventListener("click",e=>{if(!e.target.closest('[data-a="menu"]'))$("#menu")?.remove();const t=e.target.closest("[data-a]");if(t&&!t.disabled)act[t.dataset.a]?.(t.dataset,t)});
+document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(t&&!t.disabled){act[t.dataset.a]?.(t.dataset,t);if(t.dataset.a!=="menu"&&!t.closest("#menu"))$("#menu")?.remove();return;}if(!e.target.closest('[data-a="menu"]')&&!e.target.closest("#menu"))$("#menu")?.remove();});
 function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey="";scoreSnapshot={};rankSnapshot={};boardAnim=null;lastPaintState="";applyTheme("classic")}
 
 /* ---------- Accounts (opgeslagen in de Realtime Database, zonder Firebase Authentication) ---------- */
@@ -127,7 +127,7 @@ act.out=()=>{localStorage.removeItem("quizzo_user");sessionStorage.removeItem("q
 /* ---------- Home ---------- */
 function home(){
  cleanup();Q=null;joinCode=null;if(!user)return authView();
- A.innerHTML=`<header><b class="logo s">Quizzo!</b><span class="hr"><button class="btn w sm ib" data-a="log" title="Updatelog" aria-label="Updatelog">📢</button><button class="btn w sm" data-a="menu">${esc(user.displayName||user.email)} ▾</button></span></header>
+ A.innerHTML=`<header><b class="logo s">Quizzo!</b><span class="hr"><button class="btn w sm ib" data-a="log" title="Updatelog" aria-label="Updatelog">📢</button><button class="btn w sm" data-a="admin" title="Sitebeheer">⚙ Sitebeheer</button><button class="btn w sm" data-a="menu">${esc(user.displayName||user.email)} ▾</button></span></header>
  <nav class="tabs">${[["join","Quiz joinen"],["make","Quiz maken"],["mine","Gemaakte quizzen"]].map(([k,l])=>`<button data-a="tab" data-k="${k}" class="${tab==k?"on":""}">${l}</button>`).join("")}</nav><main id="tc" class="wrap"></main>`;
  tabView()}
 act.tab=d=>{tab=d.k;joinCode=null;home()};
@@ -374,7 +374,7 @@ async function priv(paths){await remove(ref(db,"_proof")).catch(()=>{});
 const adminFail=()=>{ADM=null;sessionStorage.removeItem("quizzo_adm");toast("Geen toegang. Log opnieuw in als beheerder.");adminBody()};
 
 act.menu=()=>{const old=$("#menu");if(old)return old.remove();const m=document.createElement("div");m.id="menu";m.className="menu";
- m.innerHTML=`<button data-a="admin">⚙ Sitebeheer</button><hr><button data-a="out">Uitloggen</button>`;$(".hr").append(m)};
+ m.innerHTML=`<button data-a="admin">⚙ Sitebeheer</button><button data-a="log">📢 Updatelog</button><hr><button data-a="out">Uitloggen</button>`;$(".hr").append(m)};
 
 act.log=async()=>{act.closem();const m=document.createElement("div");m.className="modal";
  m.innerHTML=`<div class="card wide"><div class="mh"><h2>Updatelog</h2><button class="btn w sm" data-a="closem">Sluiten</button></div><div id="logc">Laden...</div></div>`;document.body.append(m);
