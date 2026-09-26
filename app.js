@@ -34,19 +34,42 @@ const THEMES={
 };
 const themeIds=Object.keys(THEMES);
 const safeTheme=t=>themeIds.includes(t)?t:"classic";
+function themeAsset(id, ext="svg"){return new URL(`./themes/${id}.${ext}`,document.baseURI).href}
+function ensureThemeScene(){
+ let scene=document.getElementById("quizzo-theme-scene");
+ if(!scene){
+  scene=document.createElement("img");
+  scene.id="quizzo-theme-scene";
+  scene.alt="";
+  scene.setAttribute("aria-hidden","true");
+  scene.decoding="async";
+  scene.draggable=false;
+  document.body.prepend(scene);
+ }
+ return scene;
+}
 function applyTheme(t){
  const id=safeTheme(t);
  document.body.classList.remove(...themeIds.map(x=>"theme-"+x));
+ document.body.classList.toggle("has-theme-scene",id!=="classic");
  document.body.classList.add("theme-"+id);
- const themeUrl=id==="classic"?"":new URL(`./themes/${id}.svg`,location.href).href;
- document.documentElement.style.setProperty("--quiz-theme",themeUrl?`url("${themeUrl}")`:"none");
- if(id==="classic") document.body.style.removeProperty("background-image");
- else {
-  document.body.style.setProperty("background-image",`url("${themeUrl}")`,"important");
-  document.body.style.setProperty("background-repeat","no-repeat","important");
-  document.body.style.setProperty("background-position","center center","important");
-  document.body.style.setProperty("background-size","cover","important");
-  document.body.style.setProperty("background-attachment","fixed","important");
+ const scene=ensureThemeScene();
+ if(id==="classic"){
+  scene.removeAttribute("src");
+  scene.style.display="none";
+  document.documentElement.style.setProperty("--quiz-theme","none");
+  document.body.style.removeProperty("background-image");
+ }else{
+  const svg=themeAsset(id,"svg");
+  const png=themeAsset(id,"png");
+  scene.onerror=()=>{ if(scene.dataset.fallback!==png){scene.dataset.fallback=png;scene.src=png;} };
+  scene.onload=()=>{scene.style.display="block";};
+  scene.dataset.fallback="";
+  scene.src=svg;
+  scene.style.display="block";
+  document.documentElement.style.setProperty("--quiz-theme",`url("${svg}")`);
+  // Keep the real scene in the DOM instead of relying on CSS background loading.
+  document.body.style.setProperty("background-image","none","important");
  }
  const meta=document.querySelector('meta[name="theme-color"]');
  if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a8",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}

@@ -318,3 +318,13 @@ body[class*="theme-"] .theme-strip{background:rgba(0,0,0,.22)!important;}
 .theme-choice-thumb{display:block!important;width:100%!important;height:150px!important;object-fit:cover!important;object-position:center!important;background:#111!important;}
 .theme-choice-thumb[alt]{font-weight:800;}
 @media(max-width:700px){body[class*="theme-"] .edw{min-height:auto}.theme-choice-thumb{height:165px!important;}}
+
+/* ---- V21: render the real illustrated theme as a dedicated full-screen image ---- */
+body.has-theme-scene{background:transparent!important;background-image:none!important;}
+#quizzo-theme-scene{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;display:block;object-fit:cover!important;object-position:center center!important;z-index:0!important;pointer-events:none!important;user-select:none!important;}
+body.has-theme-scene #app{position:relative;z-index:1;}
+body.has-theme-scene header,body.has-theme-scene .tabs{position:relative;z-index:2;}
+body.has-theme-scene .modal{z-index:20;}
+/* No opaque canvas/background should cover the scene. */
+body.has-theme-scene .edw,body.has-theme-scene #main,body.has-theme-scene .stage,body.has-theme-scene .center,body.has-theme-scene .wrap{background:transparent!important;}
+@media(max-width:700px){#quizzo-theme-scene{object-position:center center;}}
