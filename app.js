@@ -153,6 +153,7 @@ function mainQ(){
  <p style="color:var(--ink)">Selecteer het rondje bij het goede antwoord. <b>Punten zijn altijd 1000.</b></p>`}
 const saveBtn=()=>{const b=$("#sv");if(b)b.disabled=!valid()};
 document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)return;const q=Q.questions[SEL];if(!q&&f!="title")return;
+ if(f=="settingsTitle"){Q.title=t.value;const qt=document.querySelector(".qtitle");if(qt)qt.value=t.value;saveBtn();return;}
  if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="info")q.info=t.value;else if(f=="time")q.time=t.value===""?NaN:+t.value;
  else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;
  side();saveBtn()});
@@ -162,7 +163,7 @@ act.settings=()=>{
  const m=document.createElement("div");m.className="modal";
  const current=safeTheme(Q.theme);
  m.innerHTML=`<div class="card settings-card"><div class="picker-head"><div><span class="eyebrow">QUIZ INSTELLINGEN</span><h2>Instellingen</h2><p>Pas de naam en het uiterlijk van je quiz aan.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div>
- <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
+ <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" data-f="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
  <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Het thema wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""} theme-preview-${id}" data-a="themePick" data-theme="${id}"><span class="theme-choice-icon">${THEMES[id].icon}</span><span><b>${esc(THEMES[id].name)}</b><small>${id===current?"Geselecteerd":"Kiezen"}</small></span></button>`).join("")}</div></div>
  <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
  document.body.append(m);
