@@ -5,6 +5,43 @@ window.__quizzoStarted = true;
 const $=s=>document.querySelector(s),A=$("#app"),COL=["r","b","y","g"],SYM=["▲","◆","●","■"];
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const arr=x=>Array.isArray(x)?x:Object.values(x||{});
+const THEMES={
+ classic:{name:"Quizzo Klassiek",icon:"🎉"},
+ winter:{name:"Winter",icon:"❄️"},
+ christmas:{name:"Kerst",icon:"🎄"},
+ spring:{name:"Lente",icon:"🌸"},
+ summer:{name:"Zomer",icon:"☀️"},
+ autumn:{name:"Herfst",icon:"🍂"},
+ classroom:{name:"Classroom",icon:"📚"},
+ ocean:{name:"Oceaan",icon:"🌊"},
+ space:{name:"Ruimte",icon:"🚀"},
+ jungle:{name:"Jungle",icon:"🌿"},
+ sunset:{name:"Zonsondergang",icon:"🌅"},
+ candy:{name:"Candy",icon:"🍭"},
+ neon:{name:"Neon",icon:"⚡"},
+ sports:{name:"Sport",icon:"🏆"},
+ football:{name:"Voetbal",icon:"⚽"},
+ basketball:{name:"Basketbal",icon:"🏀"},
+ racing:{name:"Racing",icon:"🏎️"},
+ gaming:{name:"Gaming",icon:"🎮"},
+ music:{name:"Muziek",icon:"🎵"},
+ halloween:{name:"Halloween",icon:"🎃"},
+ party:{name:"Party",icon:"🎊"},
+ rainbow:{name:"Rainbow",icon:"🌈"},
+ arcade:{name:"Arcade",icon:"🕹️"},
+ volcano:{name:"Vulkaan",icon:"🌋"},
+ study:{name:"Study",icon:"✏️"}
+};
+const themeIds=Object.keys(THEMES);
+const safeTheme=t=>themeIds.includes(t)?t:"classic";
+function applyTheme(t){
+ const id=safeTheme(t);
+ document.body.classList.remove(...themeIds.map(x=>"theme-"+x));
+ document.body.classList.add("theme-"+id);
+ document.documentElement.style.setProperty("--quiz-theme",`url(\"${id}\")`);
+ const meta=document.querySelector('meta[name="theme-color"]');
+ if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a8",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
+}
 let user=null,tab="join",mode="login",joinCode=null,offset=0,unsub=null,timer=null,G=null,CODE=null,HOST=false,busy=false,lastKey="",Q=null,QID=null,SEL=0;
 let scoreSnapshot={},rankSnapshot={},boardAnim=null,lastPaintState="";
 const now=()=>Date.now()+offset;
@@ -14,7 +51,7 @@ const errs={"auth/email-already-in-use":"Dit e-mailadres is al in gebruik.","aut
 const em=e=>errs[e.code]||errs[(e.message||"").match(/PERMISSION_DENIED/)?.[0]]||e.code||e.message;
 const act={};
 document.addEventListener("click",e=>{if(!e.target.closest('[data-a="menu"]'))$("#menu")?.remove();const t=e.target.closest("[data-a]");if(t&&!t.disabled)act[t.dataset.a]?.(t.dataset,t)});
-function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey="";scoreSnapshot={};rankSnapshot={};boardAnim=null;lastPaintState=""}
+function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey="";scoreSnapshot={};rankSnapshot={};boardAnim=null;lastPaintState="";applyTheme("classic")}
 
 /* ---------- Accounts (opgeslagen in de Realtime Database, zonder Firebase Authentication) ---------- */
 const enc=new TextEncoder(),hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
@@ -79,9 +116,9 @@ act.enter=async()=>{const n=$("#nm").value.trim();if(!n)return toast("Vul een na
  const s=await get(ref(db,"games/"+joinCode)).catch(()=>null);if(!s?.exists()||s.val().state!="lobby")return toast("Deze quiz is niet meer beschikbaar."),home();
  await set(ref(db,`games/${joinCode}/players/${user.uid}`),{name:n,score:0}).catch(e=>toast(em(e)));run(joinCode,false)};
 act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz eerst een naam.");
- Q={title:n,questions:[]};QID=null;SEL=-1;editorView()};
+ Q={title:n,theme:"classic",questions:[]};QID=null;SEL=-1;editorView()};
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
- Q={title:v.title,questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
+ Q={title:v.title,theme:safeTheme(v.theme),questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
 
 act.play=async d=>{
@@ -96,7 +133,9 @@ const newQ=(type="quiz")=>type==="tf"?{type:"tf",text:"",time:20,points:1000,dou
 const qOk=q=>q.type==="dia"?q.text.trim()&&q.info.trim()&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.type==="typing"?q.text.trim()&&q.a.some(x=>x.trim())&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.text.trim()&&q.a.every(x=>x.trim())&&q.correct>=0&&q.time>=5&&q.time<=120&&Number.isInteger(q.time);
 const valid=()=>Q.title.trim()&&Q.questions.length&&Q.questions.every(qOk);
 function editorView(){
- A.innerHTML=`<header class="ed"><input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
+ applyTheme(Q.theme);
+ A.innerHTML=`<header class="ed"><div class="editor-title-wrap"><input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><button class="btn w sm settings-btn" data-a="settings">⚙ Instellingen</button></div><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
+ <div class="theme-strip"><span class="theme-strip-icon">${THEMES[safeTheme(Q.theme)].icon}</span><b>${esc(THEMES[safeTheme(Q.theme)].name)}</b><small>Dit thema zie je tijdens het spelen op het scherm van de host en op telefoons.</small></div>
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn()}
 function side(){
  $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":q.type=="typing"?"Typen":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
@@ -119,6 +158,17 @@ document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)r
  side();saveBtn()});
 act.sel=d=>{SEL=+d.i;side();mainQ()};
 act.dq=d=>{Q.questions.splice(+d.i,1);SEL=Math.min(SEL,Q.questions.length-1);side();mainQ();saveBtn()};
+act.settings=()=>{
+ const m=document.createElement("div");m.className="modal";
+ const current=safeTheme(Q.theme);
+ m.innerHTML=`<div class="card settings-card"><div class="picker-head"><div><span class="eyebrow">QUIZ INSTELLINGEN</span><h2>Instellingen</h2><p>Pas de naam en het uiterlijk van je quiz aan.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div>
+ <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
+ <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Het thema wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""} theme-preview-${id}" data-a="themePick" data-theme="${id}"><span class="theme-choice-icon">${THEMES[id].icon}</span><span><b>${esc(THEMES[id].name)}</b><small>${id===current?"Geselecteerd":"Kiezen"}</small></span></button>`).join("")}</div></div>
+ <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
+ document.body.append(m);
+};
+act.themePick=d=>{Q.theme=safeTheme(d.theme);document.querySelectorAll(".theme-choice").forEach(x=>x.classList.toggle("selected",x.dataset.theme===Q.theme));applyTheme(Q.theme);const strip=document.querySelector(".theme-strip");if(strip){strip.querySelector(".theme-strip-icon").textContent=THEMES[Q.theme].icon;strip.querySelector("b").textContent=THEMES[Q.theme].name}};
+act.saveSettings=()=>{const input=$("#settingsTitle");const name=input?.value.trim();if(!name)return toast("Geef je quiz een naam.");Q.title=name;applyTheme(Q.theme);document.querySelector(".qtitle")&&(document.querySelector(".qtitle").value=name);act.closem();saveBtn();side()};
 let dragIndex=-1;
 document.addEventListener("dragstart",e=>{const t=e.target.closest("[data-drag-index]");if(!t||!Q)return;dragIndex=+t.dataset.dragIndex;t.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(dragIndex))});
 document.addEventListener("dragend",e=>{e.target.closest("[data-drag-index]")?.classList.remove("dragging");dragIndex=-1;document.querySelectorAll("[data-drag-index].drag-over").forEach(x=>x.classList.remove("drag-over"))});
@@ -148,14 +198,14 @@ act.addtypeanswer=()=>{const q=Q.questions[SEL];if(!q||q.type!=="typing")return;
 act.deltypeanswer=d=>{const q=Q.questions[SEL];if(!q||q.type!=="typing"||q.a.length<=1)return;q.a.splice(+d.i,1);mainQ();saveBtn()};
 act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){Q=null;tab="mine";home()}};
 act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.uid)).key;
- try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
+ try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),theme:safeTheme(Q.theme),questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
  Q=null;tab="mine";home();toast("Quiz opgeslagen!")};
 
 /* ---------- Game ---------- */
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
 const INTRO_MS=5000,DOUBLE_BONUS_INTRO_MS=2500;
 const randomCode=async()=>{let code;do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());return code};
-const createGame=async(qz,gameMode)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,questions}};if(solo)data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
+const createGame=async(qz,gameMode)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,theme:safeTheme(qz.theme),questions}};if(solo)data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
 act.host=async d=>{try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
 act.playhost=async d=>{act.closem();act.host(d)};
 act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"solo");run(code,true)}catch(e){toast(em(e))}};
@@ -238,6 +288,7 @@ function boardRows(list){
   return `<div class="row lb-row${cls}"><span><b class="lb-rank">${rank}</b> ${esc(p.name)}${delta>0?`<span class="rank-up">↑ ${delta}</span>`:""}</span><span class="lb-score" data-from="${from[p.id]??p.score??0}" data-to="${p.score||0}">${from[p.id]??p.score??0}</span></div>`}).join("")}
 
 function paint(){
+ applyTheme(G?.quiz?.theme||"classic");
  if(G.state!="reveal"&&G.state!="countdown"&&G.state!="slide")busy=false;
  const key=[G.state,G.q,P().length,HOST?Object.keys(ANS()).length:ANS()[user.uid]?1:0].join();if(key==lastKey)return;
  const prevState=lastPaintState,prevScores={...scoreSnapshot},prevRanks={...rankSnapshot};
