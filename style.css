@@ -379,3 +379,33 @@ body.theme-classic::before,body.theme-classic::after{display:none!important;cont
 /* Classic must not render an empty scene image. Custom themes are the only ones that show the image canvas. */
 #quizzo-theme-scene{display:none!important;}
 body.has-theme-scene #quizzo-theme-scene{display:block!important;}
+
+/* V26: bulletproof raster theme backgrounds. The selected JPG is also assigned inline by app.js. */
+body.has-theme-scene{
+  background-repeat:no-repeat!important;
+  background-position:center center!important;
+  background-size:cover!important;
+  background-attachment:fixed!important;
+  background-color:#17132f!important;
+}
+body.has-theme-scene>#app,
+body.has-theme-scene #tc,
+body.has-theme-scene .edw,
+body.has-theme-scene #main,
+body.has-theme-scene .wrap,
+body.has-theme-scene .stage,
+body.has-theme-scene .center{
+  background:transparent!important;
+}
+body.has-theme-scene #quizzo-theme-scene{
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  z-index:0!important;
+}
+body.theme-classic #quizzo-theme-scene{display:none!important;}

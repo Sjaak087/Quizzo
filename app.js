@@ -38,6 +38,22 @@ function themeAsset(id, ext="jpg"){
   const actualExt = (id==="classic" && ext==="jpg") ? "png" : ext;
   return new URL(`./themes/${id}.${actualExt}`,document.baseURI).href;
 }
+let themeFallbackPromise=null;
+async function themeFallback(id){
+  if(!themeFallbackPromise) themeFallbackPromise=import("./theme-assets.js");
+  const mod=await themeFallbackPromise;
+  return mod.THEME_DATA?.[id]||"";
+}
+async function repairThemeImage(img,id){
+  try{const data=await themeFallback(id);if(data){img.src=data;return true;}}catch(e){console.warn("Quizzo thema-fallback kon niet laden",e)}
+  return false;
+}
+function wireThemePreviews(){
+  document.querySelectorAll(".theme-choice-thumb[data-theme]").forEach(img=>{
+    img.onerror=()=>repairThemeImage(img,img.dataset.theme);
+  });
+}
+
 function ensureThemeScene(){
  let scene=document.getElementById("quizzo-theme-scene");
  if(!scene){
@@ -64,16 +80,23 @@ function applyTheme(t){
   document.body.style.removeProperty("background-image");
  }else{
   const jpg=themeAsset(id,"jpg");
-  scene.onerror=()=>{ scene.style.display="none"; console.warn("Quizzo thema-afbeelding kon niet laden:", jpg); };
-  scene.onload=()=>{scene.style.display="block";};
+  scene.onerror=async()=>{
+    scene.style.display="none";
+    const ok=await repairThemeImage(scene,id);
+    if(ok){scene.style.display="block";document.body.style.setProperty("background-image",`url("${scene.src}")`,"important");}
+    else console.warn("Quizzo thema-afbeelding kon niet laden:", jpg);
+  };
+  scene.onload=()=>{
+    scene.style.display="block";
+    document.body.style.setProperty("background-image",`url("${scene.src}")`,"important");
+  };
   scene.src=jpg;
   scene.style.display="block";
   document.documentElement.style.setProperty("--quiz-theme",`url("${jpg}")`);
-  // The real raster scene is mounted as the background canvas; CSS only adds the shine layer.
-  document.body.style.setProperty("background-image","none","important");
+  document.body.style.setProperty("background-image",`url("${jpg}")`,"important");
  }
  const meta=document.querySelector('meta[name="theme-color"]');
- if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a8",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
+ if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a6",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
 }
 let user=null,tab="join",mode="login",joinCode=null,offset=0,unsub=null,timer=null,G=null,CODE=null,HOST=false,busy=false,lastKey="",Q=null,QID=null,SEL=0;
 let scoreSnapshot={},rankSnapshot={},boardAnim=null,lastPaintState="";
@@ -169,7 +192,7 @@ function editorView(){
  applyTheme(Q.theme);
  A.innerHTML=`<header class="ed"><div class="editor-title-wrap"><input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><button class="btn w sm settings-btn" data-a="settings">⚙ Instellingen</button></div><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
  <div class="theme-strip"><span class="theme-strip-icon">${THEMES[safeTheme(Q.theme)].icon}</span><b>${esc(THEMES[safeTheme(Q.theme)].name)}</b><small>Dit thema zie je tijdens het spelen op het scherm van de host en op telefoons.</small></div>
- <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn()}
+ <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn();wireThemePreviews()}
 function side(){
  $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":q.type=="typing"?"Typen":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
 function mainQ(){
@@ -197,9 +220,10 @@ act.settings=()=>{
  const current=safeTheme(Q.theme);
  m.innerHTML=`<div class="card settings-card"><div class="picker-head"><div><span class="eyebrow">QUIZ INSTELLINGEN</span><h2>Instellingen</h2><p>Pas de naam en het uiterlijk van je quiz aan.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div>
  <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" data-f="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
- <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" src="${themeAsset(id,"jpg")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
+ <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" data-theme="${id}" src="${themeAsset(id,"jpg")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
  <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
  document.body.append(m);
+ wireThemePreviews();
 };
 act.themePick=d=>{Q.theme=safeTheme(d.theme);document.querySelectorAll(".theme-choice").forEach(x=>x.classList.toggle("selected",x.dataset.theme===Q.theme));applyTheme(Q.theme);const strip=document.querySelector(".theme-strip");if(strip){strip.querySelector(".theme-strip-icon").textContent=THEMES[Q.theme].icon;strip.querySelector("b").textContent=THEMES[Q.theme].name}};
 act.saveSettings=()=>{const input=$("#settingsTitle");const name=input?.value.trim();if(!name)return toast("Geef je quiz een naam.");Q.title=name;applyTheme(Q.theme);document.querySelector(".qtitle")&&(document.querySelector(".qtitle").value=name);act.closem();saveBtn();side()};
