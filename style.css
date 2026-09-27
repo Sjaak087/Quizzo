@@ -368,7 +368,7 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
 #quizzo-theme-scene{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;display:block!important;object-fit:cover!important;object-position:center!important;z-index:0!important;pointer-events:none!important;user-select:none!important;}
 body.has-theme-scene>#app{position:relative!important;z-index:2!important;background:transparent!important;}
 body.has-theme-scene #app>*{position:relative;z-index:2;}
-body.has-theme-scene #quizzo-theme-scene{filter:saturate(1.03) contrast(1.02);}
+body.has-theme-scene #quizzo-theme-scene{filter:none!important;image-rendering:auto;-webkit-backface-visibility:hidden;backface-visibility:hidden;}
 /* Subtle animated glossy light sweep over the scene only — UI stays above it. */
 body.has-theme-scene::before{content:""!important;display:block!important;position:fixed!important;inset:0!important;z-index:1!important;pointer-events:none!important;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.06),transparent 42%),radial-gradient(circle at 50% 100%,rgba(0,0,0,.18),transparent 55%)!important;}
 body.has-theme-scene::after{content:""!important;display:block!important;position:fixed!important;inset:-25%!important;z-index:1!important;pointer-events:none!important;opacity:.42!important;background:linear-gradient(108deg,transparent 34%,rgba(255,255,255,.04) 43%,rgba(255,255,255,.18) 49%,rgba(255,255,255,.05) 55%,transparent 65%)!important;transform:translateX(-40%) skewX(-14deg)!important;animation:quizzo-theme-shine 8s ease-in-out infinite!important;mix-blend-mode:screen!important;}
@@ -409,3 +409,13 @@ body.has-theme-scene #quizzo-theme-scene{
   z-index:0!important;
 }
 body.theme-classic #quizzo-theme-scene{display:none!important;}
+
+/* V27: crisp high-resolution raster theme scenes */
+body.has-theme-scene #quizzo-theme-scene{
+  image-rendering:auto!important;
+  filter:none!important;
+  transform:translateZ(0);
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
+}
+.theme-choice-thumb{image-rendering:auto!important;filter:none!important;}
