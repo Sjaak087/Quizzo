@@ -1,5 +1,4 @@
 import {db, ref, get, set, update, remove, push, onValue, serverTimestamp} from "./firebase.js";
-import {THEME_SVG} from "./theme-assets.js";
 
 window.__quizzoStarted = true;
 
@@ -35,9 +34,9 @@ const THEMES={
 };
 const themeIds=Object.keys(THEMES);
 const safeTheme=t=>themeIds.includes(t)?t:"classic";
-function themeAsset(id, ext="svg"){
-  if(ext==="svg" && THEME_SVG[id]) return THEME_SVG[id];
-  return new URL(`./themes/${id}.${ext}`,document.baseURI).href;
+function themeAsset(id, ext="jpg"){
+  const actualExt = (id==="classic" && ext==="jpg") ? "png" : ext;
+  return new URL(`./themes/${id}.${actualExt}`,document.baseURI).href;
 }
 function ensureThemeScene(){
  let scene=document.getElementById("quizzo-theme-scene");
@@ -64,15 +63,13 @@ function applyTheme(t){
   document.documentElement.style.setProperty("--quiz-theme","none");
   document.body.style.removeProperty("background-image");
  }else{
-  const svg=themeAsset(id,"svg");
-  const png=themeAsset(id,"png");
-  scene.onerror=()=>{ if(scene.dataset.fallback!==png){scene.dataset.fallback=png;scene.src=png;} };
+  const jpg=themeAsset(id,"jpg");
+  scene.onerror=()=>{ scene.style.display="none"; console.warn("Quizzo thema-afbeelding kon niet laden:", jpg); };
   scene.onload=()=>{scene.style.display="block";};
-  scene.dataset.fallback="";
-  scene.src=svg;
+  scene.src=jpg;
   scene.style.display="block";
-  document.documentElement.style.setProperty("--quiz-theme",`url("${svg}")`);
-  // Keep the real scene in the DOM instead of relying on CSS background loading.
+  document.documentElement.style.setProperty("--quiz-theme",`url("${jpg}")`);
+  // The real raster scene is mounted as the background canvas; CSS only adds the shine layer.
   document.body.style.setProperty("background-image","none","important");
  }
  const meta=document.querySelector('meta[name="theme-color"]');
@@ -200,7 +197,7 @@ act.settings=()=>{
  const current=safeTheme(Q.theme);
  m.innerHTML=`<div class="card settings-card"><div class="picker-head"><div><span class="eyebrow">QUIZ INSTELLINGEN</span><h2>Instellingen</h2><p>Pas de naam en het uiterlijk van je quiz aan.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div>
  <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" data-f="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
- <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" src="${themeAsset(id,"svg")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
+ <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" src="${themeAsset(id,"jpg")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
  <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
  document.body.append(m);
 };
