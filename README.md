@@ -1,12 +1,7 @@
-# Quizzo v29 patch
+Quizzo v31 – fix openbare quizzen
 
-Fix voor `PERMISSION_DENIED` bij **Ontdek quizzen**.
+Vervang alleen `app.js` in je huidige GitHub Pages-repository door dit bestand.
 
-De vorige versie probeerde de volledige `/users`-tak te lezen. De database-regels geven alleen leesrechten op individuele gebruikers (`/users/$u`), en terecht omdat daar ook privévelden zoals e-mail/salt/hash in staan.
+De tab "Ontdek quizzen" toont nu alle openbare quizzen, inclusief bestaande quizzen die nog geen `public`-veld hebben. Je eigen quizzen worden ook getoond (gemarkeerd als "Jouw quiz") zodat je direct kunt testen of openbaar publiceren werkt.
 
-Deze patch:
-- leest alleen `/users/<ownerId>` per quizmaker;
-- bewaart bij nieuwe quizzen ook `creatorName` in de publieke quizdata;
-- verandert niets aan de thema-bestanden.
-
-Vervang alleen `app.js` in je GitHub Pages-repository door deze versie. De bestaande `themes/`-map hoeft niet opnieuw geüpload te worden.
+De thema-bestanden zitten bewust NIET in deze patch.

@@ -159,19 +159,21 @@ async function tabView(){
   return;
  }
  if(tab=="discover"){
-  c.innerHTML=`<div class="discover-head"><div><span class="eyebrow">OPENBAAR</span><h2>Ontdek quizzen</h2><p>Speel quizzen van andere spelers. Openbare quizzen zijn alleen bedoeld om te spelen.</p></div><div class="discover-badge">🌍 Iedereen kan spelen</div></div><div id="publicQuizList" class="discover-grid"><div class="card narrow loading-card">Quizzen laden...</div></div>`;
+  c.innerHTML=`<div class="discover-head"><div><span class="eyebrow">OPENBAAR</span><h2>Ontdek quizzen</h2><p>Bekijk en speel alle openbare quizzen. Je kunt ze vanuit deze tab alleen spelen, nooit bewerken.</p></div><div class="discover-badge">🌍 Iedereen kan spelen</div></div><div id="publicQuizList" class="discover-grid"><div class="card narrow loading-card">Quizzen laden...</div></div>`;
   const qsSnap=await get(ref(db,"quizzes")).catch(e=>(toast(em(e)),null));
   const all=qsSnap?.val()||{};
   const items=[];
   const ownerIds=new Set();
   Object.entries(all).forEach(([ownerId,ownerQuizzes])=>{
-    if(ownerId===user.uid)return;
-    Object.entries(ownerQuizzes||{}).forEach(([id,qz])=>{
-      if(!qz||qz.public===false)return;
+    if(!ownerQuizzes || typeof ownerQuizzes!=="object")return;
+    Object.entries(ownerQuizzes).forEach(([id,qz])=>{
+      // Oude quizzen hebben soms nog geen public-veld: die behandelen we als openbaar.
+      if(!qz||typeof qz!=="object"||qz.public===false)return;
       const count=arr(qz.questions).length;
-      if(!qz.title||!count)return;
+      if(!String(qz.title||"").trim()||!count)return;
       ownerIds.add(ownerId);
-      items.push({id,ownerId,qz:{...qz,public:true},ownerName:qz.creatorName||"Quizzo speler"});
+      const mine=ownerId===user.uid;
+      items.push({id,ownerId,mine,qz:{...qz,public:true},ownerName:qz.creatorName||"Quizzo speler"});
     });
   });
   const ownerNames={};
@@ -189,8 +191,8 @@ async function tabView(){
   if(!list)return;
   list.innerHTML=items.length?items.map((item,i)=>`<article class="public-qcard" style="--delay:${Math.min(i,12)*35}ms">
     <div class="public-thumb" style="background-image:url('${esc(themeAsset(safeTheme(item.qz.theme),"webp"))}')"><span>${THEMES[safeTheme(item.qz.theme)].icon} ${esc(THEMES[safeTheme(item.qz.theme)].name)}</span></div>
-    <div class="public-qbody"><div class="public-meta"><span>👤 ${esc(item.ownerName)}</span><span>📝 ${countLabel(item.qz.questions)}</span></div><h3>${esc(item.qz.title)}</h3><p>Openbare quiz · direct spelen</p><button class="btn b" data-a="publicPlay" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}">▶ Spelen</button></div>
-  </article>`).join(""):`<div class="card narrow empty-discover"><h2>Nog geen openbare quizzen</h2><p>Wanneer andere spelers hun quizzen hebben opgeslagen, verschijnen ze hier.</p></div>`;
+    <div class="public-qbody"><div class="public-meta"><span>👤 ${esc(item.ownerName)}${item.mine?" · Jouw quiz":""}</span><span>📝 ${countLabel(item.qz.questions)}</span></div><h3>${esc(item.qz.title)}</h3><p>${item.mine?"Openbare quiz · jouw quiz · niet bewerkbaar vanuit Ontdek":"Openbare quiz · direct spelen"}</p><button class="btn b" data-a="publicPlay" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}">▶ Spelen</button></div>
+  </article>`).join(""):`<div class="card narrow empty-discover"><h2>Nog geen openbare quizzen</h2><p>Wanneer publieke quizzen zijn opgeslagen, verschijnen ze hier automatisch.</p><button class="btn w sm" data-a="tab" data-k="mine">Naar mijn quizzen</button></div>`;
   wireThemePreviews();
   return;
  }
