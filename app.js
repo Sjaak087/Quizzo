@@ -160,22 +160,30 @@ async function tabView(){
  }
  if(tab=="discover"){
   c.innerHTML=`<div class="discover-head"><div><span class="eyebrow">OPENBAAR</span><h2>Ontdek quizzen</h2><p>Speel quizzen van andere spelers. Openbare quizzen zijn alleen bedoeld om te spelen.</p></div><div class="discover-badge">🌍 Iedereen kan spelen</div></div><div id="publicQuizList" class="discover-grid"><div class="card narrow loading-card">Quizzen laden...</div></div>`;
-  const [qsSnap,usersSnap]=await Promise.all([
-    get(ref(db,"quizzes")).catch(e=>(toast(em(e)),null)),
-    get(ref(db,"users")).catch(()=>null)
-  ]);
-  const all=qsSnap?.val()||{}, users=usersSnap?.val()||{};
+  const qsSnap=await get(ref(db,"quizzes")).catch(e=>(toast(em(e)),null));
+  const all=qsSnap?.val()||{};
   const items=[];
+  const ownerIds=new Set();
   Object.entries(all).forEach(([ownerId,ownerQuizzes])=>{
     if(ownerId===user.uid)return;
     Object.entries(ownerQuizzes||{}).forEach(([id,qz])=>{
       if(!qz||qz.public===false)return;
       const count=arr(qz.questions).length;
       if(!qz.title||!count)return;
-      const ownerName=users?.[ownerId]?.username||"Quizzo speler";
-      items.push({id,ownerId,qz:{...qz,public:true},ownerName});
+      ownerIds.add(ownerId);
+      items.push({id,ownerId,qz:{...qz,public:true},ownerName:qz.creatorName||"Quizzo speler"});
     });
   });
+  const ownerNames={};
+  await Promise.all([...ownerIds].map(async ownerId=>{
+    try{
+      const snap=await get(ref(db,"users/"+ownerId));
+      ownerNames[ownerId]=snap.val()?.username||"Quizzo speler";
+    }catch(e){
+      ownerNames[ownerId]="Quizzo speler";
+    }
+  }));
+  items.forEach(item=>{if(!item.qz.creatorName)item.ownerName=ownerNames[item.ownerId]||item.ownerName});
   items.sort((a,b)=>(Number(b.qz.updated)||0)-(Number(a.qz.updated)||0));
   const list=$("#publicQuizList");
   if(!list)return;
@@ -304,7 +312,7 @@ act.addtypeanswer=()=>{const q=Q.questions[SEL];if(!q||q.type!=="typing")return;
 act.deltypeanswer=d=>{const q=Q.questions[SEL];if(!q||q.type!=="typing"||q.a.length<=1)return;q.a.splice(+d.i,1);mainQ();saveBtn()};
 act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){Q=null;tab="mine";home()}};
 act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.uid)).key;
- try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),theme:safeTheme(Q.theme),public:true,questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
+ try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),theme:safeTheme(Q.theme),public:true,creatorName:user.displayName||"Quizzo speler",questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
  Q=null;tab="mine";home();toast("Quiz opgeslagen!")};
 
 /* ---------- Game ---------- */
