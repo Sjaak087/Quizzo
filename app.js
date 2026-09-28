@@ -148,22 +148,55 @@ act.out=()=>{localStorage.removeItem("quizzo_user");sessionStorage.removeItem("q
 function home(){
  cleanup();Q=null;joinCode=null;if(!user)return authView();
  A.innerHTML=`<header><b class="logo s">Quizzo!</b><span class="hr"><button class="btn w sm ib" data-a="log" title="Updatelog" aria-label="Updatelog">📢</button><button class="btn w sm" data-a="admin" title="Sitebeheer">⚙ Sitebeheer</button><button class="btn w sm" data-a="menu">${esc(user.displayName||user.email)} ▾</button></span></header>
- <nav class="tabs">${[["join","Quiz joinen"],["make","Quiz maken"],["mine","Gemaakte quizzen"]].map(([k,l])=>`<button data-a="tab" data-k="${k}" class="${tab==k?"on":""}">${l}</button>`).join("")}</nav><main id="tc" class="wrap"></main>`;
+ <nav class="tabs">${[["join","Quiz joinen"],["discover","Ontdek quizzen"],["make","Quiz maken"],["mine","Gemaakte quizzen"]].map(([k,l])=>`<button data-a="tab" data-k="${k}" class="${tab==k?"on":""}">${l}</button>`).join("")}</nav><main id="tc" class="wrap"></main>`;
  tabView()}
 act.tab=d=>{tab=d.k;joinCode=null;home()};
 async function tabView(){
  const c=$("#tc");
  if(tab=="join"){
   c.innerHTML=joinCode?`<div class="card narrow"><h2>Kies je naam</h2><input id="nm" maxlength="20" placeholder="Jouw naam" value="${esc(user.displayName||"")}"><button class="btn g" data-a="enter">Meedoen</button></div>`
-  :`<div class="card narrow"><h2>Quiz joinen</h2><input id="code" inputmode="numeric" maxlength="6" placeholder="Spelcode"><button class="btn b" data-a="check">Verder</button></div>`}
- else if(tab=="make"){
-  c.innerHTML=`<div class="card narrow"><h2>Quiz maken</h2><input id="qn" maxlength="60" placeholder="Naam van de quiz"><button class="btn b" data-a="create">Maken</button></div>`}
- else{
-  c.innerHTML="Laden...";
-  const s=await get(ref(db,"quizzes/"+user.uid)).catch(e=>(toast(em(e)),null)),v=s?.val()||{},ids=Object.keys(v);
-  c.innerHTML=ids.length?ids.map(id=>`<div class="qcard"><div><b>${esc(v[id].title)}</b><small>${arr(v[id].questions).length} vragen</small></div><div>
+  :`<div class="card narrow"><h2>Quiz joinen</h2><input id="code" inputmode="numeric" maxlength="6" placeholder="Spelcode"><button class="btn b" data-a="check">Verder</button></div>`;
+  return;
+ }
+ if(tab=="discover"){
+  c.innerHTML=`<div class="discover-head"><div><span class="eyebrow">OPENBAAR</span><h2>Ontdek quizzen</h2><p>Speel quizzen van andere spelers. Openbare quizzen zijn alleen bedoeld om te spelen.</p></div><div class="discover-badge">🌍 Iedereen kan spelen</div></div><div id="publicQuizList" class="discover-grid"><div class="card narrow loading-card">Quizzen laden...</div></div>`;
+  const [qsSnap,usersSnap]=await Promise.all([
+    get(ref(db,"quizzes")).catch(e=>(toast(em(e)),null)),
+    get(ref(db,"users")).catch(()=>null)
+  ]);
+  const all=qsSnap?.val()||{}, users=usersSnap?.val()||{};
+  const items=[];
+  Object.entries(all).forEach(([ownerId,ownerQuizzes])=>{
+    if(ownerId===user.uid)return;
+    Object.entries(ownerQuizzes||{}).forEach(([id,qz])=>{
+      if(!qz||qz.public===false)return;
+      const count=arr(qz.questions).length;
+      if(!qz.title||!count)return;
+      const ownerName=users?.[ownerId]?.username||"Quizzo speler";
+      items.push({id,ownerId,qz:{...qz,public:true},ownerName});
+    });
+  });
+  items.sort((a,b)=>(Number(b.qz.updated)||0)-(Number(a.qz.updated)||0));
+  const list=$("#publicQuizList");
+  if(!list)return;
+  list.innerHTML=items.length?items.map((item,i)=>`<article class="public-qcard" style="--delay:${Math.min(i,12)*35}ms">
+    <div class="public-thumb" style="background-image:url('${esc(themeAsset(safeTheme(item.qz.theme),"webp"))}')"><span>${THEMES[safeTheme(item.qz.theme)].icon} ${esc(THEMES[safeTheme(item.qz.theme)].name)}</span></div>
+    <div class="public-qbody"><div class="public-meta"><span>👤 ${esc(item.ownerName)}</span><span>📝 ${countLabel(item.qz.questions)}</span></div><h3>${esc(item.qz.title)}</h3><p>Openbare quiz · direct spelen</p><button class="btn b" data-a="publicPlay" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}">▶ Spelen</button></div>
+  </article>`).join(""):`<div class="card narrow empty-discover"><h2>Nog geen openbare quizzen</h2><p>Wanneer andere spelers hun quizzen hebben opgeslagen, verschijnen ze hier.</p></div>`;
+  wireThemePreviews();
+  return;
+ }
+ if(tab=="make"){
+  c.innerHTML=`<div class="card narrow"><h2>Quiz maken</h2><input id="qn" maxlength="60" placeholder="Naam van de quiz"><button class="btn b" data-a="create">Maken</button></div>`;
+  return;
+ }
+ c.innerHTML="Laden...";
+ const s=await get(ref(db,"quizzes/"+user.uid)).catch(e=>(toast(em(e)),null)),v=s?.val()||{},ids=Object.keys(v);
+ c.innerHTML=ids.length?ids.map(id=>`<div class="qcard"><div><b>${esc(v[id].title)}</b><small>${arr(v[id].questions).length} vragen · openbaar</small></div><div>
    <button class="btn b sm" data-a="play" data-id="${id}">Spelen</button> <button class="btn g sm" data-a="host" data-id="${id}">Hosten</button> <button class="btn w sm" data-a="edit" data-id="${id}">Bewerken</button> <button class="btn r sm" data-a="delq" data-id="${id}">Verwijderen</button></div></div>`).join("")
-  :`<div class="card narrow">Je hebt nog geen quizzen. Ga naar "Quiz maken" om te beginnen.</div>`}}
+  :`<div class="card narrow">Je hebt nog geen quizzen. Ga naar "Quiz maken" om te beginnen.</div>`;
+}
+const countLabel=questions=>{const n=arr(questions).length;return `${n} ${n===1?"onderdeel":"onderdelen"}`};
 act.check=async()=>{const c=$("#code").value.trim();if(!c)return;
  const s=await get(ref(db,"games/"+c)).catch(e=>(toast(em(e)),null));if(!s)return;
  if(!s.exists()||s.val().state!="lobby")return toast("Deze code klopt niet of de quiz is al gestart.");
@@ -177,11 +210,26 @@ act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).va
  Q={title:v.title,theme:safeTheme(v.theme),questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
 
+async function openPlayChooser(qz,ownerId,id){
+ if(!qz)return toast("Deze quiz kon niet worden geladen.");
+ const m=document.createElement("div");m.className="modal";
+ m.innerHTML=`<div class="card mode-card"><div class="public-mode-badge">🌍 Openbare quiz</div><h2>${esc(qz.title)}</h2><p>Kies hoe je deze quiz wilt spelen. De quiz blijft alleen-lezen voor jou.</p><button class="btn b" data-a="publicSolo" data-owner="${esc(ownerId)}" data-id="${esc(id)}">👤 Alleen spelen</button><button class="btn g" data-a="publicHost" data-owner="${esc(ownerId)}" data-id="${esc(id)}">🎮 Multiplayer hosten</button><button class="btn w" data-a="closem">Annuleren</button></div>`;
+ document.body.append(m);
+}
+act.publicPlay=async d=>{
+ try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(qz?.public===false)return toast("Deze quiz is niet openbaar.");await openPlayChooser(qz,d.owner,d.id)}catch(e){toast(em(e))}
+};
+act.publicSolo=async d=>{
+ act.closem();
+ try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");const code=await createGame(qz,"solo");run(code,true)}catch(e){toast(em(e))}
+};
+act.publicHost=async d=>{
+ act.closem();
+ try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}
+};
 act.play=async d=>{
  const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();if(!qz)return toast("Deze quiz kon niet worden geladen.");
- const m=document.createElement("div");m.className="modal";
- m.innerHTML=`<div class="card mode-card"><h2>${esc(qz.title)}</h2><p>Kies hoe je deze quiz wilt spelen.</p><button class="btn b" data-a="solo" data-id="${d.id}">👤 Alleen spelen</button><button class="btn g" data-a="playhost" data-id="${d.id}">🎮 Multiplayer hosten</button><button class="btn w" data-a="closem">Annuleren</button></div>`;
- document.body.append(m)
+ await openPlayChooser(qz,user.uid,d.id);
 };
 
 /* ---------- Editor ---------- */
@@ -256,7 +304,7 @@ act.addtypeanswer=()=>{const q=Q.questions[SEL];if(!q||q.type!=="typing")return;
 act.deltypeanswer=d=>{const q=Q.questions[SEL];if(!q||q.type!=="typing"||q.a.length<=1)return;q.a.splice(+d.i,1);mainQ();saveBtn()};
 act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){Q=null;tab="mine";home()}};
 act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.uid)).key;
- try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),theme:safeTheme(Q.theme),questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
+ try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),theme:safeTheme(Q.theme),public:true,questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
  Q=null;tab="mine";home();toast("Quiz opgeslagen!")};
 
 /* ---------- Game ---------- */

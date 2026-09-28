@@ -1,10 +1,8 @@
 # Quizzo
 
-This build uses the approved detailed 25-theme gallery as the visual source for the actual themes.
-
-- `themes/*.jpg` are the live theme backgrounds used by the app.
-- `Quizzo Klassiek` keeps the original purple Quizzo background (`themes/classic.png`).
-- The other 24 themes are rendered as full-screen image scenes with a subtle animated shine overlay.
-- `theme-test.html` loads the same image files directly for checking on GitHub Pages.
-
-Upload the contents of this folder to the root of the GitHub Pages repository.
+## v28
+- Nieuwe tab **Ontdek quizzen** met openbare quizzen van andere spelers.
+- Openbare quizzen zijn in de interface alleen-lezen: ze kunnen worden gespeeld maar niet bewerkt.
+- Iedere opgeslagen quiz wordt automatisch als `public: true` opgeslagen; oude quizzen zonder veld worden in Ontdek als openbaar behandeld.
+- Vanuit een openbare quiz kun je **Alleen spelen** of **Multiplayer hosten** kiezen.
+- Eigen quizzen blijven onder **Gemaakte quizzen** met de bestaande bewerk-, host- en verwijderacties.
