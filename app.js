@@ -229,10 +229,27 @@ async function openPlayChooser(qz,ownerId,id){
  document.body.append(m);
 }
 function publicQuestionHtml(q,i){
+ q=q&&typeof q==='object'?q:{};
  const n=i+1;
- if(q.type==="dia")return `<article class="preview-q preview-dia"><div class="preview-q-top"><span class="preview-number">${n}</span><span class="preview-type dia">🖼️ DIA</span><span class="preview-time">${Number(q.time)||10}s</span></div><h3>${esc(q.text||"Dia")}</h3><p>${esc(q.info||"")}</p><div class="preview-no-points">Geen vraag • geen punten</div></article>`;
- if(q.type==="typing")return `<article class="preview-q preview-typing"><div class="preview-q-top"><span class="preview-number">${n}</span><span class="preview-type typing">⌨️ TYPEN</span><span class="preview-time">${Number(q.time)||20}s</span></div><h3>${esc(q.text||"Typvraag")}</h3><div class="preview-answer-label">Goede antwoorden</div><div class="preview-answer-list">${arr(q.a).filter(x=>String(x).trim()).map((a,j)=>`<div class="preview-answer-row"><span>${j+1}</span>${esc(a)}</div>`).join("")||"<div class="preview-empty">Geen antwoorden ingesteld</div>"}</div><div class="preview-points">${q.doublePoints?"2× ":""}max. 1000 punten · aftrek op milliseconde</div></article>`;
- const answers=arr(q.a);return `<article class="preview-q"><div class="preview-q-top"><span class="preview-number">${n}</span><span class="preview-type ${q.type==="tf"?"tf":"quiz"}">${q.type==="tf"?"✓✕ WAAR / NIET WAAR":"▲ QUIZVRAAG"}</span><span class="preview-time">${Number(q.time)||20}s</span></div><h3>${esc(q.text||"Vraag")}</h3><div class="preview-answer-grid">${answers.map((a,j)=>`<div class="preview-answer ${["r","b","y","g"][j%4]} ${j===q.correct?"correct":""}"><span>${["▲","◆","●","■"][j%4]}</span><em>${esc(a)}</em>${j===q.correct?"<b>✓ Goed</b>":""}</div>`).join("")}</div><div class="preview-points">${q.doublePoints?"2× ":""}max. 1000 punten · juiste antwoord gemarkeerd</div></article>`;
+ const time=Number(q.time)||20;
+ const doubleText=q.doublePoints?'2× ':'';
+ if(q.type==='dia'){
+  return '<article class="preview-q preview-dia"><div class="preview-q-top"><span class="preview-number">'+n+'</span><span class="preview-type dia">🖼️ DIA</span><span class="preview-time">'+time+'s</span></div><h3>'+esc(q.text||'Dia')+'</h3><p>'+esc(q.info||'')+'</p><div class="preview-no-points">Geen vraag • geen punten</div></article>';
+ }
+ if(q.type==='typing'){
+  const good=arr(q.a).filter(x=>String(x??'').trim()).map((a,j)=>'<div class="preview-answer-row"><span>'+(j+1)+'</span>'+esc(a)+'</div>').join('');
+  return '<article class="preview-q preview-typing"><div class="preview-q-top"><span class="preview-number">'+n+'</span><span class="preview-type typing">⌨️ TYPEN</span><span class="preview-time">'+time+'s</span></div><h3>'+esc(q.text||'Typvraag')+'</h3><div class="preview-answer-label">Goede antwoorden</div><div class="preview-answer-list">'+(good||'<div class="preview-empty">Geen antwoorden ingesteld</div>')+'</div><div class="preview-points">'+doubleText+'max. 1000 punten · aftrek op milliseconde</div></article>';
+ }
+ const answers=arr(q.a);
+ const typeClass=q.type==='tf'?'tf':'quiz';
+ const typeLabel=q.type==='tf'?'✓✕ WAAR / NIET WAAR':'▲ QUIZVRAAG';
+ const answerHtml=answers.map((a,j)=>{
+   const cls=['r','b','y','g'][j%4];
+   const sym=['▲','◆','●','■'][j%4];
+   const correct=j===Number(q.correct);
+   return '<div class="preview-answer '+cls+(correct?' correct':'')+'"><span>'+sym+'</span><em>'+esc(a??'')+'</em>'+(correct?'<b>✓ Goed</b>':'')+'</div>';
+ }).join('');
+ return '<article class="preview-q"><div class="preview-q-top"><span class="preview-number">'+n+'</span><span class="preview-type '+typeClass+'">'+typeLabel+'</span><span class="preview-time">'+time+'s</span></div><h3>'+esc(q.text||'Vraag')+'</h3><div class="preview-answer-grid">'+answerHtml+'</div><div class="preview-points">'+doubleText+'max. 1000 punten · juiste antwoord gemarkeerd</div></article>';
 }
 async function openPublicQuiz(qz,ownerId,id){
  if(!qz)return toast("Deze quiz kon niet worden geladen.");

@@ -1,11 +1,3 @@
-Quizzo v33 — fix voor “De app is niet geladen”
+Quizzo v34 patch
 
-De vorige v32-download had de bestanden in een extra map in de ZIP staan. Daardoor kon GitHub Pages index.html niet naast app.js/style.css vinden als de map verkeerd was uitgepakt.
-
-Deze ZIP is bewust een ROOT PATCH: de bestanden staan direct in de ZIP-root.
-
-Vervang alleen:
-- app.js
-- style.css
-
-Laat je bestaande index.html, firebase.js, theme-assets.js en themes/ staan.
+Vervang alleen app.js met dit bestand. De v33-public preview-functie is herschreven zonder geneste template literals en met extra null/typedata guards. Geen themes inbegrepen.
