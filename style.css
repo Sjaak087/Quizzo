@@ -448,3 +448,28 @@ body.has-theme-scene #quizzo-theme-scene{
 
 @media(max-width:700px){.visibility-switch{grid-template-columns:1fr}.public-view-modal{padding:0}.public-view-card{width:100vw;max-width:none;height:100dvh;max-height:none;border-radius:0}.public-view-head{padding:17px 16px 14px;position:sticky;top:0;z-index:2}.public-view-head h2{font-size:23px}.public-view-head p{font-size:12px}.public-view-head .btn{flex:none;align-self:flex-start}.public-view-theme{padding:10px 16px}.public-view-theme small{display:none}.public-question-list{padding:12px}.preview-q{padding:13px;border-radius:15px}.preview-q h3{font-size:18px}.preview-answer-grid{grid-template-columns:1fr}.preview-answer{min-height:52px}.public-view-actions{padding:12px 16px;position:sticky;bottom:0}.public-qcard{min-height:0}.public-thumb-overlay{opacity:1;transform:none}.settings-card{max-height:92dvh}}
 @media(prefers-reduced-motion:reduce){.visibility-option,.public-thumb-overlay{transition:none}}
+/* v35 — quizbeschrijving + volledig quizbeheer */
+.settings-field textarea#settingsDescription{width:100%;box-sizing:border-box;resize:vertical;min-height:120px;font:inherit;font-size:16px;line-height:1.5;padding:13px 14px;border:3px solid #ddd;border-radius:12px;background:#fff;color:var(--ink);outline:none}
+.settings-field textarea#settingsDescription:focus{border-color:var(--b);box-shadow:0 0 0 4px rgba(45,140,255,.12)}
+.settings-help{display:block;margin-top:6px;color:#777;font-size:12px;font-weight:700;line-height:1.35}
+.public-description{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;line-height:1.42}
+.public-open-note{display:block;color:#888;font-size:11px;font-weight:800;margin-bottom:10px}
+.public-view-description{margin:4px 0 8px!important;font-size:15px!important;line-height:1.45!important;white-space:pre-wrap;max-width:760px}
+.admin-edit-badge{display:inline-flex;align-items:center;gap:6px;padding:9px 11px;background:#f0eafe;color:#5d35b8;border-radius:10px;font-size:12px;font-weight:1000;white-space:nowrap}
+.admin-layout{display:grid;gap:22px;padding-bottom:48px}
+.admin-panel,.admin-section{width:min(1100px,100%);margin:0 auto;box-sizing:border-box}
+.admin-section{color:#fff}
+.admin-section-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;margin-bottom:14px}
+.admin-section-head h2{margin:3px 0 5px;font-size:28px}
+.admin-section-head p{margin:0;color:rgba(255,255,255,.78);font-weight:700;line-height:1.45}
+.admin-count{padding:9px 12px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);font-size:12px;font-weight:900;white-space:nowrap}
+.admin-quiz-list{display:grid;gap:10px}
+.admin-quiz-row{display:flex;justify-content:space-between;align-items:center;gap:15px;background:rgba(255,255,255,.98);color:var(--ink);border-radius:14px;padding:14px 16px;box-shadow:0 5px 0 rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.55)}
+.admin-quiz-info{min-width:0;flex:1}
+.admin-quiz-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+.admin-quiz-title>b{font-size:18px;overflow-wrap:anywhere}
+.admin-quiz-info small{display:block;color:#727272;font-weight:700;line-height:1.4;overflow-wrap:anywhere}
+.admin-visibility{font-size:10px;font-weight:1000;padding:5px 8px;border-radius:999px}
+.admin-visibility.public{background:#def7e5;color:#16743a}.admin-visibility.private{background:#eee7fb;color:#5d42a6}
+.admin-quiz-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:700px){.admin-quiz-row{align-items:stretch;flex-direction:column}.admin-quiz-actions{justify-content:stretch}.admin-quiz-actions .btn{flex:1}.admin-section-head{flex-direction:column}.admin-count{white-space:normal}.admin-edit-badge{order:-1}.public-view-description{font-size:13px!important}}

@@ -99,6 +99,7 @@ function applyTheme(t){
  if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a6",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
 }
 let user=null,tab="join",mode="login",joinCode=null,offset=0,unsub=null,timer=null,G=null,CODE=null,HOST=false,busy=false,lastKey="",Q=null,QID=null,SEL=0;
+let ADMIN_EDIT=null;
 let scoreSnapshot={},rankSnapshot={},boardAnim=null,lastPaintState="";
 const now=()=>Date.now()+offset;
 onValue(ref(db,".info/serverTimeOffset"),s=>offset=s.val()||0);
@@ -192,7 +193,7 @@ async function tabView(){
   if(!list)return;
   list.innerHTML=items.length?items.map((item,i)=>`<article class="public-qcard" role="button" tabindex="0" data-a="publicView" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}" style="--delay:${Math.min(i,12)*35}ms">
     <div class="public-thumb" style="background-image:url('${esc(themeAsset(safeTheme(item.qz.theme),"webp"))}')"><span>${THEMES[safeTheme(item.qz.theme)].icon} ${esc(THEMES[safeTheme(item.qz.theme)].name)}</span><div class="public-thumb-overlay">👀 Bekijk quiz</div></div>
-    <div class="public-qbody"><div class="public-meta"><span>👤 ${esc(item.ownerName)}${item.mine?" · Jouw quiz":""}</span><span>📝 ${countLabel(item.qz.questions)}</span></div><h3>${esc(item.qz.title)}</h3><p>${item.mine?"Openbare quiz · bekijken en spelen · niet bewerkbaar":"Openbare quiz · klik om vragen en antwoorden te bekijken"}</p><button class="btn b" data-a="publicPlay" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}">▶ Spelen</button></div>
+    <div class="public-qbody"><div class="public-meta"><span>👤 ${esc(item.ownerName)}${item.mine?" · Jouw quiz":""}</span><span>📝 ${countLabel(item.qz.questions)}</span></div><h3>${esc(item.qz.title)}</h3><p class="public-description">${esc(item.qz.description||"Geen beschrijving toegevoegd.")}</p><small class="public-open-note">${item.mine?"Openbare quiz · bekijken en spelen · niet bewerkbaar":"Openbare quiz · klik om vragen en antwoorden te bekijken"}</small><button class="btn b" data-a="publicPlay" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}">▶ Spelen</button></div>
   </article>`).join(""):`<div class="card narrow empty-discover"><h2>Nog geen openbare quizzen</h2><p>Wanneer publieke quizzen zijn opgeslagen, verschijnen ze hier automatisch.</p><button class="btn w sm" data-a="tab" data-k="mine">Naar mijn quizzen</button></div>`;
   wireThemePreviews();
   return;
@@ -216,9 +217,9 @@ act.enter=async()=>{const n=$("#nm").value.trim();if(!n)return toast("Vul een na
  const s=await get(ref(db,"games/"+joinCode)).catch(()=>null);if(!s?.exists()||s.val().state!="lobby")return toast("Deze quiz is niet meer beschikbaar."),home();
  await set(ref(db,`games/${joinCode}/players/${user.uid}`),{name:n,score:0}).catch(e=>toast(em(e)));run(joinCode,false)};
 act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz eerst een naam.");
- Q={title:n,theme:"classic",public:true,questions:[]};QID=null;SEL=-1;editorView()};
+ Q={title:n,description:"",theme:"classic",public:true,questions:[]};QID=null;ADMIN_EDIT=null;SEL=-1;editorView()};
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
- Q={title:v.title,theme:safeTheme(v.theme),public:v.public!==false,questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
+ Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||user.displayName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;ADMIN_EDIT=null;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
 
 async function openPlayChooser(qz,ownerId,id){
@@ -255,7 +256,7 @@ async function openPublicQuiz(qz,ownerId,id){
  if(!qz)return toast("Deze quiz kon niet worden geladen.");
  const m=document.createElement("div");m.className="modal public-view-modal";
  const qs=arr(qz.questions);
- m.innerHTML=`<div class="card public-view-card"><div class="public-view-head"><div><span class="eyebrow">🌍 OPENBARE QUIZ</span><h2>${esc(qz.title||"Quiz")}</h2><p>Gemaakt door <b>${esc(qz.creatorName||"Quizzo speler")}</b> · ${countLabel(qs)}</p></div><button class="btn w sm" data-a="closem">Sluiten</button></div><div class="public-view-theme"><span>${THEMES[safeTheme(qz.theme)].icon}</span><b>${esc(THEMES[safeTheme(qz.theme)].name)}</b><small>Vragen en antwoorden bekijken</small></div><div class="public-question-list">${qs.length?qs.map(publicQuestionHtml).join(""):`<div class="card narrow"><p>Deze quiz heeft nog geen onderdelen.</p></div>`}</div><div class="public-view-actions"><button class="btn b" data-a="publicPlay" data-owner="${esc(ownerId)}" data-id="${esc(id)}">▶ Spelen</button><button class="btn w" data-a="closem">Sluiten</button></div></div>`;
+ m.innerHTML=`<div class="card public-view-card"><div class="public-view-head"><div><span class="eyebrow">🌍 OPENBARE QUIZ</span><h2>${esc(qz.title||"Quiz")}</h2><p class="public-view-description">${esc(qz.description||"Geen beschrijving toegevoegd.")}</p><p>Gemaakt door <b>${esc(qz.creatorName||"Quizzo speler")}</b> · ${countLabel(qs)}</p></div><button class="btn w sm" data-a="closem">Sluiten</button></div><div class="public-view-theme"><span>${THEMES[safeTheme(qz.theme)].icon}</span><b>${esc(THEMES[safeTheme(qz.theme)].name)}</b><small>Vragen en antwoorden bekijken</small></div><div class="public-question-list">${qs.length?qs.map(publicQuestionHtml).join(""):`<div class="card narrow"><p>Deze quiz heeft nog geen onderdelen.</p></div>`}</div><div class="public-view-actions"><button class="btn b" data-a="publicPlay" data-owner="${esc(ownerId)}" data-id="${esc(id)}">▶ Spelen</button><button class="btn w" data-a="closem">Sluiten</button></div></div>`;
  document.body.append(m);
 }
 act.publicView=async d=>{try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");await openPublicQuiz(qz,d.owner,d.id)}catch(e){toast(em(e))}};
@@ -282,7 +283,7 @@ const qOk=q=>q.type==="dia"?q.text.trim()&&q.info.trim()&&q.time>=5&&q.time<=120
 const valid=()=>Q.title.trim()&&Q.questions.length&&Q.questions.every(qOk);
 function editorView(){
  applyTheme(Q.theme);
- A.innerHTML=`<header class="ed"><div class="editor-title-wrap"><input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><button class="btn w sm settings-btn" data-a="settings">⚙ Instellingen</button></div><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
+ A.innerHTML=`<header class="ed"><div class="editor-title-wrap">${ADMIN_EDIT?`<span class="admin-edit-badge">⚙ Sitebeheer</span>`:""}<input class="qtitle" data-f="title" placeholder="Naam van de quiz" value="${esc(Q.title)}"><button class="btn w sm settings-btn" data-a="settings">⚙ Instellingen</button></div><span><button class="btn w sm" data-a="exit">Sluiten</button> <button id="sv" class="btn g sm" data-a="save" title="Vul alles in om op te slaan">Opslaan</button></span></header>
  <div class="theme-strip"><span class="theme-strip-icon">${THEMES[safeTheme(Q.theme)].icon}</span><b>${esc(THEMES[safeTheme(Q.theme)].name)}</b><small>Dit thema zie je tijdens het spelen op het scherm van de host en op telefoons.</small></div>
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn();wireThemePreviews()}
 function side(){
@@ -302,6 +303,7 @@ function mainQ(){
 const saveBtn=()=>{const b=$("#sv");if(b)b.disabled=!valid()};
 document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)return;const q=Q.questions[SEL];if(!q&&f!="title")return;
  if(f=="settingsTitle"){Q.title=t.value;const qt=document.querySelector(".qtitle");if(qt)qt.value=t.value;saveBtn();return;}
+ if(f=="settingsDescription"){Q.description=t.value;return;}
  if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="info")q.info=t.value;else if(f=="time")q.time=t.value===""?NaN:+t.value;
  else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;
  side();saveBtn()});
@@ -312,6 +314,7 @@ act.settings=()=>{
  const current=safeTheme(Q.theme);
  m.innerHTML=`<div class="card settings-card"><div class="picker-head"><div><span class="eyebrow">QUIZ INSTELLINGEN</span><h2>Instellingen</h2><p>Pas de naam en het uiterlijk van je quiz aan.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div>
  <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" data-f="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
+ <label class="settings-field"><span>Beschrijving van de quiz</span><textarea id="settingsDescription" data-f="settingsDescription" rows="5" maxlength="500" placeholder="Waar gaat deze quiz over?">${esc(Q.description||"")}</textarea><small class="settings-help">Deze beschrijving is zichtbaar in Ontdek quizzen wanneer je quiz openbaar is.</small></label>
  <div class="visibility-setting"><div><b>🌍 Zichtbaarheid</b><small>Kies of andere spelers deze quiz in <b>Ontdek quizzen</b> mogen zien. Standaard is een quiz openbaar.</small></div><div class="visibility-switch" role="group" aria-label="Zichtbaarheid van de quiz"><button class="visibility-option ${Q.public!==false?"active":""}" data-a="visibilityPick" data-value="public">🌍 Openbaar</button><button class="visibility-option ${Q.public===false?"active":""}" data-a="visibilityPick" data-value="private">🔒 Privé</button></div><div class="visibility-note ${Q.public===false?"private":"public"}" id="visibilityNote">${Q.public===false?"Alleen jij kunt deze quiz zien en bewerken.":"Iedereen kan deze quiz vinden, bekijken en spelen."}</div></div>
  <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" data-theme="${id}" src="${themeAsset(id,"webp")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
  <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
@@ -320,7 +323,7 @@ act.settings=()=>{
 };
 act.themePick=d=>{Q.theme=safeTheme(d.theme);document.querySelectorAll(".theme-choice").forEach(x=>x.classList.toggle("selected",x.dataset.theme===Q.theme));applyTheme(Q.theme);const strip=document.querySelector(".theme-strip");if(strip){strip.querySelector(".theme-strip-icon").textContent=THEMES[Q.theme].icon;strip.querySelector("b").textContent=THEMES[Q.theme].name}};
 act.visibilityPick=d=>{Q.public=d.value!=="private";document.querySelectorAll(".visibility-option").forEach(x=>x.classList.toggle("active",(x.dataset.value==="public")===Q.public));const n=$("#visibilityNote");if(n){n.className="visibility-note "+(Q.public?"public":"private");n.textContent=Q.public?"Iedereen kan deze quiz vinden, bekijken en spelen.":"Alleen jij kunt deze quiz zien en bewerken."}saveBtn();};
-act.saveSettings=()=>{const input=$("#settingsTitle");const name=input?.value.trim();if(!name)return toast("Geef je quiz een naam.");Q.title=name;applyTheme(Q.theme);document.querySelector(".qtitle")&&(document.querySelector(".qtitle").value=name);act.closem();saveBtn();side()};
+act.saveSettings=()=>{const input=$("#settingsTitle"),desc=$("#settingsDescription");const name=input?.value.trim();if(!name)return toast("Geef je quiz een naam.");Q.title=name;Q.description=(desc?.value||"").trim();applyTheme(Q.theme);document.querySelector(".qtitle")&&(document.querySelector(".qtitle").value=name);act.closem();saveBtn();side()};
 let dragIndex=-1;
 document.addEventListener("dragstart",e=>{const t=e.target.closest("[data-drag-index]");if(!t||!Q)return;dragIndex=+t.dataset.dragIndex;t.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(dragIndex))});
 document.addEventListener("dragend",e=>{e.target.closest("[data-drag-index]")?.classList.remove("dragging");dragIndex=-1;document.querySelectorAll("[data-drag-index].drag-over").forEach(x=>x.classList.remove("drag-over"))});
@@ -348,10 +351,12 @@ act.addtyping=()=>addQ("typing");
 act.double=()=>{const q=Q.questions[SEL];if(!q||q.type==="dia")return;q.doublePoints=!q.doublePoints;mainQ();side()};
 act.addtypeanswer=()=>{const q=Q.questions[SEL];if(!q||q.type!=="typing")return;q.a.push("");mainQ();setTimeout(()=>document.querySelector('.typing-answer-row:last-child input')?.focus(),0);saveBtn()};
 act.deltypeanswer=d=>{const q=Q.questions[SEL];if(!q||q.type!=="typing"||q.a.length<=1)return;q.a.splice(+d.i,1);mainQ();saveBtn()};
-act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){Q=null;tab="mine";home()}};
-act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.uid)).key;
- try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),theme:safeTheme(Q.theme),public:Q.public!==false,creatorName:user.displayName||"Quizzo speler",questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
- Q=null;tab="mine";home();toast("Quiz opgeslagen!")};
+act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){const fromAdmin=!!ADMIN_EDIT;Q=null;QID=null;ADMIN_EDIT=null;if(fromAdmin){act.admin();}else{tab="mine";home()}}};
+act.save=async()=>{if(!valid())return;const ownerId=ADMIN_EDIT?.ownerId||user.uid;const id=QID||push(ref(db,"quizzes/"+ownerId)).key;
+ const originalCreator=Q.creatorName||user.displayName||"Quizzo speler";
+ const payload={title:Q.title.trim(),description:String(Q.description||"").trim(),theme:safeTheme(Q.theme),public:Q.public!==false,creatorName:originalCreator,questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()};
+ try{await set(ref(db,`quizzes/${ownerId}/${id}`),payload)}catch(e){return toast(em(e))}
+ const fromAdmin=!!ADMIN_EDIT;Q=null;ADMIN_EDIT=null;QID=null;if(fromAdmin){toast("Quiz van gebruiker bijgewerkt!");act.admin();return;}tab="mine";home();toast("Quiz opgeslagen!")};
 
 /* ---------- Game ---------- */
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
@@ -501,14 +506,29 @@ act.uopen=d=>{const u=UPD[d.id];if(!u)return;
 act.ulist=()=>showLog();
 
 act.admin=()=>{A.innerHTML=`<header><b class="logo s">Sitebeheer</b><button class="btn w sm" data-a="back">Terug</button></header><main id="ac" class="wrap">Laden...</main>`;adminBody()};
-act.back=()=>{ADM=null;EDITU=null;sessionStorage.removeItem("quizzo_adm");home()};
+act.back=()=>{ADM=null;EDITU=null;ADMIN_EDIT=null;Q=null;QID=null;sessionStorage.removeItem("quizzo_adm");home()};
 async function adminBody(){const c=$("#ac");if(!c)return;let has;
  try{has=await get(ref(db,"admin/salt"))}catch(e){return c.innerHTML=`<div class="card narrow">Geen toegang tot de database. Controleer of de nieuwe database-regels zijn gepubliceerd.</div>`}
  if(!has.exists()){EDITU=null;return c.innerHTML=`<div class="card narrow"><h2>Beheerder instellen</h2><p>Stel het e-mailadres en wachtwoord voor sitebeheer in. Dit kan maar één keer.</p><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord (minimaal 6 tekens)"><input id="ap2" type="password" placeholder="Herhaal wachtwoord"><button class="btn g" data-a="asetup">Instellen</button></div>`}
  if(!ADM)return c.innerHTML=`<div class="card narrow"><h2>Inloggen voor sitebeheer</h2><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord"><button class="btn b" data-a="alogin">Inloggen</button></div>`;
  const l=await loadUpdates().catch(()=>[]),e=EDITU&&UPD[EDITU],n=nowDT();
- c.innerHTML=`<div class="card wide" style="margin:0 auto"><h2>${e?"Update aanpassen":"Nieuwe update"}</h2><input id="ut" maxlength="80" placeholder="Titel" value="${esc(e?.title)}"><div class="opts"><label>Datum<input id="ud" type="date" value="${e?e.date:n.date}"></label><label>Tijd<input id="uh" type="time" value="${e?e.time:n.time}"></label></div><textarea id="ub" rows="6" placeholder="Beschrijving">${esc(e?.body)}</textarea><button class="btn g" data-a="usave">${e?"Wijzigingen opslaan":"Update plaatsen"}</button>${e?'<button class="btn w" data-a="ucancel">Annuleren</button>':""}</div>
- <h2 style="margin-top:28px">Alle updates</h2>${l.map(u=>`<div class="qcard"><div><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div><div><button class="btn b sm" data-a="uedit" data-id="${u.id}">Aanpassen</button> <button class="btn r sm" data-a="udel" data-id="${u.id}">Verwijderen</button></div></div>`).join("")||"Nog geen updates."}`}
+ let quizRows="";
+ try{
+  const all=((await get(ref(db,"quizzes"))).val()||{});
+  const owners=Object.keys(all);
+  const ownerNames={};
+  await Promise.all(owners.map(async ownerId=>{try{const u=(await get(ref(db,"users/"+ownerId))).val();ownerNames[ownerId]=u?.username||"Onbekende gebruiker"}catch(_){ownerNames[ownerId]="Onbekende gebruiker"}}));
+  const rows=[];
+  Object.entries(all).forEach(([ownerId,qs])=>{if(!qs||typeof qs!=="object")return;Object.entries(qs).forEach(([id,qz])=>{if(!qz||typeof qz!=="object")return;rows.push({ownerId,id,qz,ownerName:qz.creatorName||ownerNames[ownerId]||"Onbekende gebruiker"})})});
+  rows.sort((a,b)=>(Number(b.qz.updated)||0)-(Number(a.qz.updated)||0));
+  quizRows=rows.map(x=>`<div class="admin-quiz-row"><div class="admin-quiz-info"><div class="admin-quiz-title"><b>${esc(x.qz.title||"Naamloze quiz")}</b><span class="admin-visibility ${x.qz.public===false?"private":"public"}">${x.qz.public===false?"🔒 Privé":"🌍 Openbaar"}</span></div><small>👤 ${esc(x.ownerName)} · ${countLabel(x.qz.questions)}${x.qz.description?" · "+esc(x.qz.description).slice(0,90):""}</small></div><div class="admin-quiz-actions"><button class="btn b sm" data-a="adminEditQuiz" data-owner="${esc(x.ownerId)}" data-id="${esc(x.id)}">Bewerken</button><button class="btn r sm" data-a="adminDeleteQuiz" data-owner="${esc(x.ownerId)}" data-id="${esc(x.id)}">Verwijderen</button></div></div>`).join("");
+ }catch(err){quizRows=`<div class="card narrow">De quizdatabase kon niet geladen worden: ${esc(em(err))}</div>`}
+ c.innerHTML=`<div class="admin-layout"><section class="card wide admin-panel"><div class="admin-section-head"><div><span class="eyebrow">SITEBEHEER</span><h2>${e?"Update aanpassen":"Nieuwe update"}</h2><p>Beheer updates en alle quizzen op deze site.</p></div></div><input id="ut" maxlength="80" placeholder="Titel" value="${esc(e?.title)}"><div class="opts"><label>Datum<input id="ud" type="date" value="${e?e.date:n.date}"></label><label>Tijd<input id="uh" type="time" value="${e?e.time:n.time}"></label></div><textarea id="ub" rows="6" placeholder="Beschrijving">${esc(e?.body)}</textarea><button class="btn g" data-a="usave">${e?"Wijzigingen opslaan":"Update plaatsen"}</button>${e?'<button class="btn w" data-a="ucancel">Annuleren</button>':""}</section>
+ <section class="admin-section"><div class="admin-section-head"><div><span class="eyebrow">QUIZZEN</span><h2>Alle quizzen</h2><p>Je kunt hier iedere quiz bekijken, bewerken, openbaar/privé maken, de beschrijving aanpassen en vragen wijzigen.</p></div><div class="admin-count">${quizRows?"Alle opgeslagen quizzen":"0 quizzen"}</div></div><div class="admin-quiz-list">${quizRows||"<div class=\"card narrow\">Nog geen quizzen.</div>"}</div></section>
+ <section class="admin-section"><div class="admin-section-head"><div><span class="eyebrow">UPDATES</span><h2>Alle updates</h2></div></div><div class="admin-update-list">${l.map(u=>`<div class="qcard"><div><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div><div><button class="btn b sm" data-a="uedit" data-id="${u.id}">Aanpassen</button> <button class="btn r sm" data-a="udel" data-id="${u.id}">Verwijderen</button></div></div>`).join("")||"Nog geen updates."}</div></section></div>`;
+ }
+act.adminEditQuiz=async d=>{try{const owner=d.owner,id=d.id,v=(await get(ref(db,`quizzes/${owner}/${id}`))).val();if(!v)return toast("Deze quiz bestaat niet meer.");Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=id;ADMIN_EDIT={ownerId:owner,id};SEL=Math.max(0,Q.questions.length?0:-1);editorView()}catch(e){toast(em(e))}};
+act.adminDeleteQuiz=async d=>{if(!confirm("Deze quiz definitief verwijderen uit de site?"))return;try{await remove(ref(db,`quizzes/${d.owner}/${d.id}`));toast("Quiz verwijderd.");adminBody()}catch(e){toast(em(e))}};
 act.asetup=async()=>{const e=$("#ae").value.trim().toLowerCase(),p=$("#ap").value;
  if(!/^\S+@\S+\.\S+$/.test(e))return toast("Vul een geldig e-mailadres in.");
  if(p.length<6)return toast("Wachtwoord: minimaal 6 tekens.");
