@@ -108,6 +108,7 @@ const em=e=>errs[e.code]||errs[(e.message||"").match(/PERMISSION_DENIED/)?.[0]]|
 const act={};
 document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(t&&!t.disabled){act[t.dataset.a]?.(t.dataset,t);if(t.dataset.a!=="menu"&&!t.closest("#menu"))$("#menu")?.remove();return;}if(!e.target.closest('[data-a="menu"]')&&!e.target.closest("#menu"))$("#menu")?.remove();});
 function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey="";scoreSnapshot={};rankSnapshot={};boardAnim=null;lastPaintState="";applyTheme("classic")}
+document.addEventListener("keydown",e=>{if((e.key!=="Enter"&&e.key!==" ")||e.target.closest("button,input,textarea,a"))return;const card=e.target.closest(".public-qcard[data-a=\"publicView\"]");if(card){e.preventDefault();act.publicView(card.dataset)}});
 
 /* ---------- Accounts (opgeslagen in de Realtime Database, zonder Firebase Authentication) ---------- */
 const enc=new TextEncoder(),hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");
@@ -159,7 +160,7 @@ async function tabView(){
   return;
  }
  if(tab=="discover"){
-  c.innerHTML=`<div class="discover-head"><div><span class="eyebrow">OPENBAAR</span><h2>Ontdek quizzen</h2><p>Bekijk en speel alle openbare quizzen. Je kunt ze vanuit deze tab alleen spelen, nooit bewerken.</p></div><div class="discover-badge">🌍 Iedereen kan spelen</div></div><div id="publicQuizList" class="discover-grid"><div class="card narrow loading-card">Quizzen laden...</div></div>`;
+  c.innerHTML=`<div class="discover-head"><div><span class="eyebrow">OPENBAAR</span><h2>Ontdek quizzen</h2><p>Bekijk, lees en speel alle openbare quizzen. Klik op een quiz om de vragen en antwoorden te bekijken. Je kunt openbare quizzen alleen spelen, nooit bewerken.</p></div><div class="discover-badge">🌍 Iedereen kan spelen</div></div><div id="publicQuizList" class="discover-grid"><div class="card narrow loading-card">Quizzen laden...</div></div>`;
   const qsSnap=await get(ref(db,"quizzes")).catch(e=>(toast(em(e)),null));
   const all=qsSnap?.val()||{};
   const items=[];
@@ -189,9 +190,9 @@ async function tabView(){
   items.sort((a,b)=>(Number(b.qz.updated)||0)-(Number(a.qz.updated)||0));
   const list=$("#publicQuizList");
   if(!list)return;
-  list.innerHTML=items.length?items.map((item,i)=>`<article class="public-qcard" style="--delay:${Math.min(i,12)*35}ms">
-    <div class="public-thumb" style="background-image:url('${esc(themeAsset(safeTheme(item.qz.theme),"webp"))}')"><span>${THEMES[safeTheme(item.qz.theme)].icon} ${esc(THEMES[safeTheme(item.qz.theme)].name)}</span></div>
-    <div class="public-qbody"><div class="public-meta"><span>👤 ${esc(item.ownerName)}${item.mine?" · Jouw quiz":""}</span><span>📝 ${countLabel(item.qz.questions)}</span></div><h3>${esc(item.qz.title)}</h3><p>${item.mine?"Openbare quiz · jouw quiz · niet bewerkbaar vanuit Ontdek":"Openbare quiz · direct spelen"}</p><button class="btn b" data-a="publicPlay" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}">▶ Spelen</button></div>
+  list.innerHTML=items.length?items.map((item,i)=>`<article class="public-qcard" role="button" tabindex="0" data-a="publicView" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}" style="--delay:${Math.min(i,12)*35}ms">
+    <div class="public-thumb" style="background-image:url('${esc(themeAsset(safeTheme(item.qz.theme),"webp"))}')"><span>${THEMES[safeTheme(item.qz.theme)].icon} ${esc(THEMES[safeTheme(item.qz.theme)].name)}</span><div class="public-thumb-overlay">👀 Bekijk quiz</div></div>
+    <div class="public-qbody"><div class="public-meta"><span>👤 ${esc(item.ownerName)}${item.mine?" · Jouw quiz":""}</span><span>📝 ${countLabel(item.qz.questions)}</span></div><h3>${esc(item.qz.title)}</h3><p>${item.mine?"Openbare quiz · bekijken en spelen · niet bewerkbaar":"Openbare quiz · klik om vragen en antwoorden te bekijken"}</p><button class="btn b" data-a="publicPlay" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}">▶ Spelen</button></div>
   </article>`).join(""):`<div class="card narrow empty-discover"><h2>Nog geen openbare quizzen</h2><p>Wanneer publieke quizzen zijn opgeslagen, verschijnen ze hier automatisch.</p><button class="btn w sm" data-a="tab" data-k="mine">Naar mijn quizzen</button></div>`;
   wireThemePreviews();
   return;
@@ -202,7 +203,7 @@ async function tabView(){
  }
  c.innerHTML="Laden...";
  const s=await get(ref(db,"quizzes/"+user.uid)).catch(e=>(toast(em(e)),null)),v=s?.val()||{},ids=Object.keys(v);
- c.innerHTML=ids.length?ids.map(id=>`<div class="qcard"><div><b>${esc(v[id].title)}</b><small>${arr(v[id].questions).length} vragen · openbaar</small></div><div>
+ c.innerHTML=ids.length?ids.map(id=>`<div class="qcard"><div><b>${esc(v[id].title)}</b><small>${arr(v[id].questions).length} ${arr(v[id].questions).length===1?"onderdeel":"onderdelen"} · ${v[id].public===false?"privé":"openbaar"}</small></div><div>
    <button class="btn b sm" data-a="play" data-id="${id}">Spelen</button> <button class="btn g sm" data-a="host" data-id="${id}">Hosten</button> <button class="btn w sm" data-a="edit" data-id="${id}">Bewerken</button> <button class="btn r sm" data-a="delq" data-id="${id}">Verwijderen</button></div></div>`).join("")
   :`<div class="card narrow">Je hebt nog geen quizzen. Ga naar "Quiz maken" om te beginnen.</div>`;
 }
@@ -215,17 +216,33 @@ act.enter=async()=>{const n=$("#nm").value.trim();if(!n)return toast("Vul een na
  const s=await get(ref(db,"games/"+joinCode)).catch(()=>null);if(!s?.exists()||s.val().state!="lobby")return toast("Deze quiz is niet meer beschikbaar."),home();
  await set(ref(db,`games/${joinCode}/players/${user.uid}`),{name:n,score:0}).catch(e=>toast(em(e)));run(joinCode,false)};
 act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz eerst een naam.");
- Q={title:n,theme:"classic",questions:[]};QID=null;SEL=-1;editorView()};
+ Q={title:n,theme:"classic",public:true,questions:[]};QID=null;SEL=-1;editorView()};
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
- Q={title:v.title,theme:safeTheme(v.theme),questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
+ Q={title:v.title,theme:safeTheme(v.theme),public:v.public!==false,questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
 
 async function openPlayChooser(qz,ownerId,id){
  if(!qz)return toast("Deze quiz kon niet worden geladen.");
+ document.querySelectorAll(".modal").forEach(x=>x.remove());
  const m=document.createElement("div");m.className="modal";
  m.innerHTML=`<div class="card mode-card"><div class="public-mode-badge">🌍 Openbare quiz</div><h2>${esc(qz.title)}</h2><p>Kies hoe je deze quiz wilt spelen. De quiz blijft alleen-lezen voor jou.</p><button class="btn b" data-a="publicSolo" data-owner="${esc(ownerId)}" data-id="${esc(id)}">👤 Alleen spelen</button><button class="btn g" data-a="publicHost" data-owner="${esc(ownerId)}" data-id="${esc(id)}">🎮 Multiplayer hosten</button><button class="btn w" data-a="closem">Annuleren</button></div>`;
  document.body.append(m);
 }
+function publicQuestionHtml(q,i){
+ const n=i+1;
+ if(q.type==="dia")return `<article class="preview-q preview-dia"><div class="preview-q-top"><span class="preview-number">${n}</span><span class="preview-type dia">🖼️ DIA</span><span class="preview-time">${Number(q.time)||10}s</span></div><h3>${esc(q.text||"Dia")}</h3><p>${esc(q.info||"")}</p><div class="preview-no-points">Geen vraag • geen punten</div></article>`;
+ if(q.type==="typing")return `<article class="preview-q preview-typing"><div class="preview-q-top"><span class="preview-number">${n}</span><span class="preview-type typing">⌨️ TYPEN</span><span class="preview-time">${Number(q.time)||20}s</span></div><h3>${esc(q.text||"Typvraag")}</h3><div class="preview-answer-label">Goede antwoorden</div><div class="preview-answer-list">${arr(q.a).filter(x=>String(x).trim()).map((a,j)=>`<div class="preview-answer-row"><span>${j+1}</span>${esc(a)}</div>`).join("")||"<div class="preview-empty">Geen antwoorden ingesteld</div>"}</div><div class="preview-points">${q.doublePoints?"2× ":""}max. 1000 punten · aftrek op milliseconde</div></article>`;
+ const answers=arr(q.a);return `<article class="preview-q"><div class="preview-q-top"><span class="preview-number">${n}</span><span class="preview-type ${q.type==="tf"?"tf":"quiz"}">${q.type==="tf"?"✓✕ WAAR / NIET WAAR":"▲ QUIZVRAAG"}</span><span class="preview-time">${Number(q.time)||20}s</span></div><h3>${esc(q.text||"Vraag")}</h3><div class="preview-answer-grid">${answers.map((a,j)=>`<div class="preview-answer ${["r","b","y","g"][j%4]} ${j===q.correct?"correct":""}"><span>${["▲","◆","●","■"][j%4]}</span><em>${esc(a)}</em>${j===q.correct?"<b>✓ Goed</b>":""}</div>`).join("")}</div><div class="preview-points">${q.doublePoints?"2× ":""}max. 1000 punten · juiste antwoord gemarkeerd</div></article>`;
+}
+async function openPublicQuiz(qz,ownerId,id){
+ if(!qz)return toast("Deze quiz kon niet worden geladen.");
+ const m=document.createElement("div");m.className="modal public-view-modal";
+ const qs=arr(qz.questions);
+ m.innerHTML=`<div class="card public-view-card"><div class="public-view-head"><div><span class="eyebrow">🌍 OPENBARE QUIZ</span><h2>${esc(qz.title||"Quiz")}</h2><p>Gemaakt door <b>${esc(qz.creatorName||"Quizzo speler")}</b> · ${countLabel(qs)}</p></div><button class="btn w sm" data-a="closem">Sluiten</button></div><div class="public-view-theme"><span>${THEMES[safeTheme(qz.theme)].icon}</span><b>${esc(THEMES[safeTheme(qz.theme)].name)}</b><small>Vragen en antwoorden bekijken</small></div><div class="public-question-list">${qs.length?qs.map(publicQuestionHtml).join(""):`<div class="card narrow"><p>Deze quiz heeft nog geen onderdelen.</p></div>`}</div><div class="public-view-actions"><button class="btn b" data-a="publicPlay" data-owner="${esc(ownerId)}" data-id="${esc(id)}">▶ Spelen</button><button class="btn w" data-a="closem">Sluiten</button></div></div>`;
+ document.body.append(m);
+}
+act.publicView=async d=>{try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");await openPublicQuiz(qz,d.owner,d.id)}catch(e){toast(em(e))}};
+
 act.publicPlay=async d=>{
  try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(qz?.public===false)return toast("Deze quiz is niet openbaar.");await openPlayChooser(qz,d.owner,d.id)}catch(e){toast(em(e))}
 };
@@ -278,12 +295,14 @@ act.settings=()=>{
  const current=safeTheme(Q.theme);
  m.innerHTML=`<div class="card settings-card"><div class="picker-head"><div><span class="eyebrow">QUIZ INSTELLINGEN</span><h2>Instellingen</h2><p>Pas de naam en het uiterlijk van je quiz aan.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div>
  <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" data-f="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
+ <div class="visibility-setting"><div><b>🌍 Zichtbaarheid</b><small>Kies of andere spelers deze quiz in <b>Ontdek quizzen</b> mogen zien. Standaard is een quiz openbaar.</small></div><div class="visibility-switch" role="group" aria-label="Zichtbaarheid van de quiz"><button class="visibility-option ${Q.public!==false?"active":""}" data-a="visibilityPick" data-value="public">🌍 Openbaar</button><button class="visibility-option ${Q.public===false?"active":""}" data-a="visibilityPick" data-value="private">🔒 Privé</button></div><div class="visibility-note ${Q.public===false?"private":"public"}" id="visibilityNote">${Q.public===false?"Alleen jij kunt deze quiz zien en bewerken.":"Iedereen kan deze quiz vinden, bekijken en spelen."}</div></div>
  <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" data-theme="${id}" src="${themeAsset(id,"webp")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
  <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
  document.body.append(m);
  wireThemePreviews();
 };
 act.themePick=d=>{Q.theme=safeTheme(d.theme);document.querySelectorAll(".theme-choice").forEach(x=>x.classList.toggle("selected",x.dataset.theme===Q.theme));applyTheme(Q.theme);const strip=document.querySelector(".theme-strip");if(strip){strip.querySelector(".theme-strip-icon").textContent=THEMES[Q.theme].icon;strip.querySelector("b").textContent=THEMES[Q.theme].name}};
+act.visibilityPick=d=>{Q.public=d.value!=="private";document.querySelectorAll(".visibility-option").forEach(x=>x.classList.toggle("active",(x.dataset.value==="public")===Q.public));const n=$("#visibilityNote");if(n){n.className="visibility-note "+(Q.public?"public":"private");n.textContent=Q.public?"Iedereen kan deze quiz vinden, bekijken en spelen.":"Alleen jij kunt deze quiz zien en bewerken."}saveBtn();};
 act.saveSettings=()=>{const input=$("#settingsTitle");const name=input?.value.trim();if(!name)return toast("Geef je quiz een naam.");Q.title=name;applyTheme(Q.theme);document.querySelector(".qtitle")&&(document.querySelector(".qtitle").value=name);act.closem();saveBtn();side()};
 let dragIndex=-1;
 document.addEventListener("dragstart",e=>{const t=e.target.closest("[data-drag-index]");if(!t||!Q)return;dragIndex=+t.dataset.dragIndex;t.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",String(dragIndex))});
@@ -314,7 +333,7 @@ act.addtypeanswer=()=>{const q=Q.questions[SEL];if(!q||q.type!=="typing")return;
 act.deltypeanswer=d=>{const q=Q.questions[SEL];if(!q||q.type!=="typing"||q.a.length<=1)return;q.a.splice(+d.i,1);mainQ();saveBtn()};
 act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){Q=null;tab="mine";home()}};
 act.save=async()=>{if(!valid())return;const id=QID||push(ref(db,"quizzes/"+user.uid)).key;
- try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),theme:safeTheme(Q.theme),public:true,creatorName:user.displayName||"Quizzo speler",questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
+ try{await set(ref(db,`quizzes/${user.uid}/${id}`),{title:Q.title.trim(),theme:safeTheme(Q.theme),public:Q.public!==false,creatorName:user.displayName||"Quizzo speler",questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()})}catch(e){return toast(em(e))}
  Q=null;tab="mine";home();toast("Quiz opgeslagen!")};
 
 /* ---------- Game ---------- */

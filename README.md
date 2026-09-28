@@ -1,7 +1,16 @@
-Quizzo v31 – fix openbare quizzen
+Quizzo v32 — openbare/private quizzen + openbare quiz bekijken
 
-Vervang alleen `app.js` in je huidige GitHub Pages-repository door dit bestand.
+Vervang alleen:
+- app.js
+- style.css
 
-De tab "Ontdek quizzen" toont nu alle openbare quizzen, inclusief bestaande quizzen die nog geen `public`-veld hebben. Je eigen quizzen worden ook getoond (gemarkeerd als "Jouw quiz") zodat je direct kunt testen of openbaar publiceren werkt.
+Laat je bestaande themes/, index.html en firebase.js staan; er zijn geen thema-bestanden gewijzigd.
 
-De thema-bestanden zitten bewust NIET in deze patch.
+Nieuwe functies:
+- Quizinstellingen: Openbaar / Privé, standaard openbaar.
+- Openbare quizzen zijn zichtbaar in Ontdek quizzen.
+- Klik op een openbare quiz om alle vragen en ingestelde antwoorden te bekijken.
+- Juiste antwoorden zijn in de preview gemarkeerd.
+- Dia's en Typen worden apart weergegeven.
+- De bestaande Spelen-knop blijft beschikbaar met dezelfde speelkeuze.
+- Volledig scrollbaar en geschikt voor telefoon.
