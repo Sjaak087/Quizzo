@@ -101,6 +101,65 @@ function applyTheme(t){
 let user=null,tab="join",mode="login",joinCode=null,offset=0,unsub=null,timer=null,G=null,CODE=null,HOST=false,busy=false,lastKey="",Q=null,QID=null,SEL=0;
 let ADMIN_EDIT=null;
 let scoreSnapshot={},rankSnapshot={},boardAnim=null,lastPaintState="";
+const AVATAR_COUNT=10, ACCESSORY_COUNT=10;
+const DEFAULT_PROFILE={avatar:0,accessory:0};
+const clampIndex=(v,max)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n<max?n:0};
+const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:clampIndex(p?.accessory,ACCESSORY_COUNT)});
+const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:Math.floor(Math.random()*ACCESSORY_COUNT)});
+function avatarSvg(i){
+ const idx=clampIndex(i,AVATAR_COUNT);
+ const defs=[
+  ['#ff8c42','#ffc56f','round'],['#4aa3ff','#a9dcff','square'],['#f26bbf','#ffd0ef','ears'],['#46c78b','#a8f4d0','alien'],['#8c62ff','#d9c8ff','robot'],
+  ['#ffd34d','#fff0a6','bigeye'],['#ef5656','#ff9e9e','round2'],['#20c9d9','#9df6fa','sleepy'],['#5d6070','#b4b7c5','beard'],['#ff9f2f','#ffd49b','cat']
+ ][idx];
+ const [a,b,shape]=defs;
+ let head='';
+ if(shape==='square') head=`<rect x="21" y="17" width="54" height="54" rx="18" fill="${a}"/>`;
+ else if(shape==='ears') head=`<path d="M23 29L15 17L30 22M73 29L81 17L66 22Z" fill="${a}"/><circle cx="48" cy="45" r="28" fill="${a}"/>`;
+ else if(shape==='alien') head=`<ellipse cx="48" cy="44" rx="30" ry="27" fill="${a}"/>`;
+ else if(shape==='robot') head=`<rect x="18" y="18" width="60" height="54" rx="13" fill="${a}" stroke="#fff" stroke-width="3"/><rect x="42" y="8" width="12" height="12" rx="6" fill="${b}"/>`;
+ else if(shape==='bigeye') head=`<circle cx="48" cy="45" r="29" fill="${a}"/>`;
+ else if(shape==='round2') head=`<circle cx="48" cy="45" r="29" fill="${a}"/>`;
+ else if(shape==='sleepy') head=`<ellipse cx="48" cy="44" rx="31" ry="28" fill="${a}"/>`;
+ else if(shape==='beard') head=`<circle cx="48" cy="44" r="29" fill="${a}"/>`;
+ else if(shape==='cat') head=`<path d="M22 28L19 12L35 22Q48 15 61 22L77 12L74 30Q79 40 76 54Q70 74 48 75Q26 74 20 54Q17 40 22 28Z" fill="${a}"/>`;
+ else head=`<circle cx="48" cy="45" r="29" fill="${a}"/>`;
+ const eyeStyle=shape==='bigeye'?'r="6"':'r="4"';
+ const eyes=shape==='robot'?`<circle cx="36" cy="43" ${eyeStyle} fill="#fff"/><circle cx="60" cy="43" ${eyeStyle} fill="#fff"/><circle cx="36" cy="43" r="2.5" fill="#26334d"/><circle cx="60" cy="43" r="2.5" fill="#26334d"/>`:shape==='sleepy'?`<path d="M31 43q5-6 10 0M55 43q5-6 10 0" fill="none" stroke="#25324d" stroke-width="3" stroke-linecap="round"/>`:shape==='alien'?`<ellipse cx="35" cy="43" rx="7" ry="10" fill="#fff"/><ellipse cx="61" cy="43" rx="7" ry="10" fill="#fff"/><circle cx="35" cy="46" r="3.2" fill="#25324d"/><circle cx="61" cy="46" r="3.2" fill="#25324d"/>`:shape==='beard'?`<circle cx="36" cy="43" r="4" fill="#25324d"/><circle cx="60" cy="43" r="4" fill="#25324d"/>`:shape==='cat'?`<path d="M31 42q4-5 8 0M57 42q4-5 8 0" fill="none" stroke="#25324d" stroke-width="3" stroke-linecap="round"/>`:`<circle cx="36" cy="43" ${eyeStyle} fill="#25324d"/><circle cx="60" cy="43" ${eyeStyle} fill="#25324d"/>`;
+ const mouth=shape==='robot'?`<rect x="38" y="55" width="20" height="6" rx="3" fill="#25324d"/>`:shape==='sleepy'?`<path d="M42 57q6 5 12 0" fill="none" stroke="#25324d" stroke-width="3" stroke-linecap="round"/>`:`<path d="M42 57q6 7 12 0" fill="none" stroke="#25324d" stroke-width="3" stroke-linecap="round"/>`;
+ const beard=shape==='beard'?`<path d="M24 52Q48 84 72 52Q68 74 48 77Q28 74 24 52Z" fill="#333744" opacity=".9"/>`:'';
+ const nose=shape==='cat'?`<path d="M46 49l2 2 2-2" fill="#f06b7f"/>`:'';
+ return `<svg viewBox="0 0 96 96" aria-hidden="true"><ellipse cx="48" cy="88" rx="28" ry="7" fill="rgba(0,0,0,.18)"/><path d="M24 84Q26 64 48 63Q70 64 72 84" fill="${a}"/><path d="M30 72Q48 62 66 72L70 84H26Z" fill="rgba(255,255,255,.18)"/>${head}${eyes}${mouth}${nose}${beard}</svg>`;
+}
+function accessorySvg(i){
+ const idx=clampIndex(i,ACCESSORY_COUNT);
+ const items=[
+  `<path d="M18 28Q48 8 78 28L76 37Q48 24 20 37Z" fill="#2f3d63"/><rect x="46" y="10" width="4" height="10" rx="2" fill="#ffd34d"/>`,
+  `<path d="M29 24Q48 7 67 24L70 31H26Z" fill="#ffd34d"/><path d="M24 31Q48 38 72 31" fill="none" stroke="#f1aa18" stroke-width="4"/><circle cx="48" cy="14" r="5" fill="#fff0a6"/>`,
+  `<path d="M24 40h16v10H24zM56 40h16v10H56z" fill="rgba(255,255,255,.84)" stroke="#27314a" stroke-width="3"/><path d="M40 44h16" stroke="#27314a" stroke-width="3"/>`,
+  `<path d="M18 36Q13 48 21 58" fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round"/><path d="M78 36Q83 48 75 58" fill="none" stroke="#8b5cf6" stroke-width="8" stroke-linecap="round"/>`,
+  `<path d="M48 24c-8-8-18-3-15 6 2 6 9 7 15 2 6 5 13 4 15-2 3-9-7-14-15-6Z" fill="#ff5d8f"/>`,
+  `<ellipse cx="48" cy="20" rx="21" ry="7" fill="none" stroke="#ffd54a" stroke-width="4"/><path d="M37 19L42 8M48 20V6M59 19L54 8" stroke="#fff2a0" stroke-width="3" stroke-linecap="round"/>`,
+  `<path d="M34 28L62 28L70 39H26Z" fill="#ff5d5d"/><path d="M42 28L48 12L54 28Z" fill="#fff"/><circle cx="48" cy="11" r="5" fill="#ffd54a"/>`,
+  `<path d="M31 25c-7-7-16 2-9 8 6 5 12-2 12-2 0 0-3 10 4 11 8 1 7-10 7-10 0 0 1-10-6-11-4 0-8 4-8 4Z" fill="#66d17a"/><circle cx="31" cy="24" r="5" fill="#ffd34d"/>`,
+  `<path d="M22 41Q48 30 74 41" fill="#2f3445"/><path d="M27 39Q48 29 69 39L66 51Q48 46 30 51Z" fill="#2a2f40"/><path d="M30 45H66" stroke="#e53d4b" stroke-width="5" opacity=".85"/>`,
+  `<path d="M20 28Q48 11 76 28L71 37Q48 27 25 37Z" fill="#c77b37"/><path d="M29 25Q48 17 67 25" fill="none" stroke="#8d4f1f" stroke-width="4"/>`
+ ];
+ return `<svg viewBox="0 0 96 64" aria-hidden="true">${items[idx]}</svg>`;
+}
+function avatarMarkup(p,size=48){const v=normalizeProfile(p);return `<span class="avatar-inline" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${accessorySvg(v.accessory)}</span></span>`}
+function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return DEFAULT_PROFILE}}
+function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
+let avatarPickerCallback=null,avatarDraft=DEFAULT_PROFILE;
+function openAvatarPicker(initial,done,title="Kies je avatar"){
+ avatarDraft=normalizeProfile(initial);avatarPickerCallback=done;
+ const m=document.createElement("div");m.className="modal avatar-modal";m.innerHTML=`<div class="card avatar-picker"><div class="picker-head"><div><span class="eyebrow">QUIZZO AVATAR</span><h2>${esc(title)}</h2><p>Kies een poppetje en daarna een accessoire.</p></div><button class="btn w sm" data-a="closeAvatarPicker">×</button></div><div class="avatar-preview-live"><div class="avatar-preview-art" id="avatarLive">${avatarMarkup(avatarDraft,112)}</div><div><b>Zo zie je eruit</b><small>Je avatar verschijnt naast je naam in de quiz.</small></div></div><h3 class="avatar-section-title">Poppetje</h3><div class="avatar-grid">${Array.from({length:AVATAR_COUNT},(_,i)=>`<button class="avatar-option ${i===avatarDraft.avatar?"selected":""}" data-a="pickAvatar" data-kind="avatar" data-index="${i}" aria-label="Avatar ${i+1}">${avatarSvg(i)}</button>`).join("")}</div><h3 class="avatar-section-title">Accessoire</h3><div class="accessory-grid">${Array.from({length:ACCESSORY_COUNT},(_,i)=>`<button class="accessory-option ${i===avatarDraft.accessory?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="${i}" aria-label="Accessoire ${i+1}">${accessorySvg(i)}</button>`).join("")}</div><div class="avatar-actions"><button class="btn w" data-a="closeAvatarPicker">Annuleren</button><button class="btn g" data-a="avatarDone">✓ Klaar</button></div></div>`;
+ document.body.append(m);
+}
+act.pickAvatar=d=>{const idx=+d.index;if(d.kind==="avatar")avatarDraft.avatar=clampIndex(idx,AVATAR_COUNT);else avatarDraft.accessory=clampIndex(idx,ACCESSORY_COUNT);const m=document.querySelector(".avatar-picker");if(m){m.querySelectorAll(".avatar-option").forEach(x=>x.classList.toggle("selected",+x.dataset.index===avatarDraft.avatar));m.querySelectorAll(".accessory-option").forEach(x=>x.classList.toggle("selected",+x.dataset.index===avatarDraft.accessory));const live=m.querySelector("#avatarLive");if(live)live.innerHTML=avatarMarkup(avatarDraft,112)}};
+act.avatarDone=()=>{const p=normalizeProfile(avatarDraft);saveProfile(p);const cb=avatarPickerCallback;avatarPickerCallback=null;avatarDraft=p;document.querySelector(".avatar-modal")?.remove();cb?.(p)};
+act.closeAvatarPicker=()=>{avatarPickerCallback=null;document.querySelector(".avatar-modal")?.remove()};
+act.customizeAvatar=()=>{if(!G||!CODE)return;const cur=G.players?.[user.uid]||savedProfile();openAvatarPicker(cur,p=>{update(ref(db,`games/${CODE}/players/${user.uid}`),p).then(()=>toast("Avatar bijgewerkt!"),e=>toast(em(e)))},"Pas je avatar aan")};
 const now=()=>Date.now()+offset;
 onValue(ref(db,".info/serverTimeOffset"),s=>offset=s.val()||0);
 function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),3200)}
@@ -215,7 +274,7 @@ act.check=async()=>{const c=$("#code").value.trim();if(!c)return;
  joinCode=c;tabView()};
 act.enter=async()=>{const n=$("#nm").value.trim();if(!n)return toast("Vul een naam in.");
  const s=await get(ref(db,"games/"+joinCode)).catch(()=>null);if(!s?.exists()||s.val().state!="lobby")return toast("Deze quiz is niet meer beschikbaar."),home();
- await set(ref(db,`games/${joinCode}/players/${user.uid}`),{name:n,score:0}).catch(e=>toast(em(e)));run(joinCode,false)};
+ const profile=randProfile();saveProfile(profile);await set(ref(db,`games/${joinCode}/players/${user.uid}`),{name:n,score:0,...profile}).catch(e=>toast(em(e)));run(joinCode,false)};
 act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz eerst een naam.");
  Q={title:n,description:"",theme:"classic",public:true,questions:[]};QID=null;ADMIN_EDIT=null;SEL=-1;editorView()};
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
@@ -266,7 +325,7 @@ act.publicPlay=async d=>{
 };
 act.publicSolo=async d=>{
  act.closem();
- try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");const code=await createGame(qz,"solo");run(code,true)}catch(e){toast(em(e))}
+ try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");openAvatarPicker(savedProfile(),async profile=>{const code=await createGame(qz,"solo",profile);run(code,true)},"Kies je avatar")}catch(e){toast(em(e))}
 };
 act.publicHost=async d=>{
  act.closem();
@@ -362,14 +421,14 @@ act.save=async()=>{if(!valid())return;const ownerId=ADMIN_EDIT?.ownerId||user.ui
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
 const INTRO_MS=5000,DOUBLE_BONUS_INTRO_MS=2500;
 const randomCode=async()=>{let code;do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());return code};
-const createGame=async(qz,gameMode)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,theme:safeTheme(qz.theme),questions}};if(solo)data.players={[user.uid]:{name:user.displayName||user.email,score:0}};await set(ref(db,"games/"+code),data);return code};
+const createGame=async(qz,gameMode,playerProfile=null)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,theme:safeTheme(qz.theme),questions}};if(solo){const profile=normalizeProfile(playerProfile||savedProfile());data.players={[user.uid]:{name:user.displayName||user.email,score:0,...profile}};}await set(ref(db,"games/"+code),data);return code};
 act.host=async d=>{try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
 act.playhost=async d=>{act.closem();act.host(d)};
-act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"solo");run(code,true)}catch(e){toast(em(e))}};
+act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();openAvatarPicker(savedProfile(),async profile=>{const code=await createGame(qz,"solo",profile);run(code,true)},"Kies je avatar")}catch(e){toast(em(e))}};
 function run(code,host){cleanup();CODE=code;HOST=host;
  unsub=onValue(ref(db,"games/"+code),s=>{G=s.val();if(!G){if(!host&&CODE)toast("De quiz is afgesloten.");return home()}paint()});
  timer=setInterval(tick,250)}
-const QS=()=>arr(G.quiz.questions).map(q=>({...q,a:arr(q.a)})),P=()=>Object.entries(G.players||{}).map(([id,p])=>({id,...p}));
+const QS=()=>arr(G.quiz.questions).map(q=>({...q,a:arr(q.a)})),P=()=>Object.entries(G.players||{}).map(([id,p])=>({id,...p,...normalizeProfile(p)}));
 const ANS=()=>G.answers?.[G.q]||{},MAX_POINTS=1000,pointsFor=q=>q.type==="dia"?0:MAX_POINTS*(q.doublePoints?2:1),earnedPointsFor=(q,answerAt)=>{if(q.type==="dia"||!Number.isFinite(answerAt))return 0;const started=Number(G.startedAt);const total=Math.max(1,Number(q.time)*1000);const remaining=Math.max(0,Math.min(total,started+total-Number(answerAt)));const base=Math.floor(MAX_POINTS*remaining/total);return base*(q.doublePoints?2:1)},introDuration=q=>INTRO_MS+(q.type!=="dia"&&q.doublePoints?DOUBLE_BONUS_INTRO_MS:0),end=()=>G.startedAt+QS()[G.q].time*1000,introEnd=()=>G.countdownStartedAt+introDuration(QS()[G.q]),isSlide=()=>QS()[G.q]?.type==="dia",isTyping=()=>QS()[G.q]?.type==="typing";
 const normalizeAnswer=v=>String(v??"").normalize("NFKC").toLocaleLowerCase("nl-NL").replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
 const typingCorrect=(q,a)=>{const value=normalizeAnswer(a?.v??a?.value??"");return !!value&&q.a.some(x=>normalizeAnswer(x)===value)};
@@ -442,12 +501,12 @@ function animateLeaderboard(){
 function boardRows(list){
  const from=boardAnim?.from||{};
  return list.map((p,i)=>{const rank=i+1,prevRank=boardAnim?.ranks?.[p.id]||rank,delta=prevRank-rank,cls=delta>0?" rank-moved-up":"";
-  return `<div class="row lb-row${cls}"><span><b class="lb-rank">${rank}</b> ${esc(p.name)}${delta>0?`<span class="rank-up">↑ ${delta}</span>`:""}</span><span class="lb-score" data-from="${from[p.id]??p.score??0}" data-to="${p.score||0}">${from[p.id]??p.score??0}</span></div>`}).join("")}
+  return `<div class="row lb-row${cls}"><span class="lb-name"><b class="lb-rank">${rank}</b>${avatarMarkup(p,40)}<b>${esc(p.name)}</b>${delta>0?`<span class="rank-up">↑ ${delta}</span>`:""}</span><span class="lb-score" data-from="${from[p.id]??p.score??0}" data-to="${p.score||0}">${from[p.id]??p.score??0}</span></div>`}).join("")}
 
 function paint(){
  applyTheme(G?.quiz?.theme||"classic");
  if(G.state!="reveal"&&G.state!="countdown"&&G.state!="slide")busy=false;
- const key=[G.state,G.q,P().length,HOST?Object.keys(ANS()).length:ANS()[user.uid]?1:0].join();if(key==lastKey)return;
+ const avatarKey=P().map(p=>`${p.id}:${p.avatar}:${p.accessory}`).join("|");const key=[G.state,G.q,P().length,avatarKey,HOST?Object.keys(ANS()).length:ANS()[user.uid]?1:0].join();if(key==lastKey)return;
  const prevState=lastPaintState,prevScores={...scoreSnapshot},prevRanks={...rankSnapshot};
  lastKey=key;lastPaintState=G.state;
  const currentScores=currentScoreMap();
@@ -459,15 +518,15 @@ function paint(){
  const phoneSuccess=(buttonLabel="")=>`<div class="full ${me?.ok?"ok":"no"} phone-result"><div class="stage"><div class="result-icon">${me?.ok?"✓":"✕"}</div><div class="big-msg">${me?.ok?"Goed gedaan!":"Helaas!"}</div><div class="result-points">${me?.ok?`+${me?.earnedPoints??0} punten`:"Geen punten"}</div><p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
  let h="";
  if(HOST&&!SOLO){
-  if(G.state=="lobby")h=`<div class="stage"><h2>${esc(G.quiz.title)}</h2><div>Ga naar <b>Quiz joinen</b> en vul de code in</div><div class="code">${CODE}</div><div><b>${P().length}</b> spelers</div><div class="chips">${P().map(p=>`<span>${esc(p.name)}</span>`).join("")||"Wachten op spelers..."}</div><button class="btn g" data-a="start" ${P().length?"":"disabled"}>Quiz starten</button> <button class="btn w" data-a="close">Annuleren</button></div>`;
+  if(G.state=="lobby")h=`<div class="stage"><h2>${esc(G.quiz.title)}</h2><div>Ga naar <b>Quiz joinen</b> en vul de code in</div><div class="code">${CODE}</div><div><b>${P().length}</b> spelers</div><div class="chips">${P().map(p=>`<span class="player-chip">${avatarMarkup(p,34)}<b>${esc(p.name)}</b></span>`).join("")||"Wachten op spelers..."}</div><button class="btn g" data-a="start" ${P().length?"":"disabled"}>Quiz starten</button> <button class="btn w" data-a="close">Annuleren</button></div>`;
   else if(G.state=="countdown")h=countdown(true);
   else if(G.state=="slide")h=slideView();
   else if(G.state=="question")h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="hbar"><div class="tcirc" id="tm"></div><div class="cnt">${Object.keys(ANS()).length}<small>antwoorden</small></div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles()}</div></div>`;
-  else if(G.state=="reveal"){const ps=P();h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles("",true)}</div><div class="two"><div><h3>Goed ✓</h3>${ps.filter(p=>p.ok).map(p=>esc(p.name)).join(", ")||"Niemand"}</div><div><h3>Fout ✗</h3>${ps.filter(p=>!p.ok).map(p=>esc(p.name)).join(", ")||"Niemand"}</div></div><button class="btn b" data-a="next">Volgende</button></div>`}
+  else if(G.state=="reveal"){const ps=P();h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles("",true)}</div><div class="two"><div><h3>Goed ✓</h3>${ps.filter(p=>p.ok).map(p=>`${avatarMarkup(p,30)} ${esc(p.name)}`).join(" · ")||"Niemand"}</div><div><h3>Fout ✗</h3>${ps.filter(p=>!p.ok).map(p=>`${avatarMarkup(p,30)} ${esc(p.name)}`).join(" · ")||"Niemand"}</div></div><button class="btn b" data-a="next">Volgende</button></div>`}
   else if(G.state=="board")h=`<div class="stage leaderboard"><h1>Tussenstand</h1>${boardRows(sorted().slice(0,5))}<button class="btn b" data-a="next">Volgende vraag</button></div>`;
-  else{const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn">${esc(t[i].name)}<small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Quiz afsluiten</button></div>`}
+  else{const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn">${avatarMarkup(t[i],72)}<b>${esc(t[i].name)}</b><small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Quiz afsluiten</button></div>`}
  }else{
-  if(G.state=="lobby")h=`<div class="center"><div class="big-msg">Je zit erin, ${esc(me?.name)}!</div><p>Wachten tot de host het spel start</p></div>`;
+  if(G.state=="lobby")h=`<div class="center"><div class="game-avatar-large">${avatarMarkup(me,104)}</div><div class="big-msg">Je zit erin, ${esc(me?.name)}!</div><p>Wachten tot de host het spel start</p><button class="btn w" data-a="customizeAvatar">🎨 Avatar aanpassen</button></div>`;
   else if(G.state=="countdown")h=countdown(true);
   else if(G.state=="slide")h=slideView();
   else if(G.state=="question")h=ANS()[user.uid]?`<div class="center"><div class="big-msg">Antwoord verstuurd</div>Wachten op de uitslag...</div>`:q.type==="typing"?`<div class="stage answer-screen typing-player"><div class="typing-question"><div class="typing-kicker">⌨️ TYPEN</div><h1>${esc(q.text)}</h1><p>Typ het antwoord zo goed mogelijk.</p></div><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Typ je antwoord":"Typ je antwoord"}</div></div><div class="tbar"><div id="tb"></div></div><form id="typingForm" class="typing-form"><input id="typingInput" autocomplete="off" maxlength="160" placeholder="Typ hier je antwoord..." autofocus><button class="btn g typing-submit" type="submit">Antwoord versturen</button></form><p class="typing-note">Hoofdletters en leestekens maken niet uit.</p></div>`:`<div class="stage answer-screen"><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Kies je antwoord":"Kijk naar de host zijn scherm"}</div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${q.a.map((t,i)=>`<button class="ans ${cols(q)[i]}" data-a="ans" data-i="${i}"><span>${syms(q)[i]}</span><em>${esc(t)}</em></button>`).join("")}</div></div>`;
