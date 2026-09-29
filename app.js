@@ -150,6 +150,7 @@ function accessorySvg(i){
 function avatarMarkup(p,size=48){const v=normalizeProfile(p);return `<span class="avatar-inline" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${accessorySvg(v.accessory)}</span></span>`}
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return DEFAULT_PROFILE}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
+const act={};
 let avatarPickerCallback=null,avatarDraft=DEFAULT_PROFILE;
 function openAvatarPicker(initial,done,title="Kies je avatar"){
  avatarDraft=normalizeProfile(initial);avatarPickerCallback=done;
@@ -165,7 +166,6 @@ onValue(ref(db,".info/serverTimeOffset"),s=>offset=s.val()||0);
 function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),3200)}
 const errs={"auth/email-already-in-use":"Dit e-mailadres is al in gebruik.","auth/invalid-credential":"E-mail of wachtwoord klopt niet.","auth/weak-password":"Wachtwoord moet minstens 6 tekens zijn.","auth/invalid-email":"Dit e-mailadres is ongeldig.","PERMISSION_DENIED":"Geen toegang: controleer de database-regels."};
 const em=e=>errs[e.code]||errs[(e.message||"").match(/PERMISSION_DENIED/)?.[0]]||e.code||e.message;
-const act={};
 document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(t&&!t.disabled){act[t.dataset.a]?.(t.dataset,t);if(t.dataset.a!=="menu"&&!t.closest("#menu"))$("#menu")?.remove();return;}if(!e.target.closest('[data-a="menu"]')&&!e.target.closest("#menu"))$("#menu")?.remove();});
 function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey="";scoreSnapshot={};rankSnapshot={};boardAnim=null;lastPaintState="";applyTheme("classic")}
 document.addEventListener("keydown",e=>{if((e.key!=="Enter"&&e.key!==" ")||e.target.closest("button,input,textarea,a"))return;const card=e.target.closest(".public-qcard[data-a=\"publicView\"]");if(card){e.preventDefault();act.publicView(card.dataset)}});
