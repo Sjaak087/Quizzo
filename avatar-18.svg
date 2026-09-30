@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".24" stop-color="#ffffff" stop-opacity=".1"/><stop offset="1" stop-color="#000000" stop-opacity=".28"/></linearGradient>
+<linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".75"/><stop offset=".5" stop-color="#ffffff" stop-opacity=".18"/><stop offset="1" stop-color="#000000" stop-opacity=".25"/></linearGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#09051d" flood-opacity=".35"/></filter>
+<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+
+</defs><g filter="url(#shadow)">
+        <ellipse cx="256" cy="441" rx="128" ry="24" fill="#2c144f" opacity=".28"/>
+        <path d="M128 360 Q94 395 122 424 Q149 448 176 415 Q152 453 188 466 Q221 474 226 432 Q213 476 252 478 Q278 476 274 432 Q283 476 316 466 Q352 453 328 415 Q357 448 384 424 Q412 395 378 360 Q406 415 356 435 Q334 441 320 391 Q314 355 288 334 Q256 318 224 334 Q198 355 192 391 Q178 441 156 435 Q106 415 128 360Z" fill="#b35de8" stroke="#5d2a95" stroke-width="10"/>
+        <ellipse cx="256" cy="216" rx="124" ry="126" fill="#c16af4" stroke="#5d2a95" stroke-width="10"/>
+        <ellipse cx="214" cy="207" rx="33" ry="46" fill="#fff"/><ellipse cx="298" cy="207" rx="33" ry="46" fill="#fff"/>
+        <ellipse cx="220" cy="213" rx="16" ry="27" fill="#1b2346"/><ellipse cx="292" cy="213" rx="16" ry="27" fill="#1b2346"/>
+        <circle cx="226" cy="203" r="7" fill="#78efff"/><circle cx="298" cy="203" r="7" fill="#78efff"/>
+        <path d="M226 282 Q256 305 286 282" fill="none" stroke="#6a2f91" stroke-width="10" stroke-linecap="round"/>
+        <circle cx="176" cy="350" r="10" fill="#eaa5ff"/><circle cx="336" cy="350" r="10" fill="#eaa5ff"/>
+        </g></svg>

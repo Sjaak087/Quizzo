@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".9"/><stop offset=".24" stop-color="#ffffff" stop-opacity=".1"/><stop offset="1" stop-color="#000000" stop-opacity=".28"/></linearGradient>
+<linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".75"/><stop offset=".5" stop-color="#ffffff" stop-opacity=".18"/><stop offset="1" stop-color="#000000" stop-opacity=".25"/></linearGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#09051d" flood-opacity=".35"/></filter>
+<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5"/></filter>
+
+</defs><g filter="url(#shadow)">
+        <path d="M173 238 Q105 176 126 72 Q176 103 207 161 Q198 205 173 238Z" fill="#f05a3b" stroke="#7f2631" stroke-width="9"/>
+        <path d="M339 238 Q407 176 386 72 Q336 103 305 161 Q314 205 339 238Z" fill="#f05a3b" stroke="#7f2631" stroke-width="9"/>
+        <path d="M145 92 Q165 120 172 155 M367 92 Q347 120 340 155" stroke="#ffd16b" stroke-width="9" fill="none" stroke-linecap="round"/>
+        <path d="M190 205 Q256 238 322 205" fill="none" stroke="#cb3a32" stroke-width="13" stroke-linecap="round"/>
+        </g></svg>

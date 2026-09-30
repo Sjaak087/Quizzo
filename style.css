@@ -716,3 +716,66 @@ body.has-theme-scene #quizzo-theme-scene{
 .avatar-inline.mood-sad .avatar-main-img{filter:drop-shadow(0 4px 4px rgba(30,25,50,.18)) saturate(.78) brightness(.96)}
 .avatar-inline.mood-rankup .avatar-main-img{filter:drop-shadow(0 8px 10px rgba(103,54,220,.28)) saturate(1.08)}
 .avatar-inline.mood-overtaken .avatar-main-img{filter:drop-shadow(0 4px 5px rgba(30,25,50,.18)) saturate(.88)}
+
+/* ===== v41: normalized 20-avatar pack + properly anchored accessories ===== */
+.avatar-inline .avatar-main-img{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center bottom!important;
+}
+.avatar-inline .avatar-accessory-img{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center!important;
+}
+.avatar-inline .avatar-accessory-img.accessory-0,
+.avatar-inline .avatar-accessory-img.accessory-1,
+.avatar-inline .avatar-accessory-img.accessory-2,
+.avatar-inline .avatar-accessory-img.accessory-3,
+.avatar-inline .avatar-accessory-img.accessory-4,
+.avatar-inline .avatar-accessory-img.accessory-5,
+.avatar-inline .avatar-accessory-img.accessory-6,
+.avatar-inline .avatar-accessory-img.accessory-7,
+.avatar-inline .avatar-accessory-img.accessory-8,
+.avatar-inline .avatar-accessory-img.accessory-9,
+.avatar-inline .avatar-accessory-img.accessory-10,
+.avatar-inline .avatar-accessory-img.accessory-11,
+.avatar-inline .avatar-accessory-img.accessory-12,
+.avatar-inline .avatar-accessory-img.accessory-13,
+.avatar-inline .avatar-accessory-img.accessory-14,
+.avatar-inline .avatar-accessory-img.accessory-15,
+.avatar-inline .avatar-accessory-img.accessory-16,
+.avatar-inline .avatar-accessory-img.accessory-17,
+.avatar-inline .avatar-accessory-img.accessory-18,
+.avatar-inline .avatar-accessory-img.accessory-19{
+  left:0!important;top:0!important;right:auto!important;bottom:auto!important;
+}
+.accessory-option-art .avatar-accessory-img{
+  position:relative!important;inset:auto!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center!important;display:block!important;
+}
+.avatar-option-art .avatar-main-img{
+  position:relative!important;inset:auto!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:center bottom!important;display:block!important;
+}
+.avatar-new-tag{
+  display:inline-flex!important;align-items:center;justify-content:center;
+  margin-left:5px;padding:2px 6px;border-radius:999px;
+  font-size:8px!important;font-weight:1000!important;letter-spacing:.06em;
+  color:#fff;background:linear-gradient(135deg,#ef3cff,#6d35d1);
+  vertical-align:2px;box-shadow:0 2px 6px rgba(84,35,170,.25);
+}
+.avatar-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:22px;height:22px;padding:0 7px;margin-left:6px;
+  border-radius:999px;background:rgba(109,53,209,.1);color:#5a31b0;
+  font-size:11px;font-weight:950;vertical-align:2px;
+}
+.avatar-option,.accessory-option{overflow:visible}
+.avatar-option-art,.accessory-option-art{overflow:visible}
+@media(max-width:800px){
+  .avatar-option-art{width:88px;height:88px}
+  .accessory-option-art{width:82px;height:82px}
+}
+@media(max-width:430px){
+  .avatar-option-art{width:76px;height:76px}
+  .accessory-option-art{width:72px;height:72px}
+}
