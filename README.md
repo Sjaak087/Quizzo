@@ -1,7 +1,3 @@
-Quizzo v43 – bugfix
+Quizzo v44 patch
 
-Fixes in app.js:
-- declares user before avatar actions use it
-- declares offset before the Firebase server-time listener uses it
-
-Replace only app.js. Keep your existing firebase.js, index.html, style.css, avatars.js, avatars/, and themes/.
+Fix: `unsub` is now declared before cleanup() uses it. Replace only `app.js`; keep your existing firebase.js, style.css, avatars.js, themes, and index.html.

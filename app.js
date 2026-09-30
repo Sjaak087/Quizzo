@@ -130,6 +130,7 @@ function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getI
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
 let user=null;
 let offset=0;
+let unsub=null;
 const act={};
 let avatarPickerCallback=null,avatarDraft=DEFAULT_PROFILE;
 function openAvatarPicker(initial,done,title="Kies je avatar"){
