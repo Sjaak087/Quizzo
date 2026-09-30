@@ -128,6 +128,8 @@ function avatarReaction(emotion){
 function avatarMarkup(p,size=48,emotion=''){const v=normalizeProfile(p);const e=emotion||'';return `<span class="avatar-inline ${e?`mood-${e}`:''}" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${accessorySvg(v.accessory,v.avatar)}</span>${avatarReaction(e)}</span>`}
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return normalizeProfile(DEFAULT_PROFILE)}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
+let user=null;
+let offset=0;
 const act={};
 let avatarPickerCallback=null,avatarDraft=DEFAULT_PROFILE;
 function openAvatarPicker(initial,done,title="Kies je avatar"){

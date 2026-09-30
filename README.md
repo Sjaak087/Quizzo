@@ -1,13 +1,7 @@
-Quizzo v41 — avatar pack
+Quizzo v43 – bugfix
 
-Deze release voegt 10 nieuwe 3D-stijl avatars en 10 nieuwe accessoires toe.
-De avatar- en accessoiredata staan ook volledig ingebouwd in avatars.js, zodat de browser niet afhankelijk is van losse image-paths.
+Fixes in app.js:
+- declares user before avatar actions use it
+- declares offset before the Firebase server-time listener uses it
 
-Vervang in je repository:
-- index.html
-- app.js
-- style.css
-- avatars.js
-- map avatars/ (optionele bronbestanden/fallback)
-
-Laat themes/ en firebase.js staan.
+Replace only app.js. Keep your existing firebase.js, index.html, style.css, avatars.js, avatars/, and themes/.
