@@ -128,17 +128,6 @@ function avatarReaction(emotion){
 function avatarMarkup(p,size=48,emotion=''){const v=normalizeProfile(p);const e=emotion||'';return `<span class="avatar-inline ${e?`mood-${e}`:''}" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${accessorySvg(v.accessory,v.avatar)}</span>${avatarReaction(e)}</span>`}
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return normalizeProfile(DEFAULT_PROFILE)}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
-let avatarPickerCallback=null,avatarDraft=normalizeProfile(DEFAULT_PROFILE);
-function openAvatarPicker(initial,done,title="Kies je avatar"){
- avatarDraft=normalizeProfile(initial);avatarPickerCallback=done;
- const m=document.createElement("div");m.className="modal avatar-modal";
- m.innerHTML=`<div class="card avatar-picker"><div class="picker-head"><div><span class="eyebrow">QUIZZO AVATAR</span><h2>${esc(title)}</h2><p>Kies een 3D-poppetje en maak hem compleet met een accessoire.</p></div><button class="btn w sm" data-a="closeAvatarPicker">×</button></div>
- <div class="avatar-preview-live"><div class="avatar-preview-art" id="avatarLive">${avatarMarkup(avatarDraft,112)}</div><div><span class="eyebrow">JOUW LOOK</span><b id="avatarLiveName">${esc(AVATAR_NAMES[avatarDraft.avatar]||"Avatar")} · ${esc(ACCESSORY_NAMES[avatarDraft.accessory]||"Accessoire")}</b><small>Je avatar verschijnt naast je naam in de quiz, op het leaderboard en op het podium.</small></div></div>
- <h3 class="avatar-section-title">Poppetje <span class="avatar-count">${AVATAR_COUNT}</span></h3><div class="avatar-grid">${Array.from({length:AVATAR_COUNT},(_,i)=>{const a=QUIZZO_AVATAR_CATALOG.avatars[i]||{};return `<button class="avatar-option ${i===avatarDraft.avatar?"selected":""}" data-a="pickAvatar" data-kind="avatar" data-index="${i}" aria-label="${esc(a.name||`Avatar ${i+1}`)}"><span class="avatar-option-art">${avatarSvg(i)}</span><span>${esc(a.name||`Avatar ${i+1}`)}${a.new?`<small class="avatar-new-tag">NIEUW</small>`:""}</span></button>`}).join("")}</div>
- <h3 class="avatar-section-title">Accessoire <span class="avatar-count">${ACCESSORY_COUNT}</span></h3><div class="accessory-grid">${Array.from({length:ACCESSORY_COUNT},(_,i)=>{const a=QUIZZO_AVATAR_CATALOG.accessories[i]||{};return `<button class="accessory-option ${i===avatarDraft.accessory?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="${i}" aria-label="${esc(a.name||`Accessoire ${i+1}`)}"><span class="accessory-option-art">${accessorySvg(i,avatarDraft.avatar,true)}</span><span>${esc(a.name||`Accessoire ${i+1}`)}${a.new?`<small class="avatar-new-tag">NIEUW</small>`:""}</span></button>`}).join("")}</div>
- <div class="avatar-actions"><button class="btn w" data-a="closeAvatarPicker">Annuleren</button><button class="btn g" data-a="avatarDone">✓ Klaar</button></div></div>`;
- document.body.append(m);
-}
 const act={};
 let avatarPickerCallback=null,avatarDraft=DEFAULT_PROFILE;
 function openAvatarPicker(initial,done,title="Kies je avatar"){
