@@ -128,7 +128,24 @@ function avatarReaction(emotion){
 function avatarMarkup(p,size=48,emotion=''){const v=normalizeProfile(p);const e=emotion||'';return `<span class="avatar-inline ${e?`mood-${e}`:''}" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${accessorySvg(v.accessory,v.avatar)}</span>${avatarReaction(e)}</span>`}
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return normalizeProfile(DEFAULT_PROFILE)}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
+// Centrale applicatiestaat: alles staat hier expliciet zodat cleanup/home veilig kan draaien.
 let user=null;
+let G=null;
+let CODE=null;
+let HOST=false;
+let Q=null;
+let QID=null;
+let ADMIN_EDIT=null;
+let SEL=-1;
+let mode="login";
+let tab="join";
+let joinCode=null;
+let busy=false;
+let lastKey="";
+let scoreSnapshot={};
+let rankSnapshot={};
+let boardAnim=null;
+let lastPaintState="";
 let offset=0;
 let unsub=null;
 let timer=null;
@@ -149,7 +166,13 @@ function toast(m){const t=document.createElement("div");t.className="toast";t.te
 const errs={"auth/email-already-in-use":"Dit e-mailadres is al in gebruik.","auth/invalid-credential":"E-mail of wachtwoord klopt niet.","auth/weak-password":"Wachtwoord moet minstens 6 tekens zijn.","auth/invalid-email":"Dit e-mailadres is ongeldig.","PERMISSION_DENIED":"Geen toegang: controleer de database-regels."};
 const em=e=>errs[e.code]||errs[(e.message||"").match(/PERMISSION_DENIED/)?.[0]]||e.code||e.message;
 document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(t&&!t.disabled){act[t.dataset.a]?.(t.dataset,t);if(t.dataset.a!=="menu"&&!t.closest("#menu"))$("#menu")?.remove();return;}if(!e.target.closest('[data-a="menu"]')&&!e.target.closest("#menu"))$("#menu")?.remove();});
-function cleanup(){unsub?.();unsub=null;clearInterval(timer);G=null;CODE=null;busy=false;lastKey="";scoreSnapshot={};rankSnapshot={};boardAnim=null;lastPaintState="";applyTheme("classic")}
+function cleanup(){
+  try{if(typeof unsub==="function")unsub()}catch(e){console.warn("Quizzo listener cleanup",e)}
+  unsub=null;
+  if(timer!==null){clearInterval(timer);timer=null}
+  G=null;CODE=null;HOST=false;busy=false;lastKey="";scoreSnapshot={};rankSnapshot={};boardAnim=null;lastPaintState="";
+  try{applyTheme("classic")}catch(e){console.warn("Quizzo theme cleanup",e)}
+}
 document.addEventListener("keydown",e=>{if((e.key!=="Enter"&&e.key!==" ")||e.target.closest("button,input,textarea,a"))return;const card=e.target.closest(".public-qcard[data-a=\"publicView\"]");if(card){e.preventDefault();act.publicView(card.dataset)}});
 
 /* ---------- Accounts (opgeslagen in de Realtime Database, zonder Firebase Authentication) ---------- */
