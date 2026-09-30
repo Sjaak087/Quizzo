@@ -131,6 +131,7 @@ function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(norm
 let user=null;
 let offset=0;
 let unsub=null;
+let timer=null;
 const act={};
 let avatarPickerCallback=null,avatarDraft=DEFAULT_PROFILE;
 function openAvatarPicker(initial,done,title="Kies je avatar"){
