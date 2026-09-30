@@ -102,130 +102,34 @@ let user=null,tab="join",mode="login",joinCode=null,offset=0,unsub=null,timer=nu
 let ADMIN_EDIT=null;
 let scoreSnapshot={},rankSnapshot={},boardAnim=null,lastPaintState="";
 const AVATAR_COUNT=10, ACCESSORY_COUNT=10;
-const AVATAR_NAMES=['Vos','Panda','Pinguïn','Kat','Hond','Konijn','Leeuw','Kikker','Koala','Sneeuwpop'];
-const ACCESSORY_NAMES=['Kroon','Muts','Bril','Koptelefoon','Strikje','Sjaal','Toverhoed','Feesthoed','Bloem','Piratenhoed'];
+const AVATAR_NAMES=['Hond','Pinguïn','Dinosaurus','Eenhoorn','Panda','Vos','Haai','Uil','Giraffe','Sneeuwpop'];
+const ACCESSORY_NAMES=['Kroon','Muts','Zonnebril','Koptelefoon','Strik','Sjaal','Cowboyhoed','Feesthoed','Bloemenkrans','Piratenhoed'];
 const DEFAULT_PROFILE={avatar:0,accessory:0};
 const clampIndex=(v,max)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n<max?n:0};
 const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:clampIndex(p?.accessory,ACCESSORY_COUNT)});
 const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:Math.floor(Math.random()*ACCESSORY_COUNT)});
 function avatarSvg(i){
  const idx=clampIndex(i,AVATAR_COUNT);
- const types=['fox','panda','penguin','cat','dog','bunny','lion','frog','koala','snowman'];
- const t=types[idx]||'fox';
- const palette={
-  fox:['#ff8b3d','#f5b36b','#fff4e6','#2b2340'],
-  panda:['#f4f7fb','#20263a','#fff','#2b2340'],
-  penguin:['#263d6a','#4b78b8','#f8fbff','#2b2340'],
-  cat:['#d887ff','#f4b7ff','#fff5ff','#2b2340'],
-  dog:['#c88b52','#f0be82','#fff7e9','#2b2340'],
-  bunny:['#f2b8cf','#f8dbe7','#fff8fb','#2b2340'],
-  lion:['#e7a52d','#f2c767','#fff2c8','#2b2340'],
-  frog:['#55c76a','#8ee48e','#effff0','#17382b'],
-  koala:['#9da5b7','#c5cbd5','#f7f9ff','#2b2340'],
-  snowman:['#eef8ff','#ffffff','#ffffff','#2b2340']
- }[t];
- const [main,accent,light,ink]=palette;
- const uid=`av${idx}`;
- let head='',ears='',markings='',body='',eyes='',mouth='',extra='';
- const defs=`<defs>
-  <linearGradient id="${uid}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light}"/><stop offset=".42" stop-color="${main}"/><stop offset="1" stop-color="${accent}"/></linearGradient>
-  <linearGradient id="${uid}b" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${main}"/><stop offset="1" stop-color="${accent}"/></linearGradient>
-  <filter id="${uid}s" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#131329" flood-opacity=".22"/></filter>
-  <radialGradient id="${uid}h" cx="35%" cy="25%"><stop stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
- </defs>`;
- body=`<ellipse cx="48" cy="88" rx="28" ry="6" fill="rgba(0,0,0,.16)"/>
- <g filter="url(#${uid}s)"><path d="M19 84Q23 64 48 63Q73 64 77 84Z" fill="url(#${uid}b)"/><path d="M28 75Q48 67 68 75" fill="none" stroke="#fff" stroke-opacity=".22" stroke-width="4" stroke-linecap="round"/></g>`;
- if(t==='snowman'){
-   body=`<ellipse cx="48" cy="91" rx="26" ry="4.5" fill="rgba(0,0,0,.14)"/><g filter="url(#${uid}s)"><circle cx="48" cy="64" r="23" fill="#fff" stroke="#dbe9f7" stroke-width="2"/><circle cx="48" cy="39" r="20" fill="#fff" stroke="#dbe9f7" stroke-width="2"/><circle cx="48" cy="17" r="12" fill="#fff" stroke="#dbe9f7" stroke-width="2"/></g>`;
-   ears=`<path d="M41 15L34 7" stroke="#d9e9f8" stroke-width="5" stroke-linecap="round"/><path d="M55 15L62 7" stroke="#d9e9f8" stroke-width="5" stroke-linecap="round"/>`;
-   head=`<g filter="url(#${uid}s)"><circle cx="48" cy="17" r="12" fill="#fff" stroke="#dbe9f7" stroke-width="2"/></g>`;
-   eyes=`<circle cx="43" cy="14" r="2.2" fill="${ink}"/><circle cx="53" cy="14" r="2.2" fill="${ink}"/>`;
-   mouth=`<circle cx="48" cy="20" r="1.7" fill="${ink}"/><circle cx="44" cy="22" r="1.4" fill="${ink}"/><circle cx="52" cy="22" r="1.4" fill="${ink}"/>`;
-   markings=`<path d="M48 16l11 3-10 4z" fill="#f39a37"/>`;
-   extra=`<circle cx="48" cy="51" r="2.5" fill="#27384e"/><circle cx="48" cy="61" r="2.5" fill="#27384e"/>`;
- }else if(t==='fox'){
-   ears=`<path d="M21 34L17 10L37 24Z" fill="${main}"/><path d="M75 34L79 10L59 24Z" fill="${main}"/><path d="M22 26L20 15L30 23Z" fill="#fff0f4"/><path d="M74 26L76 15L66 23Z" fill="#fff0f4"/>`;
-   head=`<path d="M24 34Q29 16 48 15Q67 16 72 34L70 60Q65 74 48 76Q31 74 26 60Z" fill="url(#${uid}g)" filter="url(#${uid}s)"/>`;
-   markings=`<path d="M25 51Q36 64 48 67Q60 64 71 51L68 63Q59 73 48 74Q37 73 28 63Z" fill="#fff7eb" opacity=".95"/>`;
-   eyes=`<ellipse cx="37" cy="43" rx="5" ry="6" fill="#fff"/><ellipse cx="59" cy="43" rx="5" ry="6" fill="#fff"/><circle cx="37" cy="44" r="2.2" fill="${ink}"/><circle cx="59" cy="44" r="2.2" fill="${ink}"/>`;
-   mouth=`<path d="M42 56Q48 61 54 56" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
-   extra=`<path d="M44 50Q48 53 52 50" fill="none" stroke="#d96a5f" stroke-width="2" stroke-linecap="round"/>`;
- }else if(t==='panda'){
-   ears=`<circle cx="28" cy="22" r="10" fill="#20263a"/><circle cx="68" cy="22" r="10" fill="#20263a"/>`;
-   head=`<circle cx="48" cy="45" r="30" fill="#fff" filter="url(#${uid}s)"/>`;
-   markings=`<ellipse cx="36" cy="43" rx="9" ry="13" transform="rotate(22 36 43)" fill="#20263a"/><ellipse cx="60" cy="43" rx="9" ry="13" transform="rotate(-22 60 43)" fill="#20263a"/>`;
-   eyes=`<circle cx="37" cy="44" r="3" fill="#fff"/><circle cx="59" cy="44" r="3" fill="#fff"/><circle cx="37" cy="44" r="1.8" fill="${ink}"/><circle cx="59" cy="44" r="1.8" fill="${ink}"/>`;
-   mouth=`<path d="M42 57Q48 61 54 57" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
- }else if(t==='penguin'){
-   ears='';
-   head=`<path d="M21 51Q19 18 48 13Q77 18 75 51Q71 70 48 75Q25 70 21 51Z" fill="url(#${uid}g)" filter="url(#${uid}s)"/>`;
-   markings=`<ellipse cx="48" cy="51" rx="19" ry="21" fill="#f7fbff"/><path d="M30 73Q18 70 13 56Q11 50 17 49Q24 52 29 62" fill="${accent}"/><path d="M66 62Q71 52 79 49Q85 50 83 56Q78 70 66 73" fill="${accent}"/>`;
-   eyes=`<circle cx="39" cy="38" r="4" fill="#fff"/><circle cx="57" cy="38" r="4" fill="#fff"/><circle cx="39" cy="38" r="2" fill="${ink}"/><circle cx="57" cy="38" r="2" fill="${ink}"/>`;
-   markings+=`<path d="M41 46L48 52L55 46L48 58Z" fill="#f4a63d"/>`;
-   mouth=`<path d="M44 59Q48 62 52 59" fill="none" stroke="${ink}" stroke-width="2.5" stroke-linecap="round"/>`;
- }else if(t==='cat'){
-   ears=`<path d="M22 34L19 10L39 24L22 34Z" fill="${main}"/><path d="M74 34L77 10L57 24L74 34Z" fill="${main}"/><path d="M24 27L22 16L32 23Z" fill="#f2a0cf"/><path d="M72 27L74 16L64 23Z" fill="#f2a0cf"/>`;
-   head=`<path d="M23 34Q29 16 48 15Q67 16 73 34L71 59Q66 74 48 76Q30 74 25 59Z" fill="url(#${uid}g)" filter="url(#${uid}s)"/>`;
-   markings=`<path d="M37 22L41 31M55 22L51 31" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".35"/>`;
-   eyes=`<path d="M31 43Q37 37 43 43Q37 49 31 43ZM53 43Q59 37 65 43Q59 49 53 43Z" fill="#fff"/><circle cx="37" cy="43" r="2" fill="${ink}"/><circle cx="59" cy="43" r="2" fill="${ink}"/>`;
-   mouth=`<path d="M42 56Q48 61 54 56" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
-   extra=`<path d="M34 52L17 49M34 56L15 56M62 52L79 49M62 56L81 56" stroke="${ink}" stroke-width="2" stroke-linecap="round" opacity=".7"/>`;
- }else if(t==='dog'){
-   ears=`<path d="M27 28Q13 29 17 49Q20 62 31 60L35 33Z" fill="${accent}"/><path d="M69 28Q83 29 79 49Q76 62 65 60L61 33Z" fill="${accent}"/>`;
-   head=`<path d="M24 35Q29 15 48 15Q67 15 72 35L70 60Q66 74 48 76Q30 74 26 60Z" fill="url(#${uid}g)" filter="url(#${uid}s)"/>`;
-   markings=`<ellipse cx="39" cy="50" rx="9" ry="8" fill="#8d5f42" opacity=".5"/>`;
-   eyes=`<circle cx="37" cy="43" r="5" fill="#fff"/><circle cx="59" cy="43" r="5" fill="#fff"/><circle cx="37" cy="44" r="2.2" fill="${ink}"/><circle cx="59" cy="44" r="2.2" fill="${ink}"/>`;
-   mouth=`<path d="M41 55Q48 62 55 55" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/><path d="M44 60Q48 65 52 60" fill="#f48a9f"/>`;
- }else if(t==='bunny'){
-   ears=`<path d="M31 31Q20 20 25 1Q28 -4 34 0Q45 13 43 31Z" fill="${main}"/><path d="M65 31Q76 20 71 1Q68 -4 62 0Q51 13 53 31Z" fill="${main}"/><path d="M33 27Q27 17 30 8Q39 17 39 28Z" fill="#ef8fbd"/><path d="M63 27Q69 17 66 8Q57 17 57 28Z" fill="#ef8fbd"/>`;
-   head=`<circle cx="48" cy="46" r="29" fill="url(#${uid}g)" filter="url(#${uid}s)"/>`;
-   eyes=`<circle cx="37" cy="43" r="4.5" fill="#fff"/><circle cx="59" cy="43" r="4.5" fill="#fff"/><circle cx="37" cy="43" r="2" fill="${ink}"/><circle cx="59" cy="43" r="2" fill="${ink}"/>`;
-   markings=`<circle cx="48" cy="49" r="2.8" fill="#e789ab"/><path d="M48 52Q43 58 38 55M48 52Q53 58 58 55" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`;
-   mouth='';
- }else if(t==='lion'){
-   ears=`<circle cx="29" cy="31" r="10" fill="#d89120"/><circle cx="67" cy="31" r="10" fill="#d89120"/>`;
-   head=`<path d="M20 48Q19 18 48 14Q77 18 76 48Q75 73 48 78Q21 73 20 48Z" fill="#d98b25" filter="url(#${uid}s)"/><circle cx="48" cy="47" r="25" fill="url(#${uid}g)"/>`;
-   markings=`<path d="M29 29Q48 19 67 29" fill="none" stroke="#f6cf67" stroke-width="6" stroke-linecap="round" opacity=".5"/>`;
-   eyes=`<circle cx="37" cy="43" r="4.5" fill="#fff"/><circle cx="59" cy="43" r="4.5" fill="#fff"/><circle cx="37" cy="44" r="2" fill="${ink}"/><circle cx="59" cy="44" r="2" fill="${ink}"/>`;
-   mouth=`<path d="M42 57Q48 62 54 57" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
- }else if(t==='frog'){
-   ears=`<circle cx="28" cy="23" r="14" fill="${main}"/><circle cx="68" cy="23" r="14" fill="${main}"/>`;
-   head=`<ellipse cx="48" cy="47" rx="31" ry="28" fill="url(#${uid}g)" filter="url(#${uid}s)"/>`;
-   markings=`<ellipse cx="35" cy="23" rx="6" ry="7" fill="#fff"/><ellipse cx="61" cy="23" rx="6" ry="7" fill="#fff"/>`;
-   eyes=`<circle cx="35" cy="23" r="2.5" fill="${ink}"/><circle cx="61" cy="23" r="2.5" fill="${ink}"/>`;
-   mouth=`<path d="M31 54Q48 68 65 54" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
-   extra=`<circle cx="28" cy="47" r="3" fill="#44a95a" opacity=".6"/><circle cx="68" cy="47" r="3" fill="#44a95a" opacity=".6"/>`;
- }else if(t==='koala'){
-   ears=`<circle cx="24" cy="39" r="13" fill="${main}"/><circle cx="72" cy="39" r="13" fill="${main}"/>`;
-   head=`<circle cx="48" cy="47" r="29" fill="url(#${uid}g)" filter="url(#${uid}s)"/>`;
-   markings=`<ellipse cx="48" cy="53" rx="11" ry="14" fill="#7b8496" opacity=".55"/>`;
-   eyes=`<circle cx="37" cy="43" r="5" fill="#fff"/><circle cx="59" cy="43" r="5" fill="#fff"/><circle cx="37" cy="43" r="2" fill="${ink}"/><circle cx="59" cy="43" r="2" fill="${ink}"/>`;
-   mouth=`<path d="M42 60Q48 64 54 60" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`;
-   extra=`<ellipse cx="48" cy="53" rx="6" ry="7" fill="#454c5c"/>`;
- }
- return `<svg viewBox="0 0 96 96" aria-hidden="true" role="img">${defs}${body}${ears}${head}${markings}${eyes}${mouth}${extra}<ellipse cx="33" cy="27" rx="18" ry="12" fill="url(#${uid}h)" opacity=".5" pointer-events="none"/></svg>`;
+ const url=new URL(`./avatars/avatar-${idx}.png`,document.baseURI).href;
+ return `<img class="avatar-main-img" src="${url}" alt="" aria-hidden="true" draggable="false" decoding="async">`;
 }
 function accessorySvg(i,avatar=0){
  const idx=clampIndex(i,ACCESSORY_COUNT);
- const av=clampIndex(avatar,AVATAR_COUNT);
- const animalTop=av===2||av===5||av===9;
- const items=[
-  {name:'Kroon',svg:`<path d="M20 30L26 11L39 22L48 8L57 22L70 11L76 30Z" fill="#ffd84d" stroke="#a96b00" stroke-width="2"/><path d="M22 31H74" stroke="#fff1a8" stroke-width="4" stroke-linecap="round"/>`},
-  {name:'Muts',svg:`<path d="M24 30Q27 10 48 9Q69 10 72 30Z" fill="#e53f57"/><path d="M24 28Q48 35 72 28" fill="#fff"/><circle cx="48" cy="8" r="5" fill="#fff"/>`},
-  {name:'Bril',svg:`<rect x="23" y="39" width="19" height="13" rx="6" fill="rgba(255,255,255,.9)" stroke="#24314a" stroke-width="3"/><rect x="54" y="39" width="19" height="13" rx="6" fill="rgba(255,255,255,.9)" stroke="#24314a" stroke-width="3"/><path d="M42 45H54" stroke="#24314a" stroke-width="3"/>`},
-  {name:'Koptelefoon',svg:`<path d="M24 46Q24 18 48 18Q72 18 72 46" fill="none" stroke="#9b5cff" stroke-width="8" stroke-linecap="round"/><rect x="17" y="43" width="10" height="18" rx="5" fill="#6c36d8"/><rect x="69" y="43" width="10" height="18" rx="5" fill="#6c36d8"/>`},
-  {name:'Strikje',svg:`<path d="M48 70L34 60L22 66L35 77Z" fill="#ff4f7b" stroke="#bb2b54" stroke-width="2"/><path d="M48 70L62 60L74 66L61 77Z" fill="#ff4f7b" stroke="#bb2b54" stroke-width="2"/><circle cx="48" cy="69" r="6" fill="#ffd34d"/>`},
-  {name:'Sjaal',svg:`<path d="M26 62Q48 69 70 62L68 74Q48 81 28 74Z" fill="#39b6ff" stroke="#1d7db3" stroke-width="2"/><path d="M59 72L69 91L61 91L53 76Z" fill="#39b6ff"/>`},
-  {name:'Toverhoed',svg:`<path d="M25 32L48 4L71 32Z" fill="#4c2b83" stroke="#241545" stroke-width="2"/><path d="M22 31Q48 40 74 31L72 38Q48 44 24 38Z" fill="#7a4cc5"/><circle cx="48" cy="14" r="3" fill="#ffd95e"/>`},
-  {name:'Feesthoed',svg:`<path d="M28 34L48 8L68 34Z" fill="#ff5f8e" stroke="#a52f55" stroke-width="2"/><path d="M33 29L63 29" stroke="#ffd34d" stroke-width="4" stroke-linecap="round"/><circle cx="48" cy="8" r="5" fill="#ffd34d"/>`},
-  {name:'Bloem',svg:`<circle cx="32" cy="29" r="7" fill="#ff82aa"/><circle cx="42" cy="24" r="7" fill="#ff82aa"/><circle cx="47" cy="34" r="7" fill="#ff82aa"/><circle cx="38" cy="35" r="6" fill="#ff82aa"/><circle cx="39" cy="30" r="6" fill="#ffd34d"/><path d="M37 36L31 50" stroke="#4cad63" stroke-width="4" stroke-linecap="round"/>`},
-  {name:'Piratenhoed',svg:`<path d="M22 31Q31 10 49 9Q67 10 75 31Z" fill="#22283a" stroke="#111522" stroke-width="2"/><path d="M22 29Q48 38 74 29L72 36Q48 43 24 36Z" fill="#e6e9f1"/><circle cx="49" cy="25" r="6" fill="#fff"/><path d="M45 22L53 28M53 22L45 28" stroke="#22283a" stroke-width="2"/>`}
- ];
- const svg=items[idx].svg;
- // accessoires worden als overlay bovenop het dier geplaatst; brillen en sjaals blijven op hun natuurlijke plek.
- return `<svg viewBox="0 0 96 96" aria-hidden="true" role="img" data-accessory="${items[idx].name}">${svg}</svg>`;
+ const url=new URL(`./avatars/accessory-${idx}.png`,document.baseURI).href;
+ return `<img class="avatar-accessory-img accessory-${idx}" src="${url}" alt="" aria-hidden="true" draggable="false" decoding="async" data-accessory="${idx}">`;
 }
-function avatarMarkup(p,size=48){const v=normalizeProfile(p);return `<span class="avatar-inline" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${accessorySvg(v.accessory,v.avatar)}</span></span>`}
+function avatarReaction(emotion){
+ const map={
+  happy:['✨','Goed!'],
+  celebrate:['🎉','Lekker!'],
+  sad:['💧','Oei!'],
+  rankup:['⬆️','Ingehaald!'],
+  overtaken:['😵','Oh nee!']
+ };
+ const v=map[emotion];
+ return v?`<span class="avatar-reaction reaction-${emotion}" aria-hidden="true"><b>${v[0]}</b><small>${v[1]}</small></span>`:'';
+}
+function avatarMarkup(p,size=48,emotion=''){const v=normalizeProfile(p);const e=emotion||'';return `<span class="avatar-inline ${e?`mood-${e}`:''}" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${accessorySvg(v.accessory,v.avatar)}</span>${avatarReaction(e)}</span>`}
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return DEFAULT_PROFILE}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
 const act={};
@@ -579,7 +483,7 @@ function animateLeaderboard(){
 function boardRows(list){
  const from=boardAnim?.from||{};
  return list.map((p,i)=>{const rank=i+1,prevRank=boardAnim?.ranks?.[p.id]||rank,delta=prevRank-rank,cls=delta>0?" rank-moved-up":"";
-  return `<div class="row lb-row${cls}"><span class="lb-name"><b class="lb-rank">${rank}</b>${avatarMarkup(p,40)}<b>${esc(p.name)}</b>${delta>0?`<span class="rank-up">↑ ${delta}</span>`:""}</span><span class="lb-score" data-from="${from[p.id]??p.score??0}" data-to="${p.score||0}">${from[p.id]??p.score??0}</span></div>`}).join("")}
+  const mood=delta>0?"rankup":delta<0?"overtaken":"";return `<div class="row lb-row${cls}"><span class="lb-name"><b class="lb-rank">${rank}</b>${avatarMarkup(p,40,mood)}<b>${esc(p.name)}</b>${delta>0?`<span class="rank-up">↑ ${delta}</span>`:delta<0?`<span class="rank-down">↓ ${Math.abs(delta)}</span>`:""}</span><span class="lb-score" data-from="${from[p.id]??p.score??0}" data-to="${p.score||0}">${from[p.id]??p.score??0}</span></div>`}).join("")}
 
 function paint(){
  applyTheme(G?.quiz?.theme||"classic");
@@ -593,16 +497,16 @@ function paint(){
  const tiles=(cls,rev)=>{if(q.type==="typing"){const answered=Object.values(ANS()).filter(a=>a?.v!=null).length;return `<div class="typing-host-panel"><div class="typing-host-icon">⌨️</div><div><h2>${rev?"Goede antwoorden":"Typen"}</h2><p>${rev?q.a.filter(x=>x.trim()).map(x=>`<span class="accepted-chip">${esc(x)}</span>`).join(""):`Spelers typen zelf een woord of zin.`}</p><small>${answered} antwoord${answered===1?"":"en"}</small></div></div>`;}return q.a.map((t,i)=>{const n=Object.values(ANS()).filter(a=>a.c==i).length;return `<div class="ans ${cols(q)[i]} ${rev&&i!=q.correct?"dim":""}"><span>${rev&&i==q.correct?"✓":syms(q)[i]}</span><em>${esc(t)}</em>${rev?`<span class="n">${n}</span>`:""}</div>`}).join("")};
  const countdown=(showTitle)=>q.type==="dia"?`<div class="stage countdown-screen dia-countdown"><div class="dia-intro-card"><span class="eyebrow">DIA START</span><div class="dia-intro-title">${esc(q.text)}</div><div class="dia-intro-info">${esc(q.info||"")}</div></div><div class="countdown-layout"><div class="countdown-copy">Dia start in...</div><div class="countdown-number" id="introTm">5</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`:`<div class="stage countdown-screen${q.doublePoints?" has-double":""}">${q.doublePoints?'<div class="double-bonus-pop">2× PUNTEN</div>':""}<div class="countdown-title ${q.doublePoints?"after-bonus":""}">${showTitle?esc(q.text):"Kijk naar de host zijn scherm"}</div><div class="countdown-layout"><div class="countdown-copy">Vraag start in...</div><div class="countdown-number" id="introTm">${q.doublePoints?"8":"5"}</div></div><div class="tbar intro-bar"><div id="introBar"></div></div></div>`;
  const slideView=()=>`<div class="stage slide-view"><div class="slide-card"><div class="slide-kicker">DIA</div><h1>${esc(q.text)}</h1><div class="slide-info">${esc(q.info||"")}</div></div><div class="slide-timer"><div class="tcirc" id="slideTm">${q.time}</div><div class="countdown-copy">Op scherm</div></div><div class="tbar"><div id="slideBar"></div></div></div>`;
- const phoneSuccess=(buttonLabel="")=>`<div class="full ${me?.ok?"ok":"no"} phone-result"><div class="stage"><div class="result-icon">${me?.ok?"✓":"✕"}</div><div class="big-msg">${me?.ok?"Goed gedaan!":"Helaas!"}</div><div class="result-points">${me?.ok?`+${me?.earnedPoints??0} punten`:"Geen punten"}</div><p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
+ const phoneSuccess=(buttonLabel="")=>`<div class="full ${me?.ok?"ok":"no"} phone-result"><div class="stage"><div class="phone-result-avatar">${avatarMarkup(me,100,me?.ok?"happy":"sad")}</div><div class="result-icon">${me?.ok?"✓":"✕"}</div><div class="big-msg">${me?.ok?"Goed gedaan!":"Helaas!"}</div><div class="result-points">${me?.ok?`+${me?.earnedPoints??0} punten`:"Geen punten"}</div><p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
  let h="";
  if(HOST&&!SOLO){
   if(G.state=="lobby")h=`<div class="stage"><h2>${esc(G.quiz.title)}</h2><div>Ga naar <b>Quiz joinen</b> en vul de code in</div><div class="code">${CODE}</div><div><b>${P().length}</b> spelers</div><div class="chips">${P().map(p=>`<span class="player-chip">${avatarMarkup(p,34)}<b>${esc(p.name)}</b></span>`).join("")||"Wachten op spelers..."}</div><button class="btn g" data-a="start" ${P().length?"":"disabled"}>Quiz starten</button> <button class="btn w" data-a="close">Annuleren</button></div>`;
   else if(G.state=="countdown")h=countdown(true);
   else if(G.state=="slide")h=slideView();
   else if(G.state=="question")h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="hbar"><div class="tcirc" id="tm"></div><div class="cnt">${Object.keys(ANS()).length}<small>antwoorden</small></div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles()}</div></div>`;
-  else if(G.state=="reveal"){const ps=P();h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles("",true)}</div><div class="two"><div><h3>Goed ✓</h3>${ps.filter(p=>p.ok).map(p=>`${avatarMarkup(p,30)} ${esc(p.name)}`).join(" · ")||"Niemand"}</div><div><h3>Fout ✗</h3>${ps.filter(p=>!p.ok).map(p=>`${avatarMarkup(p,30)} ${esc(p.name)}`).join(" · ")||"Niemand"}</div></div><button class="btn b" data-a="next">Volgende</button></div>`}
+  else if(G.state=="reveal"){const ps=P();h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles("",true)}</div><div class="two"><div><h3>Goed ✓</h3>${ps.filter(p=>p.ok).map(p=>`${avatarMarkup(p,30,"happy")} ${esc(p.name)}`).join(" · ")||"Niemand"}</div><div><h3>Fout ✗</h3>${ps.filter(p=>!p.ok).map(p=>`${avatarMarkup(p,30,"sad")} ${esc(p.name)}`).join(" · ")||"Niemand"}</div></div><button class="btn b" data-a="next">Volgende</button></div>`}
   else if(G.state=="board")h=`<div class="stage leaderboard"><h1>Tussenstand</h1>${boardRows(sorted().slice(0,5))}<button class="btn b" data-a="next">Volgende vraag</button></div>`;
-  else{const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn">${avatarMarkup(t[i],72)}<b>${esc(t[i].name)}</b><small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Quiz afsluiten</button></div>`}
+  else{const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn">${avatarMarkup(t[i],72,"celebrate")}<b>${esc(t[i].name)}</b><small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Quiz afsluiten</button></div>`}
  }else{
   if(G.state=="lobby")h=`<div class="center"><div class="game-avatar-large">${avatarMarkup(me,104)}</div><div class="big-msg">Je zit erin, ${esc(me?.name)}!</div><p>Wachten tot de host het spel start</p><button class="btn w" data-a="customizeAvatar">🎨 Avatar aanpassen</button></div>`;
   else if(G.state=="countdown")h=countdown(true);
