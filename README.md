@@ -1,5 +1,3 @@
-Quizzo v53 – app.js bugfix
-
-Fixes the runtime error "act is not defined" and declares the shared application state before any handlers use it.
-
-Replace only app.js in the existing repository. Keep index.html, firebase.js, style.css, avatars.js, avatars/ and themes/ unchanged.
+Quizzo v54 CSS recovery patch.
+Replace app.js and style.css in the repository root. Keep index.html, firebase.js, avatars.js, avatars/ and themes/.
+The stylesheet combines the complete Quizzo base stylesheet with the full-screen avatar studio styles, restoring the normal Quizzo UI instead of unstyled browser controls.
