@@ -117,72 +117,79 @@ const normalizeAccessory=v=>{if(v===null||v===undefined||v===""||v===-1||v==="-1
 const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:normalizeAccessory(p?.accessory)});
 const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:null});
 
-/* All wearable placement is calculated from the transparent bounds stored with each character.
-   No per-character manual coordinates are required in the picker. */
-const accessoryKind=name=>{
+/* V56 — final accessory fitting pass.
+   Accessories use the same normalized coordinate space as the avatar. Their source alpha margins are
+   accounted for, so visible art (not the transparent canvas) is sized to the character's anatomy. */
+const ACCESSORY_FIT={
+  "kroon":{kind:"head",scale:1.00,rot:0},
+  "muts":{kind:"head",scale:1.00,rot:0},
+  "zonnebril":{kind:"face",scale:.76,rot:0},
+  "bril":{kind:"face",scale:.76,rot:0},
+  "masker":{kind:"face",scale:.78,rot:0},
+  "koptelefoon":{kind:"ears",scale:1.10,rot:0},
+  "oork":{kind:"ears",scale:1.08,rot:0},
+  "kattenoren":{kind:"head",scale:.95,rot:0},
+  "strik":{kind:"neck",scale:.50,rot:0},
+  "sjaal":{kind:"neck",scale:.92,rot:0},
+  "bandana":{kind:"neck",scale:.86,rot:0},
+  "tovenaarshoed":{kind:"head",scale:1.05,rot:-4},
+  "feesthoed":{kind:"head",scale:.82,rot:4},
+  "bloemenkrans":{kind:"head",scale:1.05,rot:0},
+  "piratenhoed":{kind:"head",scale:1.08,rot:-2},
+  "vikinghelm":{kind:"head",scale:1.10,rot:0},
+  "astronauthelm":{kind:"faceLarge",scale:1.00,rot:0},
+  "drakenhoorns":{kind:"head",scale:.78,rot:0},
+  "duivelhoorns":{kind:"head",scale:.78,rot:0},
+  "halo":{kind:"halo",scale:1.00,rot:0},
+  "detectivepet":{kind:"head",scale:.96,rot:-3},
+  "superheldmasker":{kind:"face",scale:.80,rot:0},
+  "cape":{kind:"back",scale:1.02,rot:0}
+};
+/* Visible alpha width of each 512×512 accessory source. This corrects transparent padding. */
+const ACCESSORY_ALPHA_WIDTH={
+  0:.8125,1:.7598,2:.8125,3:.7930,4:.8125,5:.8125,6:.8125,7:.6430,8:.8125,9:.8125,
+  10:.8125,11:.7598,12:.4570,13:.8125,14:.8125,15:.8125,16:.8125,17:.8125,18:.8125,19:.8125
+};
+function accessoryKind(name){
   const n=String(name||"").toLowerCase();
   if(/zonnebril|bril|masker/.test(n))return "face";
-  if(/koptelefoon|oork|oorbel|kattenoren/.test(n))return "ears";
+  if(/astronauthelm/.test(n))return "faceLarge";
+  if(/koptelefoon|oork|oorbel/.test(n))return "ears";
   if(/sjaal|strik|bandana|hals/.test(n))return "neck";
   if(/cape|vleugel/.test(n))return "back";
-  if(/kroon|muts|hoed|helm|hoorns|halo|bloem|pet/.test(n))return "head";
+  if(/halo/.test(n))return "halo";
   return "head";
-};
-const ACCESSORY_FIT={
-  "kroon":{kind:"head",scale:.92,y:6,rot:0},
-  "muts":{kind:"head",scale:.94,y:9,rot:0},
-  "zonnebril":{kind:"face",scale:.72,y:35,rot:0},
-  "bril":{kind:"face",scale:.72,y:35,rot:0},
-  "masker":{kind:"face",scale:.76,y:35,rot:0},
-  "koptelefoon":{kind:"ears",scale:1.18,y:26,rot:0},
-  "oork":{kind:"ears",scale:1.04,y:25,rot:0},
-  "kattenoren":{kind:"head",scale:1.00,y:7,rot:0},
-  "strik":{kind:"neck",scale:.48,y:58,rot:0},
-  "sjaal":{kind:"neck",scale:.74,y:57,rot:0},
-  "bandana":{kind:"neck",scale:.58,y:49,rot:0},
-  "tovenaarshoed":{kind:"headTall",scale:.92,y:6,rot:-5},
-  "feesthoed":{kind:"headTall",scale:.76,y:9,rot:4},
-  "bloemenkrans":{kind:"head",scale:.96,y:8,rot:0},
-  "piratenhoed":{kind:"headWide",scale:1.00,y:9,rot:-2},
-  "vikinghelm":{kind:"headWide",scale:.96,y:9,rot:0},
-  "astronauthelm":{kind:"headWide",scale:1.02,y:23,rot:0},
-  "drakenhoorns":{kind:"head",scale:.90,y:8,rot:0},
-  "duivelhoorns":{kind:"head",scale:.92,y:8,rot:0},
-  "halo":{kind:"head",scale:.86,y:3,rot:0},
-  "detectivepet":{kind:"headWide",scale:.90,y:10,rot:-4},
-  "superheldmasker":{kind:"face",scale:.80,y:36,rot:0},
-  "cape":{kind:"back",scale:1.00,y:62,rot:0}
-};
+}
 function accessoryPlacement(avatarIdx,accessoryIdx){
   const av=QUIZZO_AVATAR_CATALOG.avatars[clampIndex(avatarIdx,AVATAR_COUNT)]||{};
   const ac=QUIZZO_AVATAR_CATALOG.accessories[clampIndex(accessoryIdx,ACCESSORY_COUNT)]||{};
-  const m=av.metrics||{headX:50,headW:64,headTop:5,faceY:35,neckY:52,bodyX:50,bodyW:72};
+  const m=av.metrics||{headX:50,headW:62,headTop:4,faceY:31,neckY:49,bodyX:50,bodyW:70};
   const n=String(ac.name||"").toLowerCase();
   const key=Object.keys(ACCESSORY_FIT).find(k=>n.includes(k));
-  const f=ACCESSORY_FIT[key]||{kind:"head",scale:.76,y:m.headTop,rot:0};
-  const baseHead=Math.max(34,Math.min(88,Number(m.headW)||64));
-  const body=Math.max(baseHead,Math.min(94,Number(m.bodyW)||72));
-  let x=Number(m.headX)||50;
-  let y=f.y===undefined?m.headTop:f.y;
-  let w=baseHead*f.scale;
-  let z=7;
+  const f=ACCESSORY_FIT[key]||{kind:accessoryKind(n),scale:.9,rot:0};
+  const headW=Math.max(34,Math.min(90,Number(m.headW)||62));
+  const bodyW=Math.max(45,Math.min(96,Number(m.bodyW)||70));
+  const headX=Number(m.headX)||50, bodyX=Number(m.bodyX)||headX;
+  const alphaW=ACCESSORY_ALPHA_WIDTH[clampIndex(accessoryIdx,ACCESSORY_COUNT)]||.8125;
+  let x=headX, y=Number(m.headTop)||4, desiredW=headW*f.scale, z=7, anchor="bottom";
   if(f.kind==="face"){
-    x=Number(m.headX)||50; y=(f.y??m.faceY); w=baseHead*f.scale; z=8;
+    x=headX; y=Number(m.faceY)||31; desiredW=headW*f.scale; z=9; anchor="center";
+  } else if(f.kind==="faceLarge"){
+    x=headX; y=Number(m.faceY)||31; desiredW=headW*f.scale*1.65; z=8; anchor="center";
   } else if(f.kind==="ears"){
-    x=Number(m.headX)||50; y=(Number(m.headTop)||5)+Math.max(14,(Number(m.faceY)||35)-(Number(m.headTop)||5))*.62; w=Math.min(96,baseHead*f.scale); z=7;
+    x=headX; y=(Number(m.faceY)||31)-2; desiredW=headW*f.scale*1.10; z=8; anchor="center";
   } else if(f.kind==="neck"){
-    x=Number(m.bodyX)||Number(m.headX)||50; y=(f.y??m.neckY); w=Math.min(86,Math.max(34,body*f.scale)); z=9;
+    x=bodyX; y=(Number(m.neckY)||49)+4; desiredW=bodyW*f.scale; z=10; anchor="center";
   } else if(f.kind==="back"){
-    x=Number(m.bodyX)||50; y=f.y??Math.min(66,(Number(m.neckY)||52)+8); w=Math.min(96,body*f.scale); z=2;
-  } else if(f.kind==="headWide"){
-    x=Number(m.headX)||50; y=(f.y??m.headTop); w=Math.min(96,baseHead*f.scale*1.08); z=7;
-  } else if(f.kind==="headTall"){
-    x=Number(m.headX)||50; y=(f.y??m.headTop); w=Math.min(88,baseHead*f.scale); z=7;
+    x=bodyX; y=(Number(m.neckY)||49)+9; desiredW=bodyW*f.scale; z=2; anchor="top";
+  } else if(f.kind==="halo"){
+    x=headX; y=Math.max(0,(Number(m.headTop)||4)-3); desiredW=headW*f.scale; z=11; anchor="bottom";
   } else {
-    x=Number(m.headX)||50; y=(f.y??m.headTop); w=Math.min(92,baseHead*f.scale); z=7;
+    x=headX; y=(Number(m.headTop)||4)+3; desiredW=headW*f.scale; z=7; anchor="bottom";
   }
-  const rotation=Number(f.rot)||0;
-  return {x,y,w,z,rot:rotation};
+  // Convert desired visible width to source-box width, compensating for transparent margins.
+  const boxW=Math.min(120,Math.max(42,desiredW/alphaW));
+  return {x,y,w:boxW,z,rot:Number(f.rot)||0,anchor};
 }
 function avatarSvg(i){
   const idx=clampIndex(i,AVATAR_COUNT),item=QUIZZO_AVATAR_CATALOG.avatars[idx]||{},src=item.src||"";
@@ -191,9 +198,10 @@ function avatarSvg(i){
 function accessorySvg(i,avatar=0,preview=false){
   const idx=clampIndex(i,ACCESSORY_COUNT),item=QUIZZO_AVATAR_CATALOG.accessories[idx];
   if(!item||!item.src)return "";
-  if(preview) return `<img class="accessory-art-img" src="${item.src}" alt="${esc(item.name||`Accessoire ${idx+1}`)}" draggable="false" decoding="async">`;
+  if(preview)return `<img class="accessory-art-img" src="${item.src}" alt="${esc(item.name||`Accessoire ${idx+1}`)}" draggable="false" decoding="async">`;
   const p=accessoryPlacement(avatar,idx);
-  return `<img class="avatar-accessory-img accessory-${idx}" src="${item.src}" alt="" aria-hidden="true" draggable="false" decoding="async" style="left:${p.x}%;top:${p.y}%;width:${p.w}%;z-index:${p.z};transform:translate(-50%,-50%) rotate(${p.rot}deg);">`;
+  const ty=p.anchor==="center"?"-50%":p.anchor==="top"?"-8%":"-100%";
+  return `<img class="avatar-accessory-img accessory-${idx}" src="${item.src}" alt="" aria-hidden="true" draggable="false" decoding="async" style="left:${p.x}%;top:${p.y}%;width:${p.w}%;z-index:${p.z};transform:translate(-50%,${ty}) rotate(${p.rot}deg);">`;
 }
 function avatarReaction(emotion){
   const map={happy:['✨','Goed!'],celebrate:['🎉','Lekker!'],sad:['💧','Oei!'],rankup:['⬆️','Omhoog!'],overtaken:['😵','Oh nee!']};

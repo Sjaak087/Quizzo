@@ -604,3 +604,43 @@ html.avatar-picker-open,body.avatar-picker-open{overflow:hidden}
   .stage.leaderboard .lb-row{min-height:46px;padding:6px 8px;font-size:14px}
   .stage.leaderboard .avatar-inline{--avatar-size:30px!important}
 }
+
+
+/* V56 — final avatar/accessory fit and anti-clipping overrides */
+.avatar-inline{overflow:visible!important;contain:layout!important;isolation:isolate;}
+.avatar-svg,.avatar-accessory{position:absolute!important;inset:0!important;overflow:visible!important;contain:none!important;}
+.avatar-main-img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;display:block!important;object-fit:contain!important;object-position:50% 100%!important;}
+.avatar-accessory-img{position:absolute!important;height:auto!important;max-width:none!important;max-height:none!important;display:block!important;object-fit:contain!important;object-position:50% 50%!important;pointer-events:none!important;user-select:none!important;transform-origin:center bottom!important;}
+
+/* The cards never crop a character or wearable. */
+.avatar-option,.accessory-option{overflow:visible!important;min-width:0;}
+.avatar-option-art{height:108px!important;min-height:108px!important;padding:2px 10px 0!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;overflow:visible!important;}
+.avatar-option-art .avatar-main-img{width:94%!important;height:108px!important;object-fit:contain!important;object-position:50% 100%!important;}
+.accessory-option{min-height:154px!important;height:auto!important;padding:8px 7px 10px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;}
+.accessory-option-art{width:100%!important;height:112px!important;min-height:112px!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important;padding:2px 6px!important;}
+.accessory-option-art .accessory-art-img{width:auto!important;height:auto!important;max-width:100%!important;max-height:108px!important;display:block!important;object-fit:contain!important;}
+.accessory-option>span:not(.accessory-option-art){font-size:13px!important;line-height:1.12!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;text-align:center!important;width:100%!important;}
+.accessory-option small{font-size:9px!important;line-height:1!important;}
+
+/* Stable square preview canvas; it scales without changing relative accessory positions. */
+.showcase-stage{overflow:visible!important;display:grid!important;place-items:center!important;min-height:190px;}
+.showcase-stage .avatar-inline{--avatar-size:clamp(220px,22vw,295px)!important;}
+.showcase-stage .avatar-svg,.showcase-stage .avatar-accessory{overflow:visible!important;}
+
+@media(max-width:1100px){
+ .avatar-picker-screen{overflow:auto!important;height:auto!important;min-height:100dvh!important;}
+ .avatar-picker-main{height:auto!important;grid-template-columns:1fr!important;}
+ .avatar-showcase-panel{height:auto!important;min-height:330px!important;overflow:visible!important;}
+ .avatar-catalog-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+}
+@media(max-width:700px){
+ .avatar-picker-main{padding:10px!important;gap:10px!important;}
+ .showcase-stage .avatar-inline{--avatar-size:min(60vw,250px)!important;}
+ .avatar-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}
+ .avatar-option-art{height:104px!important;min-height:104px!important;}
+ .avatar-option-art .avatar-main-img{height:104px!important;}
+ .accessory-option{min-height:146px!important;}
+ .accessory-option-art{height:102px!important;min-height:102px!important;}
+ .accessory-option-art .accessory-art-img{max-height:98px!important;}
+ .avatar-picker-bottom{position:sticky!important;bottom:0!important;z-index:60!important;}
+}
