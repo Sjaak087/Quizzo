@@ -98,35 +98,41 @@ function applyTheme(t){
  const meta=document.querySelector('meta[name="theme-color"]');
  if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a6",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
 }
-/* QUIZZO V41 — avatars/accessories live in the separate avatars.js catalog. */
-const QUIZZO_AVATAR_CATALOG = window.QUIZZO_AVATAR_CATALOG || {avatars:[],accessories:[],defaults:{avatar:0,accessory:0}};
+/* QUIZZO V47 — 3D avatar system with character-aware accessory anchors. */
+const QUIZZO_AVATAR_CATALOG = window.QUIZZO_AVATAR_CATALOG || {avatars:[],accessories:[],defaults:{avatar:0,accessory:null}};
 const AVATAR_COUNT=Math.max(1,QUIZZO_AVATAR_CATALOG.avatars.length);
-const ACCESSORY_COUNT=Math.max(1,QUIZZO_AVATAR_CATALOG.accessories.length);
+const ACCESSORY_COUNT=Math.max(0,QUIZZO_AVATAR_CATALOG.accessories.length);
 const AVATAR_NAMES=QUIZZO_AVATAR_CATALOG.avatars.map(x=>x.name);
 const ACCESSORY_NAMES=QUIZZO_AVATAR_CATALOG.accessories.map(x=>x.name);
-const DEFAULT_PROFILE=QUIZZO_AVATAR_CATALOG.defaults||{avatar:0,accessory:0};
+const DEFAULT_PROFILE={avatar:0,accessory:null};
 const clampIndex=(v,max)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n<max?n:0};
-const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:clampIndex(p?.accessory,ACCESSORY_COUNT)});
-const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:Math.floor(Math.random()*ACCESSORY_COUNT)});
+const normalizeAccessory=v=>{if(v===null||v===undefined||v===""||v===-1||v==="-1")return null;const n=Number(v);return Number.isInteger(n)&&n>=0&&n<ACCESSORY_COUNT?n:null};
+const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:normalizeAccessory(p?.accessory)});
+const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:ACCESSORY_COUNT?Math.floor(Math.random()*ACCESSORY_COUNT):null});
 function avatarSvg(i){
- const idx=clampIndex(i,AVATAR_COUNT);
- const item=QUIZZO_AVATAR_CATALOG.avatars[idx];
- const src=item?.src||"";
- return `<img class="avatar-main-img" src="${src}" alt="" aria-hidden="true" draggable="false" decoding="async">`;
+ const idx=clampIndex(i,AVATAR_COUNT),item=QUIZZO_AVATAR_CATALOG.avatars[idx]||{},src=item.src||"";
+ const body=item.slots||{};const scale=Number(body.scale||1),y=Number(body.y||0);
+ return `<img class="avatar-main-img" src="${src}" alt="" aria-hidden="true" draggable="false" decoding="async" style="--avatar-scale:${scale};--avatar-y:${y}%">`;
 }
 function accessorySvg(i,avatar=0,preview=false){
- const idx=clampIndex(i,ACCESSORY_COUNT);
- const item=QUIZZO_AVATAR_CATALOG.accessories[idx];
- const src=preview?(item?.preview||item?.src):item?.src;
- return `<img class="avatar-accessory-img accessory-${idx}${preview?" accessory-preview":""}" src="${src||""}" alt="" aria-hidden="true" draggable="false" decoding="async" data-accessory="${idx}">`;
+ const idx=clampIndex(i,ACCESSORY_COUNT),item=QUIZZO_AVATAR_CATALOG.accessories[idx];
+ if(!item)return "";
+ const src=preview?(item.preview||item.src):item.src;
+ const av=QUIZZO_AVATAR_CATALOG.avatars[clampIndex(avatar,AVATAR_COUNT)]||{};
+ const slots=av.slots||{};const fit=item.fit||{};const slot=slots[fit.slot]||slots.head||{x:50,y:25,w:75};
+ const scale=Number(fit.scale||1),w=Math.max(18,Number(slot[2]||70)*scale),left=Number(slot[0]||50)+Number(fit.dx||0)-w/2;
+ const top=Number(slot[1]||25)+Number(fit.dy||0),h=w,rot=Number(fit.rotate||0),z=Number(fit.z||5);
+ return `<img class="avatar-accessory-img accessory-${idx}${preview?" accessory-preview":""}" src="${src||""}" alt="" aria-hidden="true" draggable="false" decoding="async" data-accessory="${idx}" style="left:${left}%;top:${top}%;width:${w}%;height:${h}%;--ar:${rot}deg;z-index:${z};transform:rotate(var(--ar))">`;
 }
 function avatarReaction(emotion){
- const map={happy:['✨','Goed!'],celebrate:['🎉','Lekker!'],sad:['💧','Oei!'],rankup:['⬆️','Ingehaald!'],overtaken:['😵','Oh nee!']};
- const v=map[emotion];
- return v?`<span class="avatar-reaction reaction-${emotion}" aria-hidden="true"><b>${v[0]}</b><small>${v[1]}</small></span>`:'';
+ const map={happy:['✨','Goed!'],celebrate:['🎉','Lekker!'],sad:['💧','Oei!'],rankup:['⬆️','Omhoog!'],overtaken:['😵','Oh nee!']};
+ const v=map[emotion]; return v?`<span class="avatar-reaction reaction-${emotion}" aria-hidden="true"><b>${v[0]}</b><small>${v[1]}</small></span>`:"";
 }
-function avatarMarkup(p,size=48,emotion=''){const v=normalizeProfile(p);const e=emotion||'';return `<span class="avatar-inline ${e?`mood-${e}`:''}" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${accessorySvg(v.accessory,v.avatar)}</span>${avatarReaction(e)}</span>`}
-function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return normalizeProfile(DEFAULT_PROFILE)}}
+function avatarMarkup(p,size=48,emotion=""){
+ const v=normalizeProfile(p),e=emotion||"",acc=v.accessory===null?"":accessorySvg(v.accessory,v.avatar);
+ return `<span class="avatar-inline ${e?`mood-${e}`:""}" style="--avatar-size:${size}px" title="Avatar"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${acc}</span>${avatarReaction(e)}</span>`;
+}
+function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return DEFAULT_PROFILE}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
 // Centrale applicatiestaat: alles staat hier expliciet zodat cleanup/home veilig kan draaien.
 let user=null;
@@ -151,12 +157,17 @@ let unsub=null;
 let timer=null;
 const act={};
 let avatarPickerCallback=null,avatarDraft=DEFAULT_PROFILE;
+function accessoryChoiceMarkup(){
+ const none=`<button class="accessory-option ${avatarDraft.accessory===null?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="-1" aria-label="Geen accessoire"><span class="accessory-option-art no-accessory-art">＋</span><span>Geen accessoire</span></button>`;
+ const items=Array.from({length:ACCESSORY_COUNT},(_,i)=>{const a=QUIZZO_AVATAR_CATALOG.accessories[i]||{};return `<button class="accessory-option ${i===avatarDraft.accessory?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="${i}" aria-label="${esc(a.name||`Accessoire ${i+1}`)}"><span class="accessory-option-art">${accessorySvg(i,avatarDraft.avatar,true)}</span><span>${esc(a.name||`Accessoire ${i+1}`)}</span></button>`}).join("");
+ return none+items;
+}
 function openAvatarPicker(initial,done,title="Kies je avatar"){
  avatarDraft=normalizeProfile(initial);avatarPickerCallback=done;
- const m=document.createElement("div");m.className="modal avatar-modal";m.innerHTML=`<div class="card avatar-picker"><div class="picker-head"><div><span class="eyebrow">QUIZZO AVATAR</span><h2>${esc(title)}</h2><p>Kies een poppetje en daarna een accessoire.</p></div><button class="btn w sm" data-a="closeAvatarPicker">×</button></div><div class="avatar-preview-live"><div class="avatar-preview-art" id="avatarLive">${avatarMarkup(avatarDraft,112)}</div><div><span class="eyebrow">JOUW LOOK</span><b id="avatarLiveName">${esc(AVATAR_NAMES[avatarDraft.avatar])} · ${esc(ACCESSORY_NAMES[avatarDraft.accessory])}</b><small>Je avatar verschijnt naast je naam in de quiz.</small></div></div><h3 class="avatar-section-title">Poppetje</h3><div class="avatar-grid">${Array.from({length:AVATAR_COUNT},(_,i)=>`<button class="avatar-option ${i===avatarDraft.avatar?"selected":""}" data-a="pickAvatar" data-kind="avatar" data-index="${i}" aria-label="${esc(AVATAR_NAMES[i])}"><span class="avatar-option-art">${avatarSvg(i)}</span><span>${esc(AVATAR_NAMES[i])}</span></button>`).join("")}</div><h3 class="avatar-section-title">Accessoire</h3><div class="accessory-grid">${Array.from({length:ACCESSORY_COUNT},(_,i)=>`<button class="accessory-option ${i===avatarDraft.accessory?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="${i}" aria-label="${esc(ACCESSORY_NAMES[i])}"><span class="accessory-option-art">${accessorySvg(i,avatarDraft.avatar)}</span><span>${esc(ACCESSORY_NAMES[i])}</span></button>`).join("")}</div><div class="avatar-actions"><button class="btn w" data-a="closeAvatarPicker">Annuleren</button><button class="btn g" data-a="avatarDone">✓ Klaar</button></div></div>`;
+ const m=document.createElement("div");m.className="modal avatar-modal";m.innerHTML=`<div class="card avatar-picker"><div class="picker-head"><div><span class="eyebrow">QUIZZO AVATAR</span><h2>${esc(title)}</h2><p>Kies een 3D-poppetje en maak hem compleet — of laat hem helemaal zonder accessoire.</p></div><button class="btn w sm" data-a="closeAvatarPicker">×</button></div><div class="avatar-preview-live"><div class="avatar-preview-art" id="avatarLive">${avatarMarkup(avatarDraft,112)}</div><div><span class="eyebrow">JOUW LOOK</span><b id="avatarLiveName">${esc(AVATAR_NAMES[avatarDraft.avatar]||"Avatar")} · ${esc(avatarDraft.accessory===null?"Geen accessoire":(ACCESSORY_NAMES[avatarDraft.accessory]||"Accessoire"))}</b><small>De gekozen avatar + accessoire verschijnt naast je naam in de quiz, op het leaderboard en op het podium.</small></div></div><h3 class="avatar-section-title">Poppetje <span class="avatar-count">${AVATAR_COUNT}</span></h3><div class="avatar-grid">${Array.from({length:AVATAR_COUNT},(_,i)=>{const a=QUIZZO_AVATAR_CATALOG.avatars[i]||{};return `<button class="avatar-option ${i===avatarDraft.avatar?"selected":""}" data-a="pickAvatar" data-kind="avatar" data-index="${i}" aria-label="${esc(a.name||`Avatar ${i+1}`)}"><span class="avatar-option-art">${avatarSvg(i)}</span><span>${esc(a.name||`Avatar ${i+1}`)}</span>${a.new?`<small class="avatar-new-tag">NIEUW</small>`:""}</button>`}).join("")}</div><h3 class="avatar-section-title">Accessoire <span class="avatar-count">${ACCESSORY_COUNT}</span></h3><div class="accessory-grid">${accessoryChoiceMarkup()}</div><div class="avatar-actions"><button class="btn w" data-a="closeAvatarPicker">Annuleren</button><button class="btn g" data-a="avatarDone">✓ Klaar</button></div></div>`;
  document.body.append(m);
 }
-act.pickAvatar=d=>{const idx=+d.index;if(d.kind==="avatar")avatarDraft.avatar=clampIndex(idx,AVATAR_COUNT);else avatarDraft.accessory=clampIndex(idx,ACCESSORY_COUNT);const m=document.querySelector(".avatar-picker");if(m){m.querySelectorAll(".avatar-option").forEach(x=>x.classList.toggle("selected",+x.dataset.index===avatarDraft.avatar));m.querySelectorAll(".accessory-option").forEach(x=>{x.classList.toggle("selected",+x.dataset.index===avatarDraft.accessory);const art=x.querySelector(".accessory-option-art");if(art)art.innerHTML=accessorySvg(+x.dataset.index,avatarDraft.avatar,true)});const live=m.querySelector("#avatarLive");if(live)live.innerHTML=avatarMarkup(avatarDraft,112);const label=m.querySelector("#avatarLiveName");if(label)label.textContent=`${AVATAR_NAMES[avatarDraft.avatar]||"Avatar"} · ${ACCESSORY_NAMES[avatarDraft.accessory]||"Accessoire"}`}};
+act.pickAvatar=d=>{const idx=+d.index;if(d.kind==="avatar")avatarDraft.avatar=clampIndex(idx,AVATAR_COUNT);else avatarDraft.accessory=normalizeAccessory(idx);const m=document.querySelector(".avatar-picker");if(m){m.querySelectorAll(".avatar-option").forEach(x=>x.classList.toggle("selected",+x.dataset.index===avatarDraft.avatar));m.querySelectorAll(".accessory-option").forEach(x=>{x.classList.toggle("selected",normalizeAccessory(x.dataset.index)===avatarDraft.accessory);const art=x.querySelector(".accessory-option-art");if(art&&+x.dataset.index>=0)art.innerHTML=accessorySvg(+x.dataset.index,avatarDraft.avatar,true)});const live=m.querySelector("#avatarLive");if(live)live.innerHTML=avatarMarkup(avatarDraft,112);const label=m.querySelector("#avatarLiveName");if(label)label.textContent=`${AVATAR_NAMES[avatarDraft.avatar]||"Avatar"} · ${avatarDraft.accessory===null?"Geen accessoire":(ACCESSORY_NAMES[avatarDraft.accessory]||"Accessoire")}`}};
 act.avatarDone=()=>{const p=normalizeProfile(avatarDraft);saveProfile(p);const cb=avatarPickerCallback;avatarPickerCallback=null;avatarDraft=p;document.querySelector(".avatar-modal")?.remove();cb?.(p)};
 act.closeAvatarPicker=()=>{avatarPickerCallback=null;document.querySelector(".avatar-modal")?.remove()};
 act.customizeAvatar=()=>{if(!G||!CODE)return;const cur=G.players?.[user.uid]||savedProfile();openAvatarPicker(cur,p=>{update(ref(db,`games/${CODE}/players/${user.uid}`),p).then(()=>toast("Avatar bijgewerkt!"),e=>toast(em(e)))},"Pas je avatar aan")};
