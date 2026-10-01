@@ -754,3 +754,46 @@ body.has-theme-scene #quizzo-theme-scene{
 @media(max-width:800px){.avatar-grid,.accessory-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.avatar-picker{width:100%;max-height:calc(100dvh - 20px);overflow-y:auto}.avatar-preview-live{align-items:flex-start}.avatar-preview-art{width:100px;height:100px}.avatar-preview-art .avatar-inline{--avatar-size:92px}.game-avatar-large .avatar-inline{--avatar-size:102px}.phone-result-avatar .avatar-inline{--avatar-size:86px}}
 @media(max-width:430px){.avatar-grid,.accessory-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.avatar-option-art{width:74px;height:74px}.accessory-option-art{width:66px;height:66px}.avatar-option-art .avatar-inline{--avatar-size:70px}.avatar-preview-live{gap:11px;padding:12px}.avatar-preview-live b{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.avatar-inline,.avatar-main-img,.avatar-accessory-img,.avatar-reaction,.avatar-option::after,.accessory-option::after{animation:none!important;transition:none!important}}
+
+/* QUIZZO v48 — precise accessory fitting and sharp 3D avatar rendering */
+.avatar-inline .avatar-svg,.avatar-inline .avatar-accessory{position:absolute;inset:0;width:100%;height:100%;display:block;line-height:0}
+.avatar-main-img{width:100%;height:100%;object-fit:contain;display:block;image-rendering:auto;filter:drop-shadow(0 4px 5px rgba(17,15,42,.22));}
+.avatar-accessory-img{position:absolute;display:block;max-width:none;height:auto;width:auto;object-fit:contain;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 3px 4px rgba(17,15,42,.22));will-change:transform,left,top;width:var(--accessory-width,auto)}
+.avatar-accessory-img.accessory-preview{position:relative;left:auto!important;top:auto!important;width:min(84%,92px)!important;height:auto!important;max-height:86px;transform:none!important;margin:auto;filter:drop-shadow(0 5px 5px rgba(17,15,42,.18))}
+.avatar-option-art{position:relative;display:grid;place-items:end center;min-height:90px;overflow:visible}
+.avatar-option-art .avatar-main-img{width:100%;height:100%;object-fit:contain}
+.accessory-option-art{position:relative;display:grid;place-items:center;overflow:hidden}
+.accessory-option-art .avatar-accessory-img{position:relative!important;left:auto!important;top:auto!important;width:82%!important;max-height:78px;height:auto!important;transform:none!important}
+/* Make the character itself visually dominant; no fake generic badge underneath. */
+.avatar-inline{overflow:visible}
+.avatar-inline::before{inset:5% 7% 3%;opacity:.26}
+/* The scarf should visibly wrap the neck instead of floating in the middle. */
+.avatar-inline .accessory-5{z-index:6}
+@keyframes avatar-good-v48{0%{transform:translateY(0) scale(1)}35%{transform:translateY(-8%) scale(1.06) rotate(-2deg)}65%{transform:translateY(0) scale(1.02) rotate(2deg)}100%{transform:translateY(0) scale(1)}}
+@keyframes avatar-rankup-v48{0%{transform:translateY(0) scale(1)}40%{transform:translateY(-18%) scale(1.08)}70%{transform:translateY(-8%) scale(1.03)}100%{transform:translateY(0) scale(1)}}
+@keyframes avatar-sad-v48{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(2%) rotate(-5deg)}60%{transform:translateY(3%) rotate(5deg)} }
+.avatar-inline.mood-happy .avatar-main-img{animation:avatar-good-v48 .8s ease-out}
+.avatar-inline.mood-celebrate .avatar-main-img{animation:avatar-rankup-v48 1s cubic-bezier(.2,.8,.2,1)}
+.avatar-inline.mood-sad .avatar-main-img,.avatar-inline.mood-overtaken .avatar-main-img{animation:avatar-sad-v48 .75s ease-in-out}
+.avatar-inline.mood-rankup .avatar-main-img{animation:avatar-rankup-v48 .85s ease-out}
+
+/* QUIZZO v49 — natural aspect-ratio accessories and character-first layering. */
+.avatar-main-img{width:100%;height:100%;object-fit:contain;object-position:50% 100%;display:block;image-rendering:auto}
+.avatar-accessory-img{position:absolute;display:block;height:auto!important;width:auto;max-width:none;object-fit:contain;transform-origin:50% 50%;filter:drop-shadow(0 3px 4px rgba(17,15,42,.20));will-change:transform,left,top}
+.avatar-accessory-img.accessory-preview{position:relative!important;left:auto!important;top:auto!important;width:82%!important;height:auto!important;max-height:84px;transform:none!important;margin:auto}
+.accessory-option-art .avatar-accessory-img{position:relative!important;left:auto!important;top:auto!important;width:82%!important;height:auto!important;max-height:80px;transform:none!important;margin:auto}
+.avatar-inline .avatar-svg{z-index:2}.avatar-inline .avatar-accessory{z-index:4;pointer-events:none}
+.avatar-inline .accessory-19{z-index:1}
+.avatar-inline .accessory-5{z-index:6}
+.avatar-option-art,.accessory-option-art{overflow:visible}
+.avatar-option-art{display:grid;place-items:end center}
+.avatar-option-art .avatar-main-img{object-position:50% 100%}
+
+/* QUIZZO v50 — accessory boxes use character-specific width/height anchors. */
+.avatar-accessory-img{position:absolute;display:block;max-width:none;object-fit:fill!important;height:auto;transform-origin:50% 50%;filter:drop-shadow(0 3px 4px rgba(17,15,42,.20));}
+.avatar-accessory-img.accessory-preview,.accessory-option-art .avatar-accessory-img{position:relative!important;left:auto!important;top:auto!important;width:82%!important;height:auto!important;max-height:82px;object-fit:contain!important;transform:none!important;margin:auto}
+
+/* v51: tighter, character-fitting accessory silhouettes */
+.avatar-accessory-img{object-fit:fill!important;transform-origin:50% 50%;}
+.avatar-main-img{object-fit:contain!important;object-position:50% 100%;}
+.accessory-option-art .avatar-accessory-img,.avatar-accessory-img.accessory-preview{object-fit:contain!important;}

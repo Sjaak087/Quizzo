@@ -112,17 +112,23 @@ const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:
 function avatarSvg(i){
  const idx=clampIndex(i,AVATAR_COUNT),item=QUIZZO_AVATAR_CATALOG.avatars[idx]||{},src=item.src||"";
  const body=item.slots||{};const scale=Number(body.scale||1),y=Number(body.y||0);
- return `<img class="avatar-main-img" src="${src}" alt="" aria-hidden="true" draggable="false" decoding="async" style="--avatar-scale:${scale};--avatar-y:${y}%">`;
+ return `<img class="avatar-main-img" src="${src}" alt="" aria-hidden="true" draggable="false" decoding="async" onerror="this.style.display='none'" style="--avatar-scale:${scale};--avatar-y:${y}%">`;
 }
 function accessorySvg(i,avatar=0,preview=false){
  const idx=clampIndex(i,ACCESSORY_COUNT),item=QUIZZO_AVATAR_CATALOG.accessories[idx];
  if(!item)return "";
- const src=preview?(item.preview||item.src):item.src;
+ const src=item.src||"";
+ if(preview) return `<img class="avatar-accessory-img accessory-${idx} accessory-preview" src="${src}" alt="" aria-hidden="true" draggable="false" decoding="async" onerror="this.style.display='none'">`;
  const av=QUIZZO_AVATAR_CATALOG.avatars[clampIndex(avatar,AVATAR_COUNT)]||{};
- const slots=av.slots||{};const fit=item.fit||{};const slot=slots[fit.slot]||slots.head||{x:50,y:25,w:75};
- const scale=Number(fit.scale||1),w=Math.max(18,Number(slot[2]||70)*scale),left=Number(slot[0]||50)+Number(fit.dx||0)-w/2;
- const top=Number(slot[1]||25)+Number(fit.dy||0),h=w,rot=Number(fit.rotate||0),z=Number(fit.z||5);
- return `<img class="avatar-accessory-img accessory-${idx}${preview?" accessory-preview":""}" src="${src||""}" alt="" aria-hidden="true" draggable="false" decoding="async" data-accessory="${idx}" style="left:${left}%;top:${top}%;width:${w}%;height:${h}%;--ar:${rot}deg;z-index:${z};transform:rotate(var(--ar))">`;
+ const slots=av.slots||{},fit=item.fit||{};
+ const slot=slots[fit.slot]||slots.head||[50,25,75];
+ const x=Number(slot[0]??50)+Number(fit.dx||0),y=Number(slot[1]??25)+Number(fit.dy||0);
+ // W/H are calculated separately so every accessory keeps a deliberate silhouette on each character.
+ const w=Math.max(8,Math.min(120,Number(slot[2]??70)*Number(fit.w??1)));
+ const h=Math.max(4,Math.min(120,Number(slot[2]??70)*Number(fit.h??0.5)));
+ const px=Math.max(0,Math.min(1,Number(fit.pivotX??0.5))),py=Math.max(0,Math.min(1,Number(fit.pivotY??0.5)));
+ const rot=Number(fit.rotate||0),z=Number(fit.z||5);
+ return `<img class="avatar-accessory-img accessory-${idx}" src="${src}" alt="" aria-hidden="true" draggable="false" decoding="async" data-accessory="${idx}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%;--pivot-x:${px*100}%;--pivot-y:${py*100}%;--ar:${rot}deg;z-index:${z};transform:translate(calc(var(--pivot-x) * -1),calc(var(--pivot-y) * -1)) rotate(var(--ar));transform-origin:50% 50%">`;
 }
 function avatarReaction(emotion){
  const map={happy:['✨','Goed!'],celebrate:['🎉','Lekker!'],sad:['💧','Oei!'],rankup:['⬆️','Omhoog!'],overtaken:['😵','Oh nee!']};
