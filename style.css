@@ -494,3 +494,113 @@ html.avatar-picker-open,body.avatar-picker-open{overflow:hidden}
 @media(max-width:1050px){.avatar-picker-main{grid-template-columns:1fr;overflow:auto}.avatar-showcase-panel{min-height:520px}.avatar-catalog-panel{min-height:540px}.showcase-stage .avatar-inline{--avatar-size:min(55vw,360px)}.avatar-picker-screen{overflow:auto;grid-template-rows:auto auto auto}.avatar-picker-bottom{position:sticky;bottom:0}.avatar-catalog-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:700px){.avatar-picker-top{padding:14px 14px 12px;align-items:flex-start}.avatar-top-icon{width:42px;height:42px}.avatar-top-brand p{font-size:11px}.avatar-phone-badge{display:none}.avatar-picker-main{padding:10px;gap:10px}.avatar-showcase-panel{min-height:440px;padding:14px;border-radius:18px}.showcase-stage .avatar-inline{--avatar-size:min(78vw,310px)}.catalog-toolbar{padding:10px;align-items:stretch;flex-direction:column}.avatar-tabs{width:100%;display:grid;grid-template-columns:1fr 1fr}.avatar-tab{width:100%}.avatar-search{min-width:0;width:100%}.catalog-scroll{padding:10px}.catalog-heading h2{font-size:20px}.avatar-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.avatar-option{min-height:144px}.accessory-option{min-height:154px}.avatar-option-art{height:100px}.accessory-option-art{height:104px}.avatar-picker-bottom{padding:10px;flex-direction:column;align-items:stretch}.selection-status{text-align:center}.avatar-bottom-actions{display:grid;grid-template-columns:1fr 1.3fr}.avatar-bottom-actions .btn{width:100%}}
 @media(max-width:390px){.avatar-picker-top h1{font-size:20px}.avatar-top-brand p{display:none}.avatar-option,.accessory-option{padding:8px 6px}.avatar-option-art{height:88px}.accessory-option-art{height:92px}.avatar-option strong,.accessory-option span:nth-last-of-type(1){font-size:12px}.avatar-option small,.accessory-option small{font-size:9px}}
+
+/* V55 — compact, fit-safe avatar layers and game boards */
+.avatar-inline{position:relative;display:inline-block;width:var(--avatar-size,48px);height:var(--avatar-size,48px);flex:0 0 auto;vertical-align:middle;line-height:0;isolation:isolate}
+.avatar-svg,.avatar-accessory{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible;pointer-events:none}
+.avatar-main-img{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;object-fit:contain;object-position:center bottom;max-width:none!important;max-height:none!important}
+.avatar-accessory-img{position:absolute!important;display:block!important;height:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center!important;pointer-events:none!important;user-select:none!important;transform-origin:center center!important}
+.avatar-reaction{position:absolute;right:-18%;top:-18%;z-index:30;display:flex;align-items:center;gap:3px;padding:4px 7px;border-radius:999px;background:rgba(25,12,62,.92);color:#fff;border:1px solid rgba(255,255,255,.22);box-shadow:0 5px 16px rgba(0,0,0,.22);font-weight:900;white-space:nowrap;animation:avatar-reaction-pop .5s cubic-bezier(.2,.8,.2,1) both;line-height:1}
+.avatar-reaction b{font-size:.95em}.avatar-reaction small{font-size:.65em}
+@keyframes avatar-reaction-pop{from{opacity:0;transform:scale(.55) translateY(8px)}to{opacity:1;transform:none}}
+
+/* The picker must fit without giant previews or clipped controls. */
+.avatar-picker-main{grid-template-columns:minmax(300px,.78fr) minmax(0,1.62fr);gap:12px;padding:12px 16px}
+.avatar-showcase-panel{grid-template-rows:auto minmax(190px,1fr) auto auto;padding:14px;border-radius:20px}
+.showcase-stage{min-height:190px;max-height:390px}
+.showcase-stage .avatar-inline{--avatar-size:clamp(210px,24vw,295px)}
+.showcase-stage .avatar-main-img{object-position:center bottom}
+.showcase-name strong{font-size:22px}.showcase-name span{font-size:12px}
+.mood-strip{gap:5px;margin-top:7px}.mood-pill{padding:6px 8px;font-size:10px}
+.showcase-tip{margin-top:8px;padding:9px 10px;font-size:11px}
+.avatar-catalog-panel{min-width:0}.catalog-toolbar{padding:10px 12px 8px}.avatar-tab{padding:8px 10px;font-size:12px}.avatar-search{min-width:180px;padding:8px 10px}
+.catalog-scroll{padding:11px}.catalog-heading{margin-bottom:8px}.catalog-heading h2{font-size:20px}.avatar-catalog-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.avatar-option,.accessory-option{min-height:128px;padding:8px 6px;border-radius:14px;gap:4px}
+.avatar-option-art{height:88px}.accessory-option{min-height:136px}.accessory-option-art{height:92px}
+.accessory-option-art .accessory-art-img{width:78%!important;max-width:104px;max-height:92px}
+.avatar-option strong,.accessory-option span:nth-last-of-type(1){font-size:12px}.avatar-option small,.accessory-option small{font-size:9px}
+.no-accessory-big{width:58px;height:58px;font-size:28px;border-radius:18px}
+.avatar-picker-bottom{padding:9px 16px}.avatar-ready{min-width:120px}
+
+/* Keep leaderboards readable but compact on every screen. */
+.stage.leaderboard,.center.leaderboard{width:min(700px,94vw);max-width:700px;margin:0 auto;padding:16px 12px;min-height:auto}
+.stage.leaderboard h1,.center.leaderboard h1{font-size:clamp(26px,4vw,38px);margin-bottom:12px}
+.leaderboard .row,.solo-board .row{min-height:50px;padding:8px 12px;margin-bottom:7px;font-size:16px;border-radius:10px}
+.leaderboard .lb-name,.solo-board .lb-name{display:flex;align-items:center;gap:5px;min-width:0;overflow:visible}
+.leaderboard .lb-name>b:last-of-type,.solo-board .lb-name>b:last-of-type{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leaderboard .avatar-inline,.solo-board .avatar-inline{--avatar-size:36px!important}
+.leaderboard .lb-rank,.solo-board .lb-rank{width:1.8em;height:1.8em;margin-right:2px}
+.leaderboard .lb-score,.solo-board .lb-score{font-size:15px;min-width:4.5ch}
+.pod{gap:12px;align-items:end}.pod .pl .pn .avatar-inline{--avatar-size:58px!important}
+.big-msg{font-size:clamp(30px,4.4vw,42px)}
+.p1{height:150px}.p2{height:112px}.p3{height:88px}.blk{font-size:34px}
+
+/* Compact the public quiz example so the whole card fits comfortably. */
+.public-view-card{width:min(840px,94vw);max-height:90vh;border-radius:18px}
+.public-view-head{padding:16px 18px 12px}.public-view-head h2{font-size:25px}.public-view-theme{padding:9px 18px}.public-question-list{padding:12px 18px 16px;gap:9px}.preview-q{padding:12px;border-radius:14px}.preview-q h3{font-size:19px}.preview-answer-grid{gap:7px}.preview-answer{padding:8px 10px}
+.public-view-actions{padding:10px 18px}
+
+@media(max-width:1100px){
+  .avatar-picker-main{grid-template-columns:1fr;overflow:auto}
+  .avatar-showcase-panel{min-height:380px;max-height:52dvh}
+  .showcase-stage{max-height:270px}
+  .showcase-stage .avatar-inline{--avatar-size:min(46vw,260px)}
+  .avatar-catalog-panel{min-height:0}
+  .avatar-catalog-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .avatar-showcase-panel{min-height:330px;max-height:none}
+  .showcase-stage{min-height:170px;max-height:250px}
+  .showcase-stage .avatar-inline{--avatar-size:min(52vw,230px)}
+  .avatar-catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .avatar-option,.accessory-option{min-height:122px}.accessory-option{min-height:132px}
+  .avatar-option-art{height:82px}.accessory-option-art{height:88px}
+  .leaderboard .row,.solo-board .row{font-size:14px;padding:7px 9px}.leaderboard .avatar-inline,.solo-board .avatar-inline{--avatar-size:32px!important}
+  .pod .pl .pn .avatar-inline{--avatar-size:48px!important}
+}
+
+/* V55.1 — final sizing/positioning pass */
+/* The avatar canvas is always a fixed square: accessory coordinates are therefore stable at every UI size. */
+.avatar-inline{contain:layout paint;}
+.avatar-svg,.avatar-accessory{inset:0;overflow:visible!important;}
+.avatar-main-img{object-position:50% 50%!important;}
+.avatar-accessory-img{will-change:transform,left,top;width:auto;}
+
+/* Don't let the avatar reaction bubble resize leaderboard rows. */
+.lb-name>.avatar-inline{margin-right:2px}
+.avatar-reaction{pointer-events:none}
+
+/* Compact leaderboard/podium cards: enough room for avatars and animated scores without dominating the screen. */
+.stage.leaderboard{max-height:calc(100dvh - 90px);overflow:auto;display:flex;flex-direction:column;align-items:stretch;justify-content:center;}
+.stage.leaderboard .lb-row{flex:0 0 auto}
+.stage.leaderboard .btn{align-self:center;width:min(360px,100%)}
+.stage:not(.leaderboard) .pod{max-width:760px;margin:0 auto;}
+.pod .pl{min-width:0;}
+.pod .pn{min-width:100px;}
+
+/* Avatar studio: never let the preview swallow the catalog or push the Done bar below the fold. */
+.avatar-picker-screen{min-height:0;overflow:hidden}
+.avatar-picker-main{min-height:0;height:100%;grid-template-columns:minmax(290px,.72fr) minmax(0,1.72fr);}
+.avatar-showcase-panel{min-height:0;height:100%;max-height:none;grid-template-rows:auto minmax(170px,1fr) auto auto;overflow:hidden}
+.showcase-stage{min-height:170px;max-height:330px}
+.showcase-stage .avatar-inline{--avatar-size:clamp(210px,22vw,285px)}
+.catalog-scroll{min-height:0;overflow:auto;scrollbar-width:thin}
+.avatar-catalog-grid{align-content:start}
+.avatar-picker-bottom{min-height:60px}
+
+@media(max-width:1100px){
+  .avatar-picker-screen{overflow:auto}
+  .avatar-picker-main{height:auto}
+  .avatar-showcase-panel{height:auto;min-height:340px}
+  .showcase-stage{max-height:270px}
+}
+@media(max-width:700px){
+  .avatar-picker-screen{overflow:auto}
+  .avatar-showcase-panel{min-height:300px}
+  .showcase-stage{min-height:150px;max-height:220px}
+  .showcase-stage .avatar-inline{--avatar-size:min(50vw,220px)}
+  .avatar-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .stage.leaderboard{width:100%;max-width:560px;padding:12px 8px}
+  .stage.leaderboard .lb-row{min-height:46px;padding:6px 8px;font-size:14px}
+  .stage.leaderboard .avatar-inline{--avatar-size:30px!important}
+}

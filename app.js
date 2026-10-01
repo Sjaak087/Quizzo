@@ -128,34 +128,62 @@ const accessoryKind=name=>{
   if(/kroon|muts|hoed|helm|hoorns|halo|bloem|pet/.test(n))return "head";
   return "head";
 };
-const accessoryPlacement=(avatarIdx,accessoryIdx)=>{
+const ACCESSORY_FIT={
+  "kroon":{kind:"head",scale:.92,y:6,rot:0},
+  "muts":{kind:"head",scale:.94,y:9,rot:0},
+  "zonnebril":{kind:"face",scale:.72,y:35,rot:0},
+  "bril":{kind:"face",scale:.72,y:35,rot:0},
+  "masker":{kind:"face",scale:.76,y:35,rot:0},
+  "koptelefoon":{kind:"ears",scale:1.18,y:26,rot:0},
+  "oork":{kind:"ears",scale:1.04,y:25,rot:0},
+  "kattenoren":{kind:"head",scale:1.00,y:7,rot:0},
+  "strik":{kind:"neck",scale:.48,y:58,rot:0},
+  "sjaal":{kind:"neck",scale:.74,y:57,rot:0},
+  "bandana":{kind:"neck",scale:.58,y:49,rot:0},
+  "tovenaarshoed":{kind:"headTall",scale:.92,y:6,rot:-5},
+  "feesthoed":{kind:"headTall",scale:.76,y:9,rot:4},
+  "bloemenkrans":{kind:"head",scale:.96,y:8,rot:0},
+  "piratenhoed":{kind:"headWide",scale:1.00,y:9,rot:-2},
+  "vikinghelm":{kind:"headWide",scale:.96,y:9,rot:0},
+  "astronauthelm":{kind:"headWide",scale:1.02,y:23,rot:0},
+  "drakenhoorns":{kind:"head",scale:.90,y:8,rot:0},
+  "duivelhoorns":{kind:"head",scale:.92,y:8,rot:0},
+  "halo":{kind:"head",scale:.86,y:3,rot:0},
+  "detectivepet":{kind:"headWide",scale:.90,y:10,rot:-4},
+  "superheldmasker":{kind:"face",scale:.80,y:36,rot:0},
+  "cape":{kind:"back",scale:1.00,y:62,rot:0}
+};
+function accessoryPlacement(avatarIdx,accessoryIdx){
   const av=QUIZZO_AVATAR_CATALOG.avatars[clampIndex(avatarIdx,AVATAR_COUNT)]||{};
   const ac=QUIZZO_AVATAR_CATALOG.accessories[clampIndex(accessoryIdx,ACCESSORY_COUNT)]||{};
-  const m=av.metrics||{headX:50,headW:36,headTop:8,faceY:30,neckY:48,bodyX:50,bodyW:62};
-  const kind=accessoryKind(ac.name);
-  let x=m.headX,y=m.headTop,w=m.headW,z=6,rot=0,dy=0;
+  const m=av.metrics||{headX:50,headW:64,headTop:5,faceY:35,neckY:52,bodyX:50,bodyW:72};
   const n=String(ac.name||"").toLowerCase();
-  if(kind==="face"){
-    x=m.headX;y=m.faceY;w=m.headW*(/masker/.test(n)?1.0:.88);z=8;
-    if(/pixel/.test(n))rot=0;
-  }else if(kind==="ears"){
-    x=m.headX;y=m.headTop+(m.faceY-m.headTop)*.42;w=m.headW*1.18;z=7;
-  }else if(kind==="neck"){
-    x=m.headX;y=m.neckY;w=m.headW*(/sjaal/.test(n)?1.18:/strik/.test(n)?.82:1.0);z=9;
-  }else if(kind==="back"){
-    x=m.bodyX;y=Math.min(64,m.neckY+6);w=m.bodyW*1.15;z=2;
-  }else{
-    x=m.headX;y=Math.max(2,m.headTop-(m.headW*.06));w=m.headW*1.16;z=7;
-    if(/kroon/.test(n))w=m.headW*1.28;
-    if(/halo/.test(n))w=m.headW*1.06;
-    if(/drakenhoorns|duivelhoorns/.test(n))w=m.headW*1.14;
+  const key=Object.keys(ACCESSORY_FIT).find(k=>n.includes(k));
+  const f=ACCESSORY_FIT[key]||{kind:"head",scale:.76,y:m.headTop,rot:0};
+  const baseHead=Math.max(34,Math.min(88,Number(m.headW)||64));
+  const body=Math.max(baseHead,Math.min(94,Number(m.bodyW)||72));
+  let x=Number(m.headX)||50;
+  let y=f.y===undefined?m.headTop:f.y;
+  let w=baseHead*f.scale;
+  let z=7;
+  if(f.kind==="face"){
+    x=Number(m.headX)||50; y=(f.y??m.faceY); w=baseHead*f.scale; z=8;
+  } else if(f.kind==="ears"){
+    x=Number(m.headX)||50; y=(Number(m.headTop)||5)+Math.max(14,(Number(m.faceY)||35)-(Number(m.headTop)||5))*.62; w=Math.min(96,baseHead*f.scale); z=7;
+  } else if(f.kind==="neck"){
+    x=Number(m.bodyX)||Number(m.headX)||50; y=(f.y??m.neckY); w=Math.min(86,Math.max(34,body*f.scale)); z=9;
+  } else if(f.kind==="back"){
+    x=Number(m.bodyX)||50; y=f.y??Math.min(66,(Number(m.neckY)||52)+8); w=Math.min(96,body*f.scale); z=2;
+  } else if(f.kind==="headWide"){
+    x=Number(m.headX)||50; y=(f.y??m.headTop); w=Math.min(96,baseHead*f.scale*1.08); z=7;
+  } else if(f.kind==="headTall"){
+    x=Number(m.headX)||50; y=(f.y??m.headTop); w=Math.min(88,baseHead*f.scale); z=7;
+  } else {
+    x=Number(m.headX)||50; y=(f.y??m.headTop); w=Math.min(92,baseHead*f.scale); z=7;
   }
-  if(/tovenaar/.test(n))rot=-4;
-  if(/feesthoed/.test(n))rot=4;
-  if(/detective/.test(n))rot=-3;
-  if(/piraten/.test(n))rot=-2;
-  return {x,y:y+dy,w,z,rot};
-};
+  const rotation=Number(f.rot)||0;
+  return {x,y,w,z,rot:rotation};
+}
 function avatarSvg(i){
   const idx=clampIndex(i,AVATAR_COUNT),item=QUIZZO_AVATAR_CATALOG.avatars[idx]||{},src=item.src||"";
   return `<img class="avatar-main-img" src="${src}" alt="" aria-hidden="true" draggable="false" decoding="async">`;
@@ -207,7 +235,7 @@ function openAvatarPicker(initial,done,title="Kies je avatar"){
     <main class="avatar-picker-main">
       <section class="avatar-showcase-panel">
         <div class="showcase-label">JOUW PERSONAGE</div>
-        <div class="showcase-stage" id="avatarLive">${avatarMarkup(avatarDraft,320)}</div>
+        <div class="showcase-stage" id="avatarLive">${avatarMarkup(avatarDraft,275)}</div>
         <div class="showcase-name"><strong id="avatarLiveName">${esc(AVATAR_NAMES[avatarDraft.avatar]||"Avatar")}</strong><span id="avatarLiveAccessory">${esc(avatarDraft.accessory===null?"Geen accessoire":(ACCESSORY_NAMES[avatarDraft.accessory]||"Accessoire"))}</span></div>
         <div class="mood-strip"><span class="mood-pill">🙂 Standaard</span><span class="mood-pill">✨ Goed antwoord</span><span class="mood-pill">⬆️ Rank-up</span><span class="mood-pill">🎉 Winnaar</span></div>
         <div class="showcase-tip">💡 Accessoires worden automatisch passend geschaald en op hoofd, gezicht, oren, nek of rug geplaatst.</div>
@@ -236,7 +264,7 @@ function refreshAvatarPickerCatalog(){
 }
 function rerenderAvatarPicker(){
   const m=document.querySelector('.avatar-picker-screen');if(!m)return;
-  const live=m.querySelector('#avatarLive');if(live)live.innerHTML=avatarMarkup(avatarDraft,320);
+  const live=m.querySelector('#avatarLive');if(live)live.innerHTML=avatarMarkup(avatarDraft,275);
   const label=m.querySelector('#avatarLiveName');if(label)label.textContent=AVATAR_NAMES[avatarDraft.avatar]||'Avatar';
   const sub=m.querySelector('#avatarLiveAccessory');if(sub)sub.textContent=avatarDraft.accessory===null?'Geen accessoire':(ACCESSORY_NAMES[avatarDraft.accessory]||'Accessoire');
   const status=m.querySelector('.selection-status strong');if(status)status.textContent=`${AVATAR_NAMES[avatarDraft.avatar]||'Avatar'} · ${avatarDraft.accessory===null?'Geen accessoire':(ACCESSORY_NAMES[avatarDraft.accessory]||'Accessoire')}`;
