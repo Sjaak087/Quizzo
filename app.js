@@ -5,6 +5,13 @@ window.__quizzoStarted = true;
 const $=s=>document.querySelector(s),A=$("#app"),COL=["r","b","y","g"],SYM=["▲","◆","●","■"];
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const arr=x=>Array.isArray(x)?x:Object.values(x||{});
+
+// Centrale app-state: declared before any event handlers use it.
+const act={};
+let user=null, offset=0, unsub=null, timer=null;
+let G=null, CODE="", HOST=false, busy=false, lastKey="";
+let scoreSnapshot={}, rankSnapshot={}, boardAnim=null, lastPaintState="";
+let Q=null, QID=null, ADMIN_EDIT=null, joinCode=null, SEL=-1, tab="join", mode="login";
 const THEMES={
  classic:{name:"Quizzo Klassiek",icon:"🎉"},
  winter:{name:"Winter",icon:"❄️"},
