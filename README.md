@@ -1,14 +1,9 @@
-# Quizzo v64 – complete stable release
+# Quizzo v65 – stability rebuild
 
-Vervang voor deze release de rootbestanden en de `avatars/` map met de bestanden in deze zip.
-Laat je bestaande `themes/` map staan: die wordt bewust niet opnieuw meegeleverd.
+Deze patch herstelt de globale click-dispatcher, bootvolgorde, ontbrekende helpers en de originele paarse Quizzo-achtergrond.
 
-Root:
-- index.html
+Vervang alleen:
 - app.js
 - style.css
-- firebase.js
-- avatars.js
-- avatars/
 
-De bestaande Quizzo-themes blijven uit de zip zodat ze niet opnieuw hoeven te worden geupload.
+Laat index.html, firebase.js, avatars.js, avatars/ en themes/ staan.

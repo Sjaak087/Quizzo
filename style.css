@@ -671,3 +671,33 @@ html.avatar-picker-open,body.avatar-picker-open{overflow:hidden}
 .avatar-showcase-panel{overflow:visible!important;contain:none!important}
 .avatar-picker-screen{overflow:auto!important}
 @media(max-width:700px){.showcase-stage{min-height:210px!important}.showcase-stage .avatar-inline{--avatar-size:min(54vw,250px)!important}.avatar-option-art{height:112px!important;min-height:112px!important}.avatar-option-art .avatar-main-img{height:108px!important}.avatar-picker-bottom{position:sticky!important;bottom:0!important;z-index:100!important}}
+
+
+/* v65 stability fix: keep the original Quizzo purple canvas visible. */
+html, body {
+  background-color: #46178f !important;
+}
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-image: radial-gradient(circle at 12% 8%, #6a2fc4 0, transparent 42%), radial-gradient(circle at 92% 92%, #8a35e0 0, transparent 38%), #46178f !important;
+  color: #fff;
+}
+body.has-theme-scene {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+body.has-theme-scene #quizzo-theme-scene {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+#app { position: relative; z-index: 1; }
+.modal { z-index: 100; }
+button, [role="button"] { cursor: pointer; }

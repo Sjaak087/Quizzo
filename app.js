@@ -13,6 +13,19 @@ let G=null, CODE="", HOST=false, busy=false, lastKey="";
 let scoreSnapshot={}, rankSnapshot={}, boardAnim=null, lastPaintState="";
 let Q=null, QID=null, ADMIN_EDIT=null, joinCode=null, SEL=-1, tab="join", mode="login";
 
+// Core utility helpers used throughout the app.
+const now=()=>Date.now()+Number(offset||0);
+const em=e=>String(e?.message||e||"Onbekende fout");
+function toast(message){
+  const old=document.querySelectorAll(".toast");
+  old.forEach(x=>x.remove());
+  const el=document.createElement("div");
+  el.className="toast";
+  el.textContent=String(message??"");
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),3200);
+}
+
 // Centrale cleanup-functie: altijd veilig aan te roepen vanuit home(), run() en andere views.
 function cleanup(){
   try{ if(typeof unsub === "function") unsub(); }catch(e){}
@@ -725,3 +738,55 @@ act.ucancel=()=>{EDITU=null;adminBody()};
 act.udel=async d=>{if(!confirm("Deze update verwijderen?"))return;
  try{await priv({["updates/"+d.id]:null})}catch(e){return adminFail()}
  if(EDITU==d.id)EDITU=null;adminBody()};
+
+
+/* ---------- Global interaction + boot ---------- */
+function dispatchAction(el,event){
+  if(!el) return;
+  const name=el.dataset?.a;
+  if(!name) return;
+  const fn=act[name];
+  if(typeof fn!=="function"){
+    console.warn("Quizzo: onbekende actie",name);
+    return;
+  }
+  const data={};
+  for(const [k,v] of Object.entries(el.dataset||{})) if(k!=="a") data[k]=v;
+  try{
+    const result=fn(data,event);
+    if(result && typeof result.catch==="function") result.catch(err=>toast(em(err)));
+  }catch(err){
+    console.error("Quizzo action error",name,err);
+    toast(em(err));
+  }
+}
+
+document.addEventListener("click",e=>{
+  const el=e.target.closest?.("[data-a]");
+  if(!el || el.disabled) return;
+  dispatchAction(el,e);
+});
+
+document.addEventListener("keydown",e=>{
+  if((e.key==="Enter"||e.key===" ") && e.target.matches?.('[role="button"][data-a]')){
+    e.preventDefault();
+    if(!e.target.disabled) dispatchAction(e.target,e);
+  }
+});
+
+// Keep client/server clocks aligned for multiplayer timing.
+let unsubOffset=null;
+try{
+  unsubOffset=onValue(ref(db,".info/serverTimeOffset"),snap=>{offset=Number(snap.val()||0);});
+}catch(e){
+  console.warn("Quizzo server-time offset unavailable",e);
+}
+
+// Start only after every action handler has been registered.
+queueMicrotask(()=>{
+  try{ home(); }catch(err){
+    console.error(err);
+    if(window.quizzoFail) window.quizzoFail(em(err));
+    else if(A) A.innerHTML='<div class="err"><h2>Quizzo kan niet starten</h2><p>'+esc(em(err))+'</p></div>';
+  }
+});
