@@ -117,7 +117,7 @@ function applyTheme(t){
   if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a6",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
 }
 
-/* QUIZZO V62 — Kahoot-style participant characters using original Quizzo assets. */
+/* QUIZZO V72 — Kahoot-style participant characters using original Quizzo assets. */
 let QUIZZO_AVATAR_CATALOG = window.QUIZZO_AVATAR_CATALOG || {avatars:[],accessories:[]};
 let AVATAR_COUNT = QUIZZO_AVATAR_CATALOG.avatars.length || 1;
 let ACCESSORY_COUNT = QUIZZO_AVATAR_CATALOG.accessories.length || 0;
@@ -146,7 +146,7 @@ async function ensureAvatarCatalog(){
     if(!existing){
       await new Promise((resolve,reject)=>{
         const s=document.createElement('script');
-        s.src=new URL('./avatars.js?quizzo-cache=71',import.meta.url).href;
+        s.src=new URL('./avatars.js?quizzo-cache=72',import.meta.url).href;
         s.async=false;
         s.onload=resolve; s.onerror=reject;
         document.head.appendChild(s);
@@ -247,20 +247,6 @@ function avatarMarkup(p,size=48,emotion=""){
   const acc=v.accessory===null?"":accessorySvg(v.accessory,v.avatar);
   const kind=v.accessory===null?null:wearableDef(ACCESSORY_NAMES[v.accessory],QUIZZO_AVATAR_CATALOG.accessories[v.accessory]).kind;
   const back=kind==="back"?acc:"",front=kind==="back"?"":acc;
-  return `<span class="avatar-inline ${e?`mood-${e}`:""}" style="--avatar-size:${size}px"><span class="avatar-back-accessory">${back}</span><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${front}</span>${avatarReaction(e)}</span>`;
-}
-function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return {...DEFAULT_PROFILE}}}
-function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
-
-function avatarReaction(emotion){
-  const map={happy:['✨','Goed!'],celebrate:['🎉','Winnaar!'],sad:['💧','Oei!'],rankup:['⬆️','Omhoog!'],overtaken:['😵','Ingehaald!']};
-  const v=map[emotion];return v?`<span class="avatar-reaction reaction-${emotion}" aria-hidden="true"><b>${v[0]}</b><small>${v[1]}</small></span>`:"";
-}
-function avatarMarkup(p,size=48,emotion=""){
-  const v=normalizeProfile(p),e=emotion||"";
-  const acc=v.accessory===null?"":accessorySvg(v.accessory,v.avatar);
-  const kind=v.accessory===null?null:wearableDef(ACCESSORY_NAMES[v.accessory]).kind;
-  const back=kind==='back'?acc:"",front=kind==='back'?"":acc;
   return `<span class="avatar-inline ${e?`mood-${e}`:""}" style="--avatar-size:${size}px"><span class="avatar-back-accessory">${back}</span><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${front}</span>${avatarReaction(e)}</span>`;
 }
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return {...DEFAULT_PROFILE}}}
