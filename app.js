@@ -189,7 +189,7 @@ async function ensureAvatarCatalog(){
   try{
     const existing=document.querySelector('script[src*="avatars.js"]');
     if(!existing){
-      await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=new URL('./avatars.js?v=80',import.meta.url).href;s.defer=true;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})
+      await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=new URL('./avatars.js?v=81',import.meta.url).href;s.defer=true;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})
     } else await new Promise(r=>setTimeout(r,250));
   }catch(e){console.warn('Quizzo avatars.js kon niet worden geladen',e)}
   refreshAvatarCatalog();
@@ -225,7 +225,7 @@ function openAvatarPicker(initial,done,title="Kies je avatar"){
   const m=document.createElement('div');m.className='avatar-modal avatar-modal-full';
   const currentBadge=avatarBadge(avatarDraft.avatar);
   m.innerHTML=`<div class="avatar-picker-screen">
-    <header class="avatar-picker-top"><div class="avatar-top-brand"><span class="avatar-top-icon">🐾</span><div><span class="eyebrow">QUIZZO</span><h1>${esc(title)}</h1><p>Kies één van de 25 personages.</p></div></div><div class="avatar-top-actions"><span class="avatar-phone-badge">📱 Telefoon ondersteund</span><button class="avatar-close-btn" data-a="closeAvatarPicker" aria-label="Sluiten">×</button></div></header>
+    <header class="avatar-picker-top"><div class="avatar-top-brand"><span class="avatar-top-icon">🐾</span><div><span class="eyebrow">QUIZZO</span><h1>${esc(title)}</h1><p>Kies één van de 20 personages.</p></div></div><div class="avatar-top-actions"><span class="avatar-phone-badge">📱 Telefoon ondersteund</span><button class="avatar-close-btn" data-a="closeAvatarPicker" aria-label="Sluiten">×</button></div></header>
     <main class="avatar-picker-main"><section class="avatar-showcase-panel"><div class="showcase-label">JOUW PERSONAGE</div><div class="showcase-stage" id="avatarLive"><div class="showcase-badge" id="avatarLiveBadge">${currentBadge}</div>${avatarMarkup(avatarDraft,275)}</div><div class="showcase-name"><strong id="avatarLiveName">${esc(AVATAR_NAMES[avatarDraft.avatar]||'Avatar')}</strong><span>Dierlijk of speciaal personage</span></div><div class="showcase-tip">Je personage wordt gebruikt in de lobby, naast je naam, op het leaderboard en op het podium.</div></section>
       <section class="avatar-catalog-panel"><div class="catalog-toolbar"><div class="avatar-tabs"><button class="avatar-tab active">🐾 Personages <b>${AVATAR_COUNT}</b></button></div><label class="avatar-search">⌕<input id="avatarSearch" placeholder="Zoek op naam..." value="${esc(avatarPickerSearch)}"></label></div><div class="catalog-scroll"><div class="catalog-heading"><div><span class="eyebrow">PERSONAGES</span><h2>Kies je personage</h2></div><span class="catalog-count">${AVATAR_COUNT} beschikbaar</span></div><div class="avatar-catalog-grid show-avatars">${avatarChoiceMarkup()}</div></div></section></main>
     <footer class="avatar-picker-bottom"><div class="selection-status"><span>GESELECTEERD</span><strong id="avatarSelectedName">${esc(AVATAR_NAMES[avatarDraft.avatar]||'Avatar')}</strong></div><div class="avatar-bottom-actions"><button class="btn w" data-a="closeAvatarPicker">Annuleren</button><button class="btn g avatar-ready" data-a="avatarDone">✓ Klaar</button></div></footer>
@@ -681,7 +681,7 @@ act.alogin=async()=>{const e=$("#ae").value.trim().toLowerCase(),p=$("#ap").valu
  try{const [se,ss]=await Promise.all([get(ref(db,"admin/email")),get(ref(db,"admin/salt"))]);
   if(se.val()!==e)throw 0;const h=await hashPw(p,ss.val());ADM=h;await priv({adminPing:Date.now()});
   sessionStorage.setItem("quizzo_adm",h);adminBody()}catch(err){ADM=null;toast("E-mailadres of wachtwoord klopt niet.")}};
-act.toggleAvatarNew=async d=>{const i=Number(d.index);if(!Number.isInteger(i)||i<0||i>=AVATAR_COUNT)return;const next=!(AVATAR_NEW_BADGES[i]===true);try{await priv({[`avatarBadges/${i}`]:next});AVATAR_NEW_BADGES[i]=next;toast(`${AVATAR_NAMES[i]||"Avatar"}: ${next?"Nieuw-badge aangezet":"Nieuw-badge uitgezet"}`);adminBody()}catch(e){adminFail()}};
+act.toggleAvatarNew=async d=>{const i=Number(d.index);if(!Number.isInteger(i)||i<0||i>=AVATAR_COUNT)return;const next=!(AVATAR_NEW_BADGES[i]===true);try{await priv({[`avatarBadges/${i}`]:next});AVATAR_NEW_BADGES[i]=next;toast(`${AVATAR_NAMES[i]||"Avatar"}: ${next?"Nieuw-badge aangezet":"Nieuw-badge uitgezet"}`);adminBody()}catch(e){console.error("avatarBadges",e);toast("De Nieuw-badge kon niet worden opgeslagen. Controleer de Firebase-regels.")}};
 act.usave=async()=>{const t=$("#ut").value.trim(),d=$("#ud").value,h=$("#uh").value,b=$("#ub").value.trim();
  if(!t||!d||!h||!b)return toast("Vul titel, datum, tijd en beschrijving in.");
  const id=EDITU||push(ref(db,"updates")).key;
