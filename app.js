@@ -72,36 +72,22 @@ const THEMES={
 const themeIds=Object.keys(THEMES);
 const safeTheme=t=>themeIds.includes(t)?t:"classic";
 
-// BELANGRIJK: assets worden relatief aan dit ES-modulebestand opgelost,
-// niet aan document.baseURI. Dit werkt ook wanneer Quizzo op GitHub Pages
-// onder een repository-submap draait (bijv. /Quizzo/).
-const QUIZZO_APP_BASE = new URL("./", import.meta.url);
-const QUIZZO_THEMES_BASE = new URL("./themes/", QUIZZO_APP_BASE);
-const QUIZZO_AVATARS_BASE = new URL("./avatars/", QUIZZO_APP_BASE);
+// Assets must be resolved from the physical location of app.js, not from the
+// current browser route. This is important on GitHub Pages when Quizzo opens
+// a route such as /Quizzo/play/ABC/.
+const QUIZZO_APP_URL = new URL("./", import.meta.url);
+const QUIZZO_ASSET_ROOT = new URL("./", QUIZZO_APP_URL);
+window.QUIZZO_ASSET_ROOT = QUIZZO_ASSET_ROOT.href;
 
-function uniqueUrls(urls){
-  return [...new Set(urls.filter(Boolean).map(String))];
+function assetHref(path){
+  const clean=String(path||"").replace(/^\.\//,"");
+  if(!clean)return "";
+  if(/^(?:data|blob|https?):/i.test(clean))return clean;
+  return new URL(clean, QUIZZO_ASSET_ROOT).href;
 }
-function assetCandidates(path, type="generic"){
-  const raw=String(path||"").trim();
-  if(!raw)return [];
-  if(/^data:|^blob:|^https?:/i.test(raw))return [raw];
-
-  let clean=raw.replace(/^\.\//,"");
-  if(type==="avatar" && !clean.startsWith("avatars/")) clean=`avatars/${clean}`;
-  if(type==="theme" && !clean.startsWith("themes/")) clean=`themes/${clean}`;
-
-  const urls=[new URL(clean,QUIZZO_APP_BASE).href];
-
-  // Extra fallback voor een afwijkende hosting-configuratie.
-  try{ urls.push(new URL(clean,document.baseURI).href); }catch(_){}
-  try{ urls.push(new URL(`./${clean}`,location.href).href); }catch(_){}
-  return uniqueUrls(urls);
-}
-
 function themeSources(id){
   const exts = id === "classic" ? ["png","jpg","webp","svg"] : ["jpg","webp","png","svg"];
-  return uniqueUrls(exts.flatMap(ext=>assetCandidates(`themes/${id}.${ext}`,"theme")));
+  return exts.map(ext => assetHref(`themes/${id}.${ext}`));
 }
 function themeAsset(id){
   return themeSources(id)[0] || "";
@@ -121,8 +107,14 @@ function wireFallbackImage(img, sources){
 function setThemeImageWithFallback(img,id){
   const sources = themeSources(id);
   img.dataset.themeSources = JSON.stringify(sources);
-  img.style.display="block";
-  setImageWithCandidates(img,sources,{hideOnFail:false});
+  let idx=0;
+  const next=()=>{
+    if(idx>=sources.length){ img.style.display="none"; return; }
+    img.style.display="block";
+    img.onerror=next;
+    img.src=sources[idx++];
+  };
+  next();
 }
 function wireThemePreviews(){
   document.querySelectorAll('.theme-choice-thumb[data-theme]').forEach(img=>setThemeImageWithFallback(img,img.dataset.theme));
@@ -158,7 +150,6 @@ function applyTheme(t){
    const tryNext=()=>{
      if(i>=sources.length){
        scene.style.display="none";
-       document.body.style.removeProperty("background-image");
        console.warn("Quizzo thema kon niet worden geladen:", id, sources);
        return;
      }
@@ -205,7 +196,7 @@ async function ensureAvatarCatalog(){
     if(!existing){
       await new Promise((resolve,reject)=>{
         const s=document.createElement('script');
-        s.src=new URL('./avatars.js?quizzo-cache=66',document.baseURI).href;
+        s.src=new URL('./avatars.js?quizzo-cache=75', QUIZZO_APP_URL).href;
         s.async=false;
         s.onload=resolve; s.onerror=reject;
         document.head.appendChild(s);
@@ -226,30 +217,14 @@ const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:
 const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:null});
 const assetUrl=src=>{
   try{
-    const raw=String(src||"").trim();
-    if(!raw)return "";
+    let raw=String(src||'').trim();
+    if(!raw)return '';
     if(/^data:|^blob:|^https?:/i.test(raw))return raw;
-    const isAvatar=/^(?:\.\/)?avatars\//i.test(raw) || /^(?:avatar|accessory)-\d+\.(?:webp|png|jpg|jpeg|svg)$/i.test(raw);
-    const candidates=assetCandidates(raw,isAvatar?"avatar":"generic");
-    return candidates[0] || raw;
+    raw=raw.replace(/^\.\//,'');
+    if(!raw.includes('/avatars/') && /^(?:avatar|accessory)-\d+\.(?:webp|png|jpg|jpeg|svg)$/i.test(raw)) raw='avatars/'+raw;
+    return assetHref(raw);
   }catch(_){return src||""}
 };
-
-function setImageWithCandidates(img,candidates,{hideOnFail=true}={}){
-  if(!img || !candidates?.length)return;
-  let index=0;
-  const next=()=>{
-    if(index>=candidates.length){
-      if(hideOnFail) img.style.visibility="hidden";
-      return;
-    }
-    const url=candidates[index++];
-    img.onerror=next;
-    img.style.visibility="visible";
-    img.src=url;
-  };
-  next();
-}
 
 /*
   Wearables are placed on a normalized 512×512 character canvas.
