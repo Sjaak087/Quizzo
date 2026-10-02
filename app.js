@@ -71,24 +71,39 @@ const THEMES={
 };
 const themeIds=Object.keys(THEMES);
 const safeTheme=t=>themeIds.includes(t)?t:"classic";
-function themeAsset(id, ext="webp"){
-  const actualExt = (id==="classic") ? "png" : ext;
-  return new URL(`./themes/${id}.${actualExt}`,document.baseURI).href;
+function themeSources(id){
+  const exts = id === "classic" ? ["png","jpg","webp","svg"] : ["jpg","webp","png","svg"];
+  return exts.map(ext => new URL(`./themes/${id}.${ext}`, document.baseURI).href);
 }
-let themeFallbackPromise=null;
-async function themeFallback(id){
-  if(!themeFallbackPromise) themeFallbackPromise=import("./theme-assets.js");
-  const mod=await themeFallbackPromise;
-  return mod.THEME_DATA?.[id]||"";
+function themeAsset(id, ext="jpg"){
+  return themeSources(id)[0];
 }
-async function repairThemeImage(img,id){
-  try{const data=await themeFallback(id);if(data){img.src=data;return true;}}catch(e){console.warn("Quizzo thema-fallback kon niet laden",e)}
-  return false;
+function wireFallbackImage(img, sources){
+  if(!img || !sources?.length) return;
+  let idx = Math.max(0, sources.findIndex(s => s === img.src));
+  if(idx < 0) idx = 0;
+  const tryNext = () => {
+    if(idx >= sources.length){ img.removeEventListener("error", tryNext); return; }
+    const next = sources[idx++];
+    if(img.src === next) return tryNext();
+    img.src = next;
+  };
+  img.addEventListener("error", tryNext);
+}
+function setThemeImageWithFallback(img,id){
+  const sources = themeSources(id);
+  img.dataset.themeSources = JSON.stringify(sources);
+  let idx=0;
+  const next=()=>{
+    if(idx>=sources.length){ img.style.display="none"; return; }
+    img.style.display="block";
+    img.onerror=next;
+    img.src=sources[idx++];
+  };
+  next();
 }
 function wireThemePreviews(){
-  document.querySelectorAll(".theme-choice-thumb[data-theme]").forEach(img=>{
-    img.onerror=()=>repairThemeImage(img,img.dataset.theme);
-  });
+  document.querySelectorAll('.theme-choice-thumb[data-theme]').forEach(img=>setThemeImageWithFallback(img,img.dataset.theme));
 }
 
 function ensureThemeScene(){
@@ -111,30 +126,33 @@ function applyTheme(t){
  document.body.classList.add("theme-"+id);
  const scene=ensureThemeScene();
  if(id==="classic"){
-  scene.removeAttribute("src");
-  scene.style.display="none";
-  document.documentElement.style.setProperty("--quiz-theme","none");
-  document.body.style.removeProperty("background-image");
+   scene.removeAttribute("src");
+   scene.style.display="none";
+   document.documentElement.style.setProperty("--quiz-theme","none");
+   document.body.style.removeProperty("background-image");
  }else{
-  const jpg=themeAsset(id,"webp");
-  scene.onerror=async()=>{
-    scene.style.display="none";
-    const ok=await repairThemeImage(scene,id);
-    if(ok){scene.style.display="block";document.body.style.setProperty("background-image",`url("${scene.src}")`,"important");}
-    else console.warn("Quizzo thema-afbeelding kon niet laden:", jpg);
-  };
-  scene.onload=()=>{
-    scene.style.display="block";
-    document.body.style.setProperty("background-image",`url("${scene.src}")`,"important");
-  };
-  scene.src=jpg;
-  scene.style.display="block";
-  document.documentElement.style.setProperty("--quiz-theme",`url("${jpg}")`);
-  document.body.style.setProperty("background-image",`url("${jpg}")`,"important");
+   const sources=themeSources(id);
+   let i=0;
+   const tryNext=()=>{
+     if(i>=sources.length){
+       scene.style.display="none";
+       console.warn("Quizzo thema kon niet worden geladen:", id, sources);
+       return;
+     }
+     const src=sources[i++];
+     scene.onload=()=>{
+       scene.style.display="block";
+       document.body.style.setProperty("background-image",`url("${scene.src}")`,"important");
+     };
+     scene.onerror=tryNext;
+     scene.src=src;
+   };
+   tryNext();
  }
  const meta=document.querySelector('meta[name="theme-color"]');
  if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a6",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
 }
+
 /* QUIZZO V62 — Kahoot-style participant characters using original Quizzo assets. */
 let QUIZZO_AVATAR_CATALOG = window.QUIZZO_AVATAR_CATALOG || {avatars:[],accessories:[]};
 let AVATAR_COUNT = QUIZZO_AVATAR_CATALOG.avatars.length || 1;
@@ -185,10 +203,12 @@ const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:
 const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:null});
 const assetUrl=src=>{
   try{
-    const raw=String(src||'').trim();
+    let raw=String(src||'').trim();
     if(!raw)return '';
     if(/^data:|^blob:|^https?:/i.test(raw))return raw;
-    return new URL(raw.replace(/^\//,''),document.baseURI).href;
+    raw=raw.replace(/^\.\//,'');
+    if(!raw.includes('/avatars/') && /^(?:avatar|accessory)-\d+\.(?:webp|png|jpg|jpeg|svg)$/i.test(raw)) raw='avatars/'+raw;
+    return new URL(raw,document.baseURI).href;
   }catch(_){return src||""}
 };
 
@@ -424,7 +444,7 @@ async function tabView(){
   const list=$("#publicQuizList");
   if(!list)return;
   list.innerHTML=items.length?items.map((item,i)=>`<article class="public-qcard" role="button" tabindex="0" data-a="publicView" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}" style="--delay:${Math.min(i,12)*35}ms">
-    <div class="public-thumb" style="background-image:url('${esc(themeAsset(safeTheme(item.qz.theme),"webp"))}')"><span>${THEMES[safeTheme(item.qz.theme)].icon} ${esc(THEMES[safeTheme(item.qz.theme)].name)}</span><div class="public-thumb-overlay">👀 Bekijk quiz</div></div>
+    <div class="public-thumb" style="background-image:url('${esc(themeAsset(safeTheme(item.qz.theme),"jpg"))}')"><span>${THEMES[safeTheme(item.qz.theme)].icon} ${esc(THEMES[safeTheme(item.qz.theme)].name)}</span><div class="public-thumb-overlay">👀 Bekijk quiz</div></div>
     <div class="public-qbody"><div class="public-meta"><span>👤 ${esc(item.ownerName)}${item.mine?" · Jouw quiz":""}</span><span>📝 ${countLabel(item.qz.questions)}</span></div><h3>${esc(item.qz.title)}</h3><p class="public-description">${esc(item.qz.description||"Geen beschrijving toegevoegd.")}</p><small class="public-open-note">${item.mine?"Openbare quiz · bekijken en spelen · niet bewerkbaar":"Openbare quiz · klik om vragen en antwoorden te bekijken"}</small><button class="btn b" data-a="publicPlay" data-owner="${esc(item.ownerId)}" data-id="${esc(item.id)}">▶ Spelen</button></div>
   </article>`).join(""):`<div class="card narrow empty-discover"><h2>Nog geen openbare quizzen</h2><p>Wanneer publieke quizzen zijn opgeslagen, verschijnen ze hier automatisch.</p><button class="btn w sm" data-a="tab" data-k="mine">Naar mijn quizzen</button></div>`;
   wireThemePreviews();
@@ -548,7 +568,7 @@ act.settings=()=>{
  <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" data-f="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
  <label class="settings-field"><span>Beschrijving van de quiz</span><textarea id="settingsDescription" data-f="settingsDescription" rows="5" maxlength="500" placeholder="Waar gaat deze quiz over?">${esc(Q.description||"")}</textarea><small class="settings-help">Deze beschrijving is zichtbaar in Ontdek quizzen wanneer je quiz openbaar is.</small></label>
  <div class="visibility-setting"><div><b>🌍 Zichtbaarheid</b><small>Kies of andere spelers deze quiz in <b>Ontdek quizzen</b> mogen zien. Standaard is een quiz openbaar.</small></div><div class="visibility-switch" role="group" aria-label="Zichtbaarheid van de quiz"><button class="visibility-option ${Q.public!==false?"active":""}" data-a="visibilityPick" data-value="public">🌍 Openbaar</button><button class="visibility-option ${Q.public===false?"active":""}" data-a="visibilityPick" data-value="private">🔒 Privé</button></div><div class="visibility-note ${Q.public===false?"private":"public"}" id="visibilityNote">${Q.public===false?"Alleen jij kunt deze quiz zien en bewerken.":"Iedereen kan deze quiz vinden, bekijken en spelen."}</div></div>
- <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" data-theme="${id}" src="${themeAsset(id,"webp")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
+ <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" data-theme="${id}" src="${themeAsset(id,"jpg")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
  <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
  document.body.append(m);
  wireThemePreviews();

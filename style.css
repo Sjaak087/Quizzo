@@ -284,30 +284,30 @@ body[class*="theme-"]::after{background-size:cover;background-position:center ce
 html,body{min-height:100%;}
 body[class*="theme-"]::before,body[class*="theme-"]::after{display:none!important;content:none!important;background:none!important;}
 body[class*="theme-"]{background-repeat:no-repeat!important;background-position:center center!important;background-size:cover!important;background-attachment:fixed!important;}
-body.theme-winter{background-color:#dcefff!important;background-image:url("themes/winter.svg")!important;}
-body.theme-christmas{background-color:#7a1f2e!important;background-image:url("themes/christmas.svg")!important;}
-body.theme-spring{background-color:#b8d9b7!important;background-image:url("themes/spring.svg")!important;}
-body.theme-summer{background-color:#48b9e5!important;background-image:url("themes/summer.svg")!important;}
-body.theme-autumn{background-color:#a86b3a!important;background-image:url("themes/autumn.svg")!important;}
-body.theme-classroom{background-color:#55725b!important;background-image:url("themes/classroom.svg")!important;}
-body.theme-ocean{background-color:#116b8d!important;background-image:url("themes/ocean.svg")!important;}
-body.theme-space{background-color:#1f184f!important;background-image:url("themes/space.svg")!important;}
-body.theme-jungle{background-color:#2a6e46!important;background-image:url("themes/jungle.svg")!important;}
-body.theme-sunset{background-color:#8f4a43!important;background-image:url("themes/sunset.svg")!important;}
-body.theme-candy{background-color:#d36b9b!important;background-image:url("themes/candy.svg")!important;}
-body.theme-neon{background-color:#20113d!important;background-image:url("themes/neon.svg")!important;}
-body.theme-sports{background-color:#2f7d45!important;background-image:url("themes/sports.svg")!important;}
-body.theme-football{background-color:#2e7545!important;background-image:url("themes/football.svg")!important;}
-body.theme-basketball{background-color:#9b562b!important;background-image:url("themes/basketball.svg")!important;}
-body.theme-racing{background-color:#b42d45!important;background-image:url("themes/racing.svg")!important;}
-body.theme-gaming{background-color:#38205c!important;background-image:url("themes/gaming.svg")!important;}
-body.theme-music{background-color:#6a35a6!important;background-image:url("themes/music.svg")!important;}
-body.theme-halloween{background-color:#321b3b!important;background-image:url("themes/halloween.svg")!important;}
-body.theme-party{background-color:#7b2ca5!important;background-image:url("themes/party.svg")!important;}
-body.theme-rainbow{background-color:#5f61c7!important;background-image:url("themes/rainbow.svg")!important;}
-body.theme-arcade{background-color:#17366f!important;background-image:url("themes/arcade.svg")!important;}
-body.theme-volcano{background-color:#5e2018!important;background-image:url("themes/volcano.svg")!important;}
-body.theme-study{background-color:#806044!important;background-image:url("themes/study.svg")!important;}
+body.theme-winter{background-color:#dcefff!important;}
+body.theme-christmas{background-color:#7a1f2e!important;}
+body.theme-spring{background-color:#b8d9b7!important;}
+body.theme-summer{background-color:#48b9e5!important;}
+body.theme-autumn{background-color:#a86b3a!important;}
+body.theme-classroom{background-color:#55725b!important;}
+body.theme-ocean{background-color:#116b8d!important;}
+body.theme-space{background-color:#1f184f!important;}
+body.theme-jungle{background-color:#2a6e46!important;}
+body.theme-sunset{background-color:#8f4a43!important;}
+body.theme-candy{background-color:#d36b9b!important;}
+body.theme-neon{background-color:#20113d!important;}
+body.theme-sports{background-color:#2f7d45!important;}
+body.theme-football{background-color:#2e7545!important;}
+body.theme-basketball{background-color:#9b562b!important;}
+body.theme-racing{background-color:#b42d45!important;}
+body.theme-gaming{background-color:#38205c!important;}
+body.theme-music{background-color:#6a35a6!important;}
+body.theme-halloween{background-color:#321b3b!important;}
+body.theme-party{background-color:#7b2ca5!important;}
+body.theme-rainbow{background-color:#5f61c7!important;}
+body.theme-arcade{background-color:#17366f!important;}
+body.theme-volcano{background-color:#5e2018!important;}
+body.theme-study{background-color:#806044!important;}
 /* v19: the SVG theme is the actual page canvas. Keep editor/game surfaces transparent so the scene is visible. */
 body[class*="theme-"]{background-repeat:no-repeat!important;background-position:center center!important;background-size:cover!important;background-attachment:fixed!important;}
 body[class*="theme-"]::before,body[class*="theme-"]::after{display:none!important;}
@@ -701,3 +701,9 @@ body.has-theme-scene #quizzo-theme-scene {
 #app { position: relative; z-index: 1; }
 .modal { z-index: 100; }
 button, [role="button"] { cursor: pointer; }
+
+/* v67 resource-repair: use the actual raster theme images without blur. */
+#quizzo-theme-scene{filter:none!important;image-rendering:auto!important;}
+body.has-theme-scene{background:transparent!important;background-image:none!important;}
+/* Asset images must never be softened by global effects. */
+.avatar-main-img,.accessory-art-img,.avatar-accessory-img{filter:none!important;image-rendering:auto!important;}

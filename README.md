@@ -1,9 +1,10 @@
-# Quizzo v66 avatar loader fix
+Quizzo v67 — resource repair patch
 
-Vervang alleen `app.js`.
+Vervang app.js, style.css, avatars.js en de map avatars/.
+Laat index.html, firebase.js en themes/ staan.
 
-Deze versie wacht eerst op `avatars.js` voordat de avatarcatalogus wordt vastgelegd. Als GitHub Pages de scripts door elkaar uitvoert, laadt `app.js` `avatars.js` automatisch nogmaals met een cache-buster. Daardoor blijven de 20 avatars en 20 accessoires zichtbaar in de avatar-kiezer.
-
-De bestaande `avatars.js` en `avatars/` map blijven nodig en hoeven niet aangepast te worden.
-
-`themes/` zit bewust niet in deze patch.
+Fixes:
+- Thema-afbeeldingen zoeken eerst JPG (de bestaande themes/ bestanden), daarna WebP/PNG/SVG als fallback.
+- Oude SVG-CSS-verwijzingen worden geneutraliseerd zodat ze geen 404s meer veroorzaken.
+- Avatar/accessoire-assets uit de werkende avatarcatalogus zijn meegeleverd.
+- Bare avatar-0.webp/accessory-0.webp namen worden automatisch naar avatars/ genormaliseerd.
