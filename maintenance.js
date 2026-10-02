@@ -9,7 +9,7 @@
 window.QUIZZO_MAINTENANCE = {
   enabled: true,
   password: "Mijnsiteisbeter",
-  rememberUnlock: true
+  rememberUnlock: false
 };
 
 (function () {
