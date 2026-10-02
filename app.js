@@ -42,6 +42,11 @@ function cleanup(){
   boardAnim=null;
   lastPaintState="";
 }
+// V68: resolve assets relative to the deployed app module, not the browser document URL.
+const QUIZZO_APP_BASE=new URL(".",import.meta.url);
+const QUIZZO_ASSET_BASE=new URL(".",QUIZZO_APP_BASE);
+const QUIZZO_VERSION="68";
+
 const THEMES={
  classic:{name:"Quizzo Klassiek",icon:"🎉"},
  winter:{name:"Winter",icon:"❄️"},
@@ -73,7 +78,7 @@ const themeIds=Object.keys(THEMES);
 const safeTheme=t=>themeIds.includes(t)?t:"classic";
 function themeSources(id){
   const exts = id === "classic" ? ["png","jpg","webp","svg"] : ["jpg","webp","png","svg"];
-  return exts.map(ext => new URL(`./themes/${id}.${ext}`, document.baseURI).href);
+  return exts.map(ext => new URL(`./themes/${id}.${ext}`, QUIZZO_ASSET_BASE).href);
 }
 function themeAsset(id, ext="jpg"){
   return themeSources(id)[0];
@@ -168,6 +173,15 @@ function refreshAvatarCatalog(){
   ACCESSORY_NAMES = (QUIZZO_AVATAR_CATALOG.accessories||[]).map(x=>x?.name||"Accessoire");
 }
 
+async function preflightQuizzoAssets(){
+  const classic=new URL('./themes/classic.png',QUIZZO_ASSET_BASE).href;
+  const urls=[classic,...(QUIZZO_AVATAR_CATALOG.avatars||[]).map(x=>x?.src),...(QUIZZO_AVATAR_CATALOG.accessories||[]).map(x=>x?.src)]
+    .map(assetUrl).filter(Boolean);
+  let failed=0;
+  await Promise.all(urls.map(u=>new Promise(resolve=>{const img=new Image();img.onload=resolve;img.onerror=()=>{failed++;resolve()};img.src=u})));
+  if(failed)console.warn(`Quizzo: ${failed} lokale avatar/thema-assets konden niet direct worden geladen.`);
+}
+
 async function ensureAvatarCatalog(){
   if(window.QUIZZO_AVATAR_CATALOG?.avatars?.length){ refreshAvatarCatalog(); return true; }
   // Give an existing avatars.js script a chance to finish before loading a fallback.
@@ -182,7 +196,7 @@ async function ensureAvatarCatalog(){
     if(!existing){
       await new Promise((resolve,reject)=>{
         const s=document.createElement('script');
-        s.src=new URL('./avatars.js?quizzo-cache=66',document.baseURI).href;
+        s.src=new URL(`./avatars.js?quizzo-cache=${QUIZZO_VERSION}`,QUIZZO_ASSET_BASE).href;
         s.async=false;
         s.onload=resolve; s.onerror=reject;
         document.head.appendChild(s);
@@ -206,11 +220,35 @@ const assetUrl=src=>{
     let raw=String(src||'').trim();
     if(!raw)return '';
     if(/^data:|^blob:|^https?:/i.test(raw))return raw;
-    raw=raw.replace(/^\.\//,'');
-    if(!raw.includes('/avatars/') && /^(?:avatar|accessory)-\d+\.(?:webp|png|jpg|jpeg|svg)$/i.test(raw)) raw='avatars/'+raw;
-    return new URL(raw,document.baseURI).href;
+    raw=raw.replace(/^\.\//,'').replace(/^\/+/, '');
+    const file=(raw.split(/[?#]/)[0].split('/').pop()||raw);
+    if(/^(?:avatar|accessory)-\d+\.(?:webp|png|jpg|jpeg|svg)$/i.test(file)) raw=`avatars/${file}`;
+    else if(/^[a-z0-9_-]+\.(?:jpg|jpeg|png|webp|svg)$/i.test(file) && !raw.includes('/themes/')) raw=`themes/${file}`;
+    return new URL(raw,QUIZZO_ASSET_BASE).href;
   }catch(_){return src||""}
 };
+
+const avatarFallbackEmoji=i=>["🦊","🐼","🐧","🐱","🐶","🐰","🦁","🐸","🐨","🦈","🐲","🐵","💀","👽","🤖","🏴‍☠️","🚀","🐯","🐙","😈"][Number(i)||0]||"🙂";
+function bindAssetFallbacks(root=document){
+  root.querySelectorAll?.('img.avatar-main-img').forEach(img=>{
+    if(img.dataset.fallbackBound)return;
+    img.dataset.fallbackBound='1';
+    img.addEventListener('error',()=>{
+      const holder=img.closest('.avatar-inline');
+      img.style.display='none';
+      if(holder){
+        holder.classList.add('avatar-image-missing');
+        if(!holder.querySelector('.avatar-fallback')){const f=document.createElement('span');f.className='avatar-fallback';f.textContent=avatarFallbackEmoji(img.dataset.avatarIndex);holder.append(f)}
+      }
+    },{once:true});
+  });
+  root.querySelectorAll?.('img.avatar-accessory-img,img.accessory-art-img').forEach(img=>{
+    if(img.dataset.fallbackBound)return;
+    img.dataset.fallbackBound='1';
+    img.addEventListener('error',()=>{img.style.display='none'},{once:true});
+  });
+}
+
 
 /*
   Wearables are placed on a normalized 512×512 character canvas.
@@ -270,7 +308,7 @@ function accessoryPlacement(avatarIdx,accessoryIdx){
 }
 function avatarSvg(i){
   const idx=clampIndex(i,AVATAR_COUNT),item=QUIZZO_AVATAR_CATALOG.avatars[idx]||{};
-  return `<img class="avatar-main-img" src="${esc(assetUrl(item.src||''))}" alt="" aria-hidden="true" draggable="false" decoding="async">`;
+  return `<img class="avatar-main-img" src="${esc(assetUrl(item.src||''))}" data-avatar-index="${idx}" alt="" aria-hidden="true" draggable="false" decoding="async">`;
 }
 function accessorySvg(i,avatar=0,preview=false){
   const idx=normalizeAccessory(i),item=idx===null?null:QUIZZO_AVATAR_CATALOG.accessories[idx];
@@ -289,7 +327,7 @@ function avatarMarkup(p,size=48,emotion=""){
   const acc=v.accessory===null?"":accessorySvg(v.accessory,v.avatar);
   const kind=v.accessory===null?null:wearableDef(ACCESSORY_NAMES[v.accessory]).kind;
   const back=kind==='back'?acc:"",front=kind==='back'?"":acc;
-  return `<span class="avatar-inline ${e?`mood-${e}`:""}" style="--avatar-size:${size}px"><span class="avatar-back-accessory">${back}</span><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${front}</span>${avatarReaction(e)}</span>`;
+  return `<span class="avatar-inline ${e?`mood-${e}`:""}" data-avatar-index="${v.avatar}" style="--avatar-size:${size}px"><span class="avatar-back-accessory">${back}</span><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${front}</span>${avatarReaction(e)}</span>`;
 }
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return {...DEFAULT_PROFILE}}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
@@ -337,11 +375,11 @@ function openAvatarPicker(initial,done,title="Kies je avatar"){
     </main>
     <footer class="avatar-picker-bottom"><div class="selection-status"><span>GESELECTEERD</span><strong>${esc(AVATAR_NAMES[avatarDraft.avatar]||"Avatar")} · ${esc(avatarDraft.accessory===null?"Geen accessoire":ACCESSORY_NAMES[avatarDraft.accessory]||"Accessoire")}</strong></div><div class="avatar-bottom-actions"><button class="btn w" data-a="closeAvatarPicker">Annuleren</button><button class="btn g avatar-ready" data-a="avatarDone">✓ Klaar</button></div></footer>
   </div>`;
-  document.body.append(m);document.body.classList.add('avatar-picker-open');setTimeout(()=>m.querySelector('#avatarSearch')?.focus(),0);
+  document.body.append(m);bindAssetFallbacks(m);document.body.classList.add('avatar-picker-open');setTimeout(()=>m.querySelector('#avatarSearch')?.focus(),0);
 }
 function refreshAvatarPickerCatalog(){
   const m=document.querySelector('.avatar-picker-screen');if(!m)return;
-  const grid=m.querySelector('.avatar-catalog-grid');if(grid)grid.innerHTML=avatarPickerTab==='avatars'?avatarChoiceMarkup():accessoryChoiceMarkup();
+  const grid=m.querySelector('.avatar-catalog-grid');if(grid){grid.innerHTML=avatarPickerTab==='avatars'?avatarChoiceMarkup():accessoryChoiceMarkup();bindAssetFallbacks(m)}
   const head=m.querySelector('.catalog-heading h2');if(head)head.textContent=avatarPickerTab==='avatars'?'Kies je personage':'Kies je accessoire';
   const count=m.querySelector('.catalog-count');if(count)count.textContent=`${avatarPickerTab==='avatars'?AVATAR_COUNT:ACCESSORY_COUNT} beschikbaar`;
   m.querySelectorAll('.avatar-tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===avatarPickerTab));
@@ -349,7 +387,7 @@ function refreshAvatarPickerCatalog(){
 }
 function rerenderAvatarPicker(){
   const m=document.querySelector('.avatar-picker-screen');if(!m)return;
-  const live=m.querySelector('#avatarLive');if(live)live.innerHTML=avatarMarkup(avatarDraft,275);
+  const live=m.querySelector('#avatarLive');if(live){live.innerHTML=avatarMarkup(avatarDraft,275);bindAssetFallbacks(live)}
   const label=m.querySelector('#avatarLiveName');if(label)label.textContent=AVATAR_NAMES[avatarDraft.avatar]||'Avatar';
   const sub=m.querySelector('#avatarLiveAccessory');if(sub)sub.textContent=avatarDraft.accessory===null?'Geen accessoire':(ACCESSORY_NAMES[avatarDraft.accessory]||'Accessoire');
   const status=m.querySelector('.selection-status strong');if(status)status.textContent=`${AVATAR_NAMES[avatarDraft.avatar]||'Avatar'} · ${avatarDraft.accessory===null?'Geen accessoire':(ACCESSORY_NAMES[avatarDraft.accessory]||'Accessoire')}`;
@@ -850,6 +888,8 @@ try{
 queueMicrotask(async()=>{
   try{
     await ensureAvatarCatalog();
+    await preflightQuizzoAssets();
+    bindAssetFallbacks(document);
     if(!window.QUIZZO_AVATAR_CATALOG?.avatars?.length){
       console.warn('Quizzo: avatarcatalogus ontbreekt; de rest van de app start wel.');
     }
