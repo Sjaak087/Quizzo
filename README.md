@@ -1,10 +1,9 @@
-# Quizzo V82
+Quizzo V83
 
-- Public quiz discovery fixed: `/quizzes` now has a readable parent rule so the existing "Ontdek quizzen" view no longer gets `PERMISSION_DENIED`.
-- Sitebeheer can read the quiz collection without being kicked out when changing avatar badges.
-- Restored the original V67 avatar artwork (embedded in `avatars.js`) for the existing 20 avatars.
-- Added 5 extra avatar artworks based on the previously generated character set: Sneeuwpop, Zon, Meisje, Jongen and Giraf.
-- Total avatar count is now 25.
-- Accessories remain removed.
-- Avatar badge settings remain per-avatar and are stored under `avatarBadges/<index>`.
-- Cache version bumped to V82.
+Wijzigingen:
+- De originele 20 V67-avatarafbeeldingen zijn behouden.
+- 5 nieuwe losse avatar-afbeeldingen toegevoegd (Sneeuwpop, Zon, Meisje, Jongen, Giraf) en als echte afbeeldingsdata in avatars.js ingebouwd; geen screenshot/spritesheet.
+- Accessoires blijven volledig verwijderd.
+- Totaal: 25 avatars.
+- Firebase-regels: root-read op quizzes toegevoegd zodat Ontdek quizzen de openbare quizlijst kan laden zonder PERMISSION_DENIED.
+- Cacheversie naar 83.

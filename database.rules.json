@@ -13,10 +13,11 @@
       }
     },
     "quizzes": {
-      ".read": true,
       "$u": {
+        ".read": true,
         ".write": true
-      }
+      },
+      ".read": true
     },
     "games": {
       "$code": {
