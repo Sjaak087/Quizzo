@@ -606,6 +606,27 @@ html.avatar-picker-open,body.avatar-picker-open{overflow:hidden}
 }
 
 
+/* V84 — large leaderboard: exactly the top five fit without scrolling. */
+.stage.leaderboard,.center.leaderboard{width:min(980px,94vw);max-width:980px;margin:0 auto;padding:28px 26px;box-sizing:border-box;overflow:hidden;}
+.stage.leaderboard h1,.center.leaderboard h1{font-size:clamp(34px,4.5vw,52px);margin:0 0 18px;}
+.stage.leaderboard .lb-row,.center.leaderboard .lb-row{min-height:72px;height:72px;padding:10px 18px;margin-bottom:9px;font-size:20px;border-radius:16px;box-sizing:border-box;}
+.stage.leaderboard .lb-name,.center.leaderboard .lb-name{gap:10px;}
+.stage.leaderboard .avatar-inline,.center.leaderboard .avatar-inline{--avatar-size:54px!important;}
+.stage.leaderboard .lb-rank,.center.leaderboard .lb-rank{width:2em;height:2em;font-size:22px;}
+.stage.leaderboard .lb-score,.center.leaderboard .lb-score{font-size:20px;min-width:5ch;font-weight:900;}
+.stage.leaderboard .btn,.center.leaderboard .btn{align-self:center;width:min(420px,100%);min-height:54px;margin-top:8px;font-size:18px;}
+.stage.leaderboard{max-height:calc(100dvh - 48px);overflow:hidden;display:flex;flex-direction:column;align-items:stretch;justify-content:center;}
+.stage.leaderboard .lb-row{flex:0 0 72px;}
+.center.leaderboard{max-height:calc(100dvh - 48px);overflow:hidden;}
+@media(max-width:700px){
+  .stage.leaderboard,.center.leaderboard{width:100%;max-width:620px;padding:18px 12px;}
+  .stage.leaderboard h1,.center.leaderboard h1{font-size:32px;margin-bottom:12px;}
+  .stage.leaderboard .lb-row,.center.leaderboard .lb-row{min-height:58px;height:58px;margin-bottom:7px;padding:8px 10px;font-size:15px;}
+  .stage.leaderboard .avatar-inline,.center.leaderboard .avatar-inline{--avatar-size:42px!important;}
+  .stage.leaderboard .lb-score,.center.leaderboard .lb-score{font-size:16px;}
+  .stage.leaderboard .btn,.center.leaderboard .btn{min-height:48px;font-size:16px;margin-top:4px;}
+}
+
 /* V56 — final avatar/accessory fit and anti-clipping overrides */
 .avatar-inline{overflow:visible!important;contain:layout!important;isolation:isolate;}
 .avatar-svg,.avatar-accessory{position:absolute!important;inset:0!important;overflow:visible!important;contain:none!important;}
