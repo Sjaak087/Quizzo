@@ -12,6 +12,23 @@ let user=null, offset=0, unsub=null, timer=null;
 let G=null, CODE="", HOST=false, busy=false, lastKey="";
 let scoreSnapshot={}, rankSnapshot={}, boardAnim=null, lastPaintState="";
 let Q=null, QID=null, ADMIN_EDIT=null, joinCode=null, SEL=-1, tab="join", mode="login";
+
+// Centrale cleanup-functie: altijd veilig aan te roepen vanuit home(), run() en andere views.
+function cleanup(){
+  try{ if(typeof unsub === "function") unsub(); }catch(e){}
+  unsub=null;
+  try{ if(timer!=null) clearInterval(timer); }catch(e){}
+  timer=null;
+  G=null;
+  CODE="";
+  HOST=false;
+  busy=false;
+  lastKey="";
+  scoreSnapshot={};
+  rankSnapshot={};
+  boardAnim=null;
+  lastPaintState="";
+}
 const THEMES={
  classic:{name:"Quizzo Klassiek",icon:"🎉"},
  winter:{name:"Winter",icon:"❄️"},

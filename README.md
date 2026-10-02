@@ -1,5 +1,6 @@
-Quizzo v60 — old Quizzo UI restored; avatar system reworked in a Kahoot-style flow using original Quizzo character/accessory assets.
+Quizzo v63 patch
 
-Replace index.html, app.js, style.css, avatars.js and the avatars/ folder. Keep firebase.js and themes/ from the existing repository.
+Fix voor: "Uncaught ReferenceError: cleanup is not defined".
 
-Multiplayer: random character on join, then customize through the character/accessory tabs and finalize with Klaar. Solo: choose character/accessory first, then the game starts. Characters are shown next to names, in the leaderboard and on the podium. No default accessories.
+Vervang alleen app.js in de bestaande repository. Laat index.html, firebase.js, style.css, avatars.js, avatars/ en themes/ staan.
+De cleanup-functie is nu centraal en veilig gedeclareerd vóór home() en run().
