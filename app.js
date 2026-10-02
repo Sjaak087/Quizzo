@@ -136,17 +136,61 @@ function applyTheme(t){
  if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a6",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
 }
 /* QUIZZO V62 — Kahoot-style participant characters using original Quizzo assets. */
-const QUIZZO_AVATAR_CATALOG = window.QUIZZO_AVATAR_CATALOG || {avatars:[],accessories:[]};
-const AVATAR_COUNT = QUIZZO_AVATAR_CATALOG.avatars.length || 1;
-const ACCESSORY_COUNT = QUIZZO_AVATAR_CATALOG.accessories.length || 0;
-const AVATAR_NAMES = QUIZZO_AVATAR_CATALOG.avatars.map(x=>x?.name||"Avatar");
-const ACCESSORY_NAMES = QUIZZO_AVATAR_CATALOG.accessories.map(x=>x?.name||"Accessoire");
+let QUIZZO_AVATAR_CATALOG = window.QUIZZO_AVATAR_CATALOG || {avatars:[],accessories:[]};
+let AVATAR_COUNT = QUIZZO_AVATAR_CATALOG.avatars.length || 1;
+let ACCESSORY_COUNT = QUIZZO_AVATAR_CATALOG.accessories.length || 0;
+let AVATAR_NAMES = QUIZZO_AVATAR_CATALOG.avatars.map(x=>x?.name||"Avatar");
+let ACCESSORY_NAMES = QUIZZO_AVATAR_CATALOG.accessories.map(x=>x?.name||"Accessoire");
+
+function refreshAvatarCatalog(){
+  QUIZZO_AVATAR_CATALOG = window.QUIZZO_AVATAR_CATALOG || QUIZZO_AVATAR_CATALOG || {avatars:[],accessories:[]};
+  AVATAR_COUNT = Math.max(1, QUIZZO_AVATAR_CATALOG.avatars?.length || 0);
+  ACCESSORY_COUNT = Math.max(0, QUIZZO_AVATAR_CATALOG.accessories?.length || 0);
+  AVATAR_NAMES = (QUIZZO_AVATAR_CATALOG.avatars||[]).map(x=>x?.name||"Avatar");
+  ACCESSORY_NAMES = (QUIZZO_AVATAR_CATALOG.accessories||[]).map(x=>x?.name||"Accessoire");
+}
+
+async function ensureAvatarCatalog(){
+  if(window.QUIZZO_AVATAR_CATALOG?.avatars?.length){ refreshAvatarCatalog(); return true; }
+  // Give an existing avatars.js script a chance to finish before loading a fallback.
+  const deadline=Date.now()+2500;
+  while(Date.now()<deadline){
+    if(window.QUIZZO_AVATAR_CATALOG?.avatars?.length){ refreshAvatarCatalog(); return true; }
+    await new Promise(r=>setTimeout(r,50));
+  }
+  // Load avatars.js ourselves as a final GitHub Pages-safe fallback.
+  try{
+    const existing=document.querySelector('script[src*="avatars.js"]');
+    if(!existing){
+      await new Promise((resolve,reject)=>{
+        const s=document.createElement('script');
+        s.src=new URL('./avatars.js?quizzo-cache=66',document.baseURI).href;
+        s.async=false;
+        s.onload=resolve; s.onerror=reject;
+        document.head.appendChild(s);
+      });
+    }else{
+      await new Promise(r=>setTimeout(r,300));
+    }
+  }catch(e){
+    console.warn('Quizzo: avatars.js kon niet automatisch worden geladen',e);
+  }
+  refreshAvatarCatalog();
+  return !!window.QUIZZO_AVATAR_CATALOG?.avatars?.length;
+}
 const DEFAULT_PROFILE = {avatar:0, accessory:null};
 const clampIndex=(v,max)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n<max?n:0};
 const normalizeAccessory=v=>{if(v===null||v===undefined||v===""||v===-1||v==="-1")return null;const n=Number(v);return Number.isInteger(n)&&n>=0&&n<ACCESSORY_COUNT?n:null};
 const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:normalizeAccessory(p?.accessory)});
 const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:null});
-const assetUrl=src=>{try{return new URL(src,document.baseURI).href}catch(_){return src||""}};
+const assetUrl=src=>{
+  try{
+    const raw=String(src||'').trim();
+    if(!raw)return '';
+    if(/^data:|^blob:|^https?:/i.test(raw))return raw;
+    return new URL(raw.replace(/^\//,''),document.baseURI).href;
+  }catch(_){return src||""}
+};
 
 /*
   Wearables are placed on a normalized 512×512 character canvas.
@@ -783,8 +827,14 @@ try{
 }
 
 // Start only after every action handler has been registered.
-queueMicrotask(()=>{
-  try{ home(); }catch(err){
+queueMicrotask(async()=>{
+  try{
+    await ensureAvatarCatalog();
+    if(!window.QUIZZO_AVATAR_CATALOG?.avatars?.length){
+      console.warn('Quizzo: avatarcatalogus ontbreekt; de rest van de app start wel.');
+    }
+    home();
+  }catch(err){
     console.error(err);
     if(window.quizzoFail) window.quizzoFail(em(err));
     else if(A) A.innerHTML='<div class="err"><h2>Quizzo kan niet starten</h2><p>'+esc(em(err))+'</p></div>';

@@ -1,9 +1,9 @@
-# Quizzo v65 – stability rebuild
+# Quizzo v66 avatar loader fix
 
-Deze patch herstelt de globale click-dispatcher, bootvolgorde, ontbrekende helpers en de originele paarse Quizzo-achtergrond.
+Vervang alleen `app.js`.
 
-Vervang alleen:
-- app.js
-- style.css
+Deze versie wacht eerst op `avatars.js` voordat de avatarcatalogus wordt vastgelegd. Als GitHub Pages de scripts door elkaar uitvoert, laadt `app.js` `avatars.js` automatisch nogmaals met een cache-buster. Daardoor blijven de 20 avatars en 20 accessoires zichtbaar in de avatar-kiezer.
 
-Laat index.html, firebase.js, avatars.js, avatars/ en themes/ staan.
+De bestaande `avatars.js` en `avatars/` map blijven nodig en hoeven niet aangepast te worden.
+
+`themes/` zit bewust niet in deze patch.
