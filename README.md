@@ -1,6 +1,11 @@
-Quizzo V76
-- Exacte V67 achtergronden, avatars en accessoires zijn ingebed in app.js als data-URLs.
-- Daardoor vraagt de app deze afbeeldingen niet meer via /Quizzo/avatars of /Quizzo/themes en kunnen deze 404-fouten niet meer optreden.
-- Onderhoud staat standaard aan via maintenance.js. Zet enabled op false om uit te schakelen.
-- Inloggen verschijnt alleen nadat op de knop Inloggen is gedrukt. Wachtwoord: Mijnsiteisbeter.
-- Niets wordt opgeslagen; na elke nieuwe pagina-load is opnieuw inloggen nodig.
+Quizzo V77 – avatar accessoires fit
+
+Aangepast:
+- app.js: accessoireplaatsing gebruikt nu x/y-offset, schaalcorrectie en angle uit avatars.js.
+- avatars.js: accessoire-fitting verfijnd; strik en sjaal staan lager op de nek/borst en alle accessoires hebben een expliciete angle=0 zodat de originele hoek van de artwork behouden blijft.
+- index.html: cacheversie verhoogd naar v77 voor app.js, avatars.js, style.css en maintenance.js.
+
+Niet inbegrepen omdat ze niet gewijzigd zijn:
+- style.css
+- maintenance.js
+- embedded assets in app.js blijven aanwezig.

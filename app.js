@@ -195,7 +195,7 @@ async function ensureAvatarCatalog(){
     if(!existing){
       await new Promise((resolve,reject)=>{
         const s=document.createElement('script');
-        s.src=new URL('./avatars.js?quizzo-cache=76',QUIZZO_APP_URL).href;
+        s.src=new URL('./avatars.js?quizzo-cache=77',QUIZZO_APP_URL).href;
         s.async=false;
         s.onload=resolve; s.onerror=reject;
         document.head.appendChild(s);
@@ -271,14 +271,22 @@ function accessoryPlacement(avatarIdx,accessoryIdx){
   }else{
     targetW=headW*Number(fit.wFactor||1); targetH=headH*Number(fit.hFactor||.60); centerX=headX; targetTop=headTop+Number(fit.topOffset||-2); z=6;
   }
+  // Fine tuning lives in avatars.js so each accessory can be positioned independently
+  // without changing the shared placement algorithm.
+  centerX += Number(fit.xOffset||0);
+  targetTop += Number(fit.yOffset||0);
+  targetW *= Number(fit.scaleX||1);
+  targetH *= Number(fit.scaleY||1);
   targetW=Math.max(24,Math.min(420,targetW)); targetH=Math.max(18,Math.min(360,targetH));
-  // Scale width and height independently. This prevents tall source assets from becoming huge.
+  // Keep the original artwork proportions inside the tuned target box.
+  // The fit dimensions intentionally control the final width/height separately because
+  // the source accessory artwork is created to sit on the 512px character canvas.
   const renderedW=targetW * W / visW;
   const renderedH=targetH * H / visH;
   let left=centerX - (((bx0+bx1)/2)/W)*renderedW;
   let top=targetTop - (by0/H)*renderedH;
-  top=Math.max(-70,Math.min(512-renderedH+35,top));
-  const angle=Number(ac.angle||0);
+  top=Math.max(-90,Math.min(512-renderedH+45,top));
+  const angle=Number(fit.angle ?? ac.angle ?? 0);
   return {left:left/512*100,top:top/512*100,width:renderedW/512*100,height:renderedH/512*100,z,angle,kind:fit.kind};
 }
 function avatarSvg(i){
