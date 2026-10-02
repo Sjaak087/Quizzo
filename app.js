@@ -45,7 +45,7 @@ function cleanup(){
 // V68: resolve assets relative to the deployed app module, not the browser document URL.
 const QUIZZO_APP_BASE=new URL(".",import.meta.url);
 const QUIZZO_ASSET_BASE=new URL(".",QUIZZO_APP_BASE);
-const QUIZZO_VERSION="69";
+const QUIZZO_VERSION="70";
 
 const THEMES={
  classic:{name:"Quizzo Klassiek",icon:"🎉"},
@@ -76,86 +76,69 @@ const THEMES={
 };
 const themeIds=Object.keys(THEMES);
 const safeTheme=t=>themeIds.includes(t)?t:"classic";
+function withAssetVersion(url){
+  try{
+    const u=new URL(url,QUIZZO_ASSET_BASE);
+    u.searchParams.set("qz",QUIZZO_VERSION);
+    return u.href;
+  }catch(_){return url;}
+}
 function themeSources(id){
   const exts = id === "classic" ? ["png","jpg","webp","svg"] : ["jpg","webp","png","svg"];
-  return exts.map(ext => new URL(`./themes/${id}.${ext}`, QUIZZO_ASSET_BASE).href);
+  return exts.map(ext => withAssetVersion(new URL(`./themes/${id}.${ext}`,QUIZZO_ASSET_BASE).href));
 }
 function themeAsset(id, ext="jpg"){
   return themeSources(id)[0];
 }
-function wireFallbackImage(img, sources){
-  if(!img || !sources?.length) return;
-  let idx = Math.max(0, sources.findIndex(s => s === img.src));
-  if(idx < 0) idx = 0;
-  const tryNext = () => {
-    if(idx >= sources.length){ img.removeEventListener("error", tryNext); return; }
-    const next = sources[idx++];
-    if(img.src === next) return tryNext();
-    img.src = next;
-  };
-  img.addEventListener("error", tryNext);
-}
-function setThemeImageWithFallback(img,id){
-  const sources = themeSources(id);
-  img.dataset.themeSources = JSON.stringify(sources);
-  let idx=0;
-  const next=()=>{
-    if(idx>=sources.length){ img.style.display="none"; return; }
-    img.style.display="block";
-    img.onerror=next;
-    img.src=sources[idx++];
-  };
-  next();
-}
 function wireThemePreviews(){
-  document.querySelectorAll('.theme-choice-thumb[data-theme]').forEach(img=>setThemeImageWithFallback(img,img.dataset.theme));
+  document.querySelectorAll('.theme-choice-thumb[data-theme]').forEach(el=>{
+    const id=safeTheme(el.dataset.theme);
+    el.style.backgroundImage='none';
+    loadImageFromCandidates(themeSources(id), src=>{el.style.backgroundImage=`url("${src}")`;el.classList.add('loaded')}, ()=>el.classList.add('unavailable'));
+  });
 }
 
 function ensureThemeScene(){
- let scene=document.getElementById("quizzo-theme-scene");
- if(!scene){
-  scene=document.createElement("img");
-  scene.id="quizzo-theme-scene";
-  scene.alt="";
-  scene.setAttribute("aria-hidden","true");
-  scene.decoding="async";
-  scene.draggable=false;
-  document.body.prepend(scene);
- }
- return scene;
+  let scene=document.getElementById("quizzo-theme-scene");
+  if(!scene){
+    scene=document.createElement("div");
+    scene.id="quizzo-theme-scene";
+    scene.setAttribute("aria-hidden","true");
+    document.body.prepend(scene);
+  }
+  return scene;
 }
 function applyTheme(t){
- const id=safeTheme(t);
- document.body.classList.remove(...themeIds.map(x=>"theme-"+x));
- document.body.classList.toggle("has-theme-scene",id!=="classic");
- document.body.classList.add("theme-"+id);
- const scene=ensureThemeScene();
- if(id==="classic"){
-   scene.removeAttribute("src");
-   scene.style.display="none";
-   document.documentElement.style.setProperty("--quiz-theme","none");
-   document.body.style.removeProperty("background-image");
- }else{
-   const sources=themeSources(id);
-   let i=0;
-   const tryNext=()=>{
-     if(i>=sources.length){
-       scene.style.display="none";
-       console.warn("Quizzo thema kon niet worden geladen:", id, sources);
-       return;
-     }
-     const src=sources[i++];
-     scene.onload=()=>{
-       scene.style.display="block";
-       document.body.style.setProperty("background-image",`url("${scene.src}")`,"important");
-     };
-     scene.onerror=tryNext;
-     scene.src=src;
-   };
-   tryNext();
- }
- const meta=document.querySelector('meta[name="theme-color"]');
- if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a6",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
+  const id=safeTheme(t);
+  document.body.classList.remove(...themeIds.map(x=>"theme-"+x));
+  document.body.classList.toggle("has-theme-scene",id!=="classic");
+  document.body.classList.add("theme-"+id);
+  const scene=ensureThemeScene();
+  scene.style.backgroundImage="none";
+  scene.dataset.theme=id;
+  if(id!=="classic") loadImageFromCandidates(themeSources(id), (src)=>{
+    scene.style.backgroundImage=`url("${src}")`;
+    scene.style.display="block";
+  }, ()=>{
+    scene.style.backgroundImage="none";
+    scene.style.display="block";
+    console.warn("Quizzo thema kon niet worden geladen:",id);
+  });
+  else scene.style.display="none";
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta){const colors={classic:"#46178f",winter:"#2463a6",christmas:"#a51d35",spring:"#c85f8e",summer:"#f29b2f",autumn:"#a95f2c",classroom:"#34593f",ocean:"#0b668e",space:"#24164e",jungle:"#247447",sunset:"#bd5332",candy:"#cf4b9c",neon:"#241044",sports:"#14532d",football:"#1f6b45",basketball:"#a64b1e",racing:"#b51f3a",gaming:"#2b1c56",music:"#6130a6",halloween:"#2f153f",party:"#8b2bb4",rainbow:"#5b4bd8",arcade:"#12336e",volcano:"#7e2318",study:"#6b4f2d"};meta.setAttribute("content",colors[id]||colors.classic)}
+}
+function loadImageFromCandidates(sources,onload,onfail){
+  let idx=0;
+  const next=()=>{
+    if(idx>=sources.length){onfail?.();return;}
+    const img=new Image();
+    const src=sources[idx++];
+    img.onload=()=>onload?.(src);
+    img.onerror=next;
+    img.src=src;
+  };
+  next();
 }
 
 /* QUIZZO V62 — Kahoot-style participant characters using original Quizzo assets. */
@@ -174,11 +157,10 @@ function refreshAvatarCatalog(){
 }
 
 async function preflightQuizzoAssets(){
-  const classic=new URL('./themes/classic.png',QUIZZO_ASSET_BASE).href;
-  const urls=[classic,...(QUIZZO_AVATAR_CATALOG.avatars||[]).map(x=>x?.src),...(QUIZZO_AVATAR_CATALOG.accessories||[]).map(x=>x?.src)]
-    .map(assetUrl).filter(Boolean);
+  const urls=[...themeIds.flatMap(id=>themeSources(id)),...(QUIZZO_AVATAR_CATALOG.avatars||[]).map(x=>assetUrl(x?.src)),...(QUIZZO_AVATAR_CATALOG.accessories||[]).map(x=>assetUrl(x?.src))].filter(Boolean);
+  const unique=[...new Set(urls)];
   let failed=0;
-  await Promise.all(urls.map(u=>new Promise(resolve=>{const img=new Image();img.onload=resolve;img.onerror=()=>{failed++;resolve()};img.src=u})));
+  await Promise.all(unique.map(u=>new Promise(resolve=>{const img=new Image();img.onload=resolve;img.onerror=()=>{failed++;resolve()};img.src=u})));
   if(failed)console.warn(`Quizzo: ${failed} lokale avatar/thema-assets konden niet direct worden geladen.`);
 }
 
@@ -219,33 +201,45 @@ const assetUrl=src=>{
   try{
     let raw=String(src||'').trim();
     if(!raw)return '';
-    if(/^data:|^blob:|^https?:/i.test(raw))return raw;
+    if(/^data:|^blob:/i.test(raw))return raw;
+    if(/^https?:/i.test(raw))return raw;
     raw=raw.replace(/^\.\//,'').replace(/^\/+/, '');
     const file=(raw.split(/[?#]/)[0].split('/').pop()||raw);
     if(/^(?:avatar|accessory)-\d+\.(?:webp|png|jpg|jpeg|svg)$/i.test(file)) raw=`avatars/${file}`;
-    else if(/^[a-z0-9_-]+\.(?:jpg|jpeg|png|webp|svg)$/i.test(file) && !raw.includes('/themes/')) raw=`themes/${file}`;
-    return new URL(raw,QUIZZO_ASSET_BASE).href;
+    else if(/^[a-z0-9_-]+\.(?:jpg|jpeg|png|webp|svg)$/i.test(file) && raw.indexOf('/')<0) raw=`themes/${file}`;
+    return withAssetVersion(new URL(raw,QUIZZO_ASSET_BASE).href);
   }catch(_){return src||""}
 };
 
 const avatarFallbackEmoji=i=>["🦊","🐼","🐧","🐱","🐶","🐰","🦁","🐸","🐨","🦈","🐲","🐵","💀","👽","🤖","🏴‍☠️","🚀","🐯","🐙","😈"][Number(i)||0]||"🙂";
 function bindAssetFallbacks(root=document){
-  root.querySelectorAll?.('img.avatar-main-img').forEach(img=>{
+  root.querySelectorAll?.('img.avatar-main-img,img.avatar-accessory-img,img.accessory-art-img').forEach(img=>{
     if(img.dataset.fallbackBound)return;
     img.dataset.fallbackBound='1';
-    img.addEventListener('error',()=>{
-      const holder=img.closest('.avatar-inline');
+    img.style.visibility='hidden';
+    const show=()=>{img.style.visibility='visible';img.style.display='block'};
+    const hide=()=>{
+      img.style.visibility='hidden';
       img.style.display='none';
-      if(holder){
-        holder.classList.add('avatar-image-missing');
-        if(!holder.querySelector('.avatar-fallback')){const f=document.createElement('span');f.className='avatar-fallback';f.textContent=avatarFallbackEmoji(img.dataset.avatarIndex);holder.append(f)}
+      if(img.classList.contains('avatar-main-img')){
+        const holder=img.closest('.avatar-inline');
+        if(holder){
+          holder.classList.add('avatar-image-missing');
+          if(!holder.querySelector('.avatar-fallback')){
+            const f=document.createElement('span');
+            f.className='avatar-fallback';
+            f.textContent=avatarFallbackEmoji(img.dataset.avatarIndex);
+            holder.append(f);
+          }
+        }
       }
-    },{once:true});
-  });
-  root.querySelectorAll?.('img.avatar-accessory-img,img.accessory-art-img').forEach(img=>{
-    if(img.dataset.fallbackBound)return;
-    img.dataset.fallbackBound='1';
-    img.addEventListener('error',()=>{img.style.display='none'},{once:true});
+    };
+    img.addEventListener('load',show,{once:true});
+    img.addEventListener('error',hide,{once:true});
+    if(img.complete){
+      if(img.naturalWidth>0) show();
+      else hide();
+    }
   });
 }
 
@@ -308,13 +302,13 @@ function accessoryPlacement(avatarIdx,accessoryIdx){
 }
 function avatarSvg(i){
   const idx=clampIndex(i,AVATAR_COUNT),item=QUIZZO_AVATAR_CATALOG.avatars[idx]||{};
-  return `<img class="avatar-main-img" src="${esc(assetUrl(item.src||''))}" data-avatar-index="${idx}" alt="" aria-hidden="true" draggable="false" decoding="async">`;
+  return `<img class="avatar-main-img" src="${esc(assetUrl(item.src||''))}" data-avatar-index="${idx}" alt="" aria-hidden="true" draggable="false" decoding="async" style="visibility:hidden">`;
 }
 function accessorySvg(i,avatar=0,preview=false){
   const idx=normalizeAccessory(i),item=idx===null?null:QUIZZO_AVATAR_CATALOG.accessories[idx];
   if(!item?.src)return "";
   const src=esc(assetUrl(item.src));
-  if(preview)return `<img class="accessory-art-img" src="${src}" alt="${esc(item.name||`Accessoire ${idx+1}`)}" draggable="false" decoding="async">`;
+  if(preview)return `<img class="accessory-art-img" src="${src}" alt="${esc(item.name||`Accessoire ${idx+1}`)}" draggable="false" decoding="async" style="visibility:hidden">`;
   const p=accessoryPlacement(avatar,idx);
   return `<img class="avatar-accessory-img accessory-${idx}" src="${src}" alt="" aria-hidden="true" draggable="false" decoding="async" style="left:${p.left}%;top:${p.top}%;width:${p.width}%;height:${p.height}%;z-index:${p.z};transform:rotate(${p.angle}deg);">`;
 }
@@ -612,7 +606,7 @@ act.settings=()=>{
  <label class="settings-field"><span>Naam van de quiz</span><input id="settingsTitle" data-f="settingsTitle" maxlength="60" value="${esc(Q.title)}" placeholder="Naam van de quiz"></label>
  <label class="settings-field"><span>Beschrijving van de quiz</span><textarea id="settingsDescription" data-f="settingsDescription" rows="5" maxlength="500" placeholder="Waar gaat deze quiz over?">${esc(Q.description||"")}</textarea><small class="settings-help">Deze beschrijving is zichtbaar in Ontdek quizzen wanneer je quiz openbaar is.</small></label>
  <div class="visibility-setting"><div><b>🌍 Zichtbaarheid</b><small>Kies of andere spelers deze quiz in <b>Ontdek quizzen</b> mogen zien. Standaard is een quiz openbaar.</small></div><div class="visibility-switch" role="group" aria-label="Zichtbaarheid van de quiz"><button class="visibility-option ${Q.public!==false?"active":""}" data-a="visibilityPick" data-value="public">🌍 Openbaar</button><button class="visibility-option ${Q.public===false?"active":""}" data-a="visibilityPick" data-value="private">🔒 Privé</button></div><div class="visibility-note ${Q.public===false?"private":"public"}" id="visibilityNote">${Q.public===false?"Alleen jij kunt deze quiz zien en bewerken.":"Iedereen kan deze quiz vinden, bekijken en spelen."}</div></div>
- <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><img class="theme-choice-thumb" data-theme="${id}" src="${themeAsset(id,"jpg")}" alt="${esc(THEMES[id].name)} voorbeeld" decoding="async"><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
+ <div class="settings-section"><div class="settings-label"><b>Achtergrondthema</b><small>Kies 1 van de 25 stijlen. Je ziet de echte achtergrond als preview; die wordt tijdens het spelen op host én speler gebruikt.</small></div><div class="theme-grid">${themeIds.map(id=>`<button class="theme-choice ${id===current?"selected":""}" data-a="themePick" data-theme="${id}"><span class="theme-choice-thumb" data-theme="${id}" aria-label="${esc(THEMES[id].name)} voorbeeld"></span><span class="theme-choice-meta"><b>${esc(THEMES[id].name)}</b><small>${id===current?"✓ Geselecteerd":"Thema kiezen"}</small></span></button>`).join("")}</div></div>
  <div class="settings-actions"><button class="btn w" data-a="closem">Annuleren</button><button class="btn g" data-a="saveSettings">Instellingen opslaan</button></div></div>`;
  document.body.append(m);
  wireThemePreviews();

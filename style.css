@@ -855,3 +855,68 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
   .avatar-option-preview .avatar-inline,.accessory-option-preview .avatar-inline{--avatar-size:86px!important}
   .selection-status{display:none!important}
 }
+
+/* V70 — echte achtergrondcanvas zonder broken-image icoon */
+#quizzo-theme-scene{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  display:block;
+  background-repeat:no-repeat!important;
+  background-position:center center!important;
+  background-size:cover!important;
+  pointer-events:none!important;
+  user-select:none!important;
+  z-index:0!important;
+}
+body.theme-classic #quizzo-theme-scene{display:none!important;}
+body.has-theme-scene #quizzo-theme-scene{display:block!important;}
+
+/* V70 — theme thumbnails zijn divs, dus een mislukte afbeelding kan nooit een 404-icoon tonen */
+.theme-choice-thumb{
+  display:block!important;
+  width:100%!important;
+  height:150px!important;
+  border-radius:0!important;
+  background-color:#17131d!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:cover!important;
+  position:relative!important;
+}
+.theme-choice-thumb:not(.loaded)::after{
+  content:'Voorbeeld laden…';
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  color:rgba(255,255,255,.72);
+  font-size:12px;
+  font-weight:900;
+  background:linear-gradient(180deg,rgba(24,16,36,.12),rgba(24,16,36,.32));
+}
+.theme-choice-thumb.unavailable::after{content:'Thema';}
+@media(max-width:700px){.theme-choice-thumb{height:165px!important;}}
+
+/* V70 — nette full-body character cards, zonder afgekapt of vervormd poppetje */
+.avatar-option-preview,.accessory-option-preview{
+  position:relative!important;
+  overflow:visible!important;
+}
+.avatar-option-preview .avatar-inline,.accessory-option-preview .avatar-inline{
+  width:86px!important;
+  height:86px!important;
+  --avatar-size:86px!important;
+}
+.avatar-option-preview .avatar-main-img,.accessory-option-preview .avatar-main-img{
+  object-fit:contain!important;
+  object-position:center bottom!important;
+}
+.avatar-option-preview .avatar-accessory-img,.accessory-option-preview .avatar-accessory-img{
+  object-fit:contain!important;
+}
+@media(max-width:700px){
+  .avatar-option-preview .avatar-inline,.accessory-option-preview .avatar-inline{width:76px!important;height:76px!important;--avatar-size:76px!important;}
+}
