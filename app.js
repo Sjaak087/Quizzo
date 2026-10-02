@@ -122,30 +122,36 @@ const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:
    Each category is anchored to the character's anatomy instead of the 512x512 source canvas.
 */
 const ACCESSORY_FIT={
-  kroon:{kind:"head",scale:1.02,dy:-1},
-  muts:{kind:"head",scale:1.00,dy:1},
-  "zonnebril":{kind:"face",scale:.74},
-  bril:{kind:"face",scale:.74},
-  masker:{kind:"face",scale:.78},
-  "superheldmasker":{kind:"face",scale:.80},
-  koptelefoon:{kind:"ears",scale:1.12},
-  oork:{kind:"ears",scale:.95},
-  "kattenoren":{kind:"head",scale:.98,dy:-1},
-  strik:{kind:"neck",scale:.46,dy:3},
-  sjaal:{kind:"neck",scale:.78,dy:5},
-  bandana:{kind:"neck",scale:.72,dy:3},
-  tovenaarshoed:{kind:"head",scale:1.04,dy:-2,rot:-3},
-  feesthoed:{kind:"head",scale:.78,dy:-2,rot:4},
-  bloemenkrans:{kind:"head",scale:1.04,dy:0},
-  piratenhoed:{kind:"head",scale:1.08,dy:-1,rot:-2},
-  vikinghelm:{kind:"head",scale:1.10,dy:0},
-  astronauthelm:{kind:"faceLarge",scale:1.08},
-  drakenhoorns:{kind:"head",scale:.85,dy:-1},
-  duivelhoorns:{kind:"head",scale:.85,dy:-1},
-  halo:{kind:"halo",scale:.92,dy:-4},
-  detectivepet:{kind:"head",scale:1.00,dy:-1,rot:-4},
-  piratenbandana:{kind:"neck",scale:.78,dy:1},
-  cape:{kind:"back",scale:1.00,dy:8}
+  kroon:{kind:"head",scale:1.08,height:.26,overlap:2},
+  muts:{kind:"head",scale:1.02,height:.24,overlap:2},
+  "zonnebril":{kind:"face",scale:.78,height:.18},
+  bril:{kind:"face",scale:.78,height:.18},
+  masker:{kind:"face",scale:.80,height:.20},
+  "superheldmasker":{kind:"face",scale:.82,height:.18},
+  koptelefoon:{kind:"ears",scale:1.12,height:.42},
+  oork:{kind:"ears",scale:.98,height:.18},
+  "kattenoren":{kind:"head",scale:1.00,height:.27,overlap:1},
+  strik:{kind:"neck",scale:.50,height:.18,dy:1},
+  sjaal:{kind:"neck",scale:.82,height:.42,dy:2},
+  bandana:{kind:"neck",scale:.74,height:.23,dy:1},
+  tovenaarshoed:{kind:"head",scale:1.02,height:.40,overlap:3},
+  feesthoed:{kind:"head",scale:.76,height:.34,overlap:2},
+  bloemenkrans:{kind:"head",scale:1.06,height:.20,overlap:2},
+  piratenhoed:{kind:"head",scale:1.10,height:.32,overlap:3},
+  vikinghelm:{kind:"head",scale:1.10,height:.30,overlap:2},
+  astronauthelm:{kind:"faceLarge",scale:1.02,height:.60},
+  drakenhoorns:{kind:"head",scale:.88,height:.30,overlap:1},
+  duivelhoorns:{kind:"head",scale:.88,height:.28,overlap:1},
+  halo:{kind:"halo",scale:.84,height:.15,dy:-2},
+  detectivepet:{kind:"head",scale:1.00,height:.25,overlap:2,rot:-4},
+  piratenbandana:{kind:"neck",scale:.80,height:.22,dy:1},
+  cape:{kind:"back",scale:1.00,height:.82,dy:3}
+};
+const ACCESSORY_BBOX={
+  0:[48,64,464,448],1:[61,48,450,464],2:[48,140,464,371],3:[53,48,459,464],4:[48,106,464,405],
+  5:[48,80,464,431],6:[48,79,464,433],7:[91,48,420,464],8:[48,133,464,378],9:[48,91,464,421],
+  10:[48,67,464,444],11:[61,48,450,464],12:[139,48,373,464],13:[48,85,464,426],14:[48,125,464,386],
+  15:[48,124,464,387],16:[48,95,464,417],17:[48,109,464,402],18:[48,159,464,353],19:[48,80,464,431]
 };
 function accessoryKind(name){
   const n=String(name||"").toLowerCase();
@@ -163,38 +169,49 @@ function accessoryPlacement(avatarIdx,accessoryIdx){
   const m=av.metrics||{headX:50,headW:62,headTop:5,faceY:36,neckY:52,bodyX:50,bodyW:70};
   const n=String(ac.name||"").toLowerCase();
   const key=Object.keys(ACCESSORY_FIT).find(k=>n.includes(k));
-  const f=ACCESSORY_FIT[key]||{kind:accessoryKind(n),scale:.9,dy:0,rot:0};
-  const headW=Number(m.headW)||62, bodyW=Number(m.bodyW)||70;
-  const headX=Number(m.headX)||50, bodyX=Number(m.bodyX)||headX;
-  const ratio=Math.max(.18,Math.min(2.4,Number(ac.ratio)||1));
-  let visibleW=headW*f.scale, centerX=headX, centerY=Number(m.faceY)||36, z=10;
+  const f=ACCESSORY_FIT[key]||{kind:accessoryKind(n),scale:.9};
+  const bb=ACCESSORY_BBOX[clampIndex(accessoryIdx,ACCESSORY_COUNT)]||[0,0,512,512];
+  const [x0,y0,x1,y1]=bb;
+  const bw=Math.max(1,x1-x0), bh=Math.max(1,y1-y0);
+  const sx=bw/512, sy=bh/512;
+  const headX=Number(m.headX)||50, headW=Number(m.headW)||62;
+  const faceY=Number(m.faceY)||36, neckY=Number(m.neckY)||52;
+  const bodyX=Number(m.bodyX)||headX, bodyW=Number(m.bodyW)||70;
+  const headTop=Number(m.headTop)||5;
+  let vw=headW*(Number(f.scale)||.9), vh=Math.max(8,headW*(Number(f.height)||.30));
+  let visibleLeft=headX-vw/2, visibleTop=1, z=20;
   if(f.kind==='head'){
-    // Place bottom of visible art on the top contour of the head.
-    visibleW=Math.max(24,headW*f.scale); centerY=(Number(m.headTop)||5)+(visibleW*ratio)/2-2+(Number(f.dy)||0); z=9;
-  } else if(f.kind==='halo'){
-    visibleW=Math.max(26,headW*f.scale); centerY=(Number(m.headTop)||5)+(visibleW*ratio)/2-5+(Number(f.dy)||0); z=11;
-  } else if(f.kind==='face'){
-    visibleW=Math.max(22,headW*f.scale); centerY=Number(m.faceY)||36; z=12;
-  } else if(f.kind==='faceLarge'){
-    visibleW=Math.max(30,headW*f.scale*1.48); centerY=Number(m.faceY)||36; z=8;
-  } else if(f.kind==='ears'){
-    visibleW=Math.max(28,headW*f.scale*1.16); centerY=(Number(m.faceY)||36)-1; z=8;
-  } else if(f.kind==='neck'){
-    visibleW=Math.max(25,bodyW*f.scale); centerX=bodyX; centerY=(Number(m.neckY)||52)+(Number(f.dy)||0); z=11;
-  } else if(f.kind==='back'){
-    visibleW=Math.max(35,bodyW*f.scale); centerX=bodyX; centerY=(Number(m.neckY)||52)+10+(Number(f.dy)||0); z=2;
+    // Hat/crown bottom hugs the top contour of the head, with controlled height.
+    visibleTop=Math.max(1.5,headTop-vh+(Number(f.overlap)||2));
+    z=20;
+  }else if(f.kind==='halo'){
+    vw=headW*(Number(f.scale)||.88); vh=Math.max(6,headW*(Number(f.height)||.16));
+    visibleLeft=headX-vw/2; visibleTop=Math.max(1,headTop-vh-1); z=21;
+  }else if(f.kind==='face'){
+    vw=Math.min(headW*(Number(f.scale)||.78),80); vh=Math.max(7,headW*(Number(f.height)||.18));
+    visibleLeft=headX-vw/2; visibleTop=faceY-vh/2; z=22;
+  }else if(f.kind==='faceLarge'){
+    vw=Math.min(headW*(Number(f.scale)||1.05)*1.28,96); vh=Math.max(22,headW*(Number(f.height)||.62));
+    visibleLeft=headX-vw/2; visibleTop=faceY-vh/2; z=19;
+  }else if(f.kind==='ears'){
+    vw=Math.min(headW*(Number(f.scale)||1.05),96); vh=Math.max(12,headW*(Number(f.height)||.40));
+    visibleLeft=headX-vw/2; visibleTop=(faceY-2)-vh/2; z=19;
+  }else if(f.kind==='neck'){
+    vw=Math.min(bodyW*(Number(f.scale)||.8),88); vh=Math.max(10,bodyW*(Number(f.height)||.30));
+    visibleLeft=bodyX-vw/2; visibleTop=neckY-vh*.20+Number(f.dy||0); z=23;
+  }else if(f.kind==='back'){
+    vw=Math.min(bodyW*(Number(f.scale)||1),94); vh=Math.max(20,bodyW*(Number(f.height)||.82));
+    visibleLeft=bodyX-vw/2; visibleTop=neckY-vh*.08+Number(f.dy||0); z=3;
   }
-  // With tightly-cropped art, visibleW directly represents the rendered accessory width.
-  const visibleH=visibleW*ratio;
-  return {
-    left:centerX-visibleW/2,
-    top:centerY-visibleH/2,
-    w:visibleW,
-    h:visibleH,
-    z,
-    rot:Number(f.rot)||0,
-    ratio
-  };
+  // Scale the browser image independently in X/Y so generated accessory art keeps its intended wearable proportions.
+  const imgW=vw/sx, imgH=vh/sy;
+  let cssLeft=visibleLeft-imgW*(x0/512), cssTop=visibleTop-imgH*(y0/512);
+  const minVisible=.5, maxVisible=99.5;
+  if(visibleLeft<minVisible){visibleLeft=minVisible;cssLeft=visibleLeft-imgW*(x0/512)}
+  if(visibleLeft+vw>maxVisible){visibleLeft=maxVisible-vw;cssLeft=visibleLeft-imgW*(x0/512)}
+  if(visibleTop<minVisible){visibleTop=minVisible;cssTop=visibleTop-imgH*(y0/512)}
+  if(visibleTop+vh>maxVisible){visibleTop=maxVisible-vh;cssTop=visibleTop-imgH*(y0/512)}
+  return {left:cssLeft,top:cssTop,w:imgW,h:imgH,z,rot:Number(f.rot)||0,originX:((x0+x1)/2/512)*100,originY:((y0+y1)/2/512)*100,kind:f.kind};
 }
 function avatarSvg(i){
   const idx=clampIndex(i,AVATAR_COUNT),item=QUIZZO_AVATAR_CATALOG.avatars[idx]||{},src=item.src||"";
@@ -205,15 +222,18 @@ function accessorySvg(i,avatar=0,preview=false){
   if(!item||!item.src)return "";
   if(preview)return `<img class="accessory-art-img" src="${item.src}" alt="${esc(item.name||`Accessoire ${idx+1}`)}" draggable="false" decoding="async">`;
   const p=accessoryPlacement(avatar,idx);
-  return `<img class="avatar-accessory-img accessory-${idx}" src="${item.src}" alt="" aria-hidden="true" draggable="false" decoding="async" style="left:${p.left}%;top:${p.top}%;width:${p.w}%;z-index:${p.z};transform:translate(-50%,-50%) rotate(${p.rot}deg);">`;
+  return `<img class="avatar-accessory-img accessory-${idx}" src="${item.src}" alt="" aria-hidden="true" draggable="false" decoding="async" style="left:${p.left}%;top:${p.top}%;width:${p.w}%;z-index:${p.z};transform:rotate(${p.rot}deg);transform-origin:${p.originX}% ${p.originY}%">`;
 }
 function avatarReaction(emotion){
   const map={happy:['✨','Goed!'],celebrate:['🎉','Lekker!'],sad:['💧','Oei!'],rankup:['⬆️','Omhoog!'],overtaken:['😵','Oh nee!']};
   const v=map[emotion];return v?`<span class="avatar-reaction reaction-${emotion}" aria-hidden="true"><b>${v[0]}</b><small>${v[1]}</small></span>`:"";
 }
 function avatarMarkup(p,size=48,emotion=""){
-  const v=normalizeProfile(p),e=emotion||"",acc=v.accessory===null?"":accessorySvg(v.accessory,v.avatar);
-  return `<span class="avatar-inline ${e?`mood-${e}`:""}" style="--avatar-size:${size}px"><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${acc}</span>${avatarReaction(e)}</span>`;
+  const v=normalizeProfile(p),e=emotion||"",name=ACCESSORY_NAMES[v.accessory]||"";
+  const kind=v.accessory===null?null:accessoryKind(name);
+  const acc=v.accessory===null?"":accessorySvg(v.accessory,v.avatar);
+  const back=kind==='back'?acc:"",front=kind==='back'?"":acc;
+  return `<span class="avatar-inline ${e?`mood-${e}`:""}" style="--avatar-size:${size}px"><span class="avatar-back-accessory">${back}</span><span class="avatar-svg">${avatarSvg(v.avatar)}</span><span class="avatar-accessory">${front}</span>${avatarReaction(e)}</span>`;
 }
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return DEFAULT_PROFILE}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}

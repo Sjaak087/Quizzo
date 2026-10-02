@@ -654,3 +654,20 @@ html.avatar-picker-open,body.avatar-picker-open{overflow:hidden}
 .showcase-stage{overflow:visible!important;clip-path:none!important}
 /* Keep accessories and the whole character inside the showcase; the catalog remains scrollable. */
 .avatar-picker-screen .showcase-stage{padding:10px 10px 4px;min-height:220px}
+
+
+/* V58 — Kahoot-style character composition: full-body, anatomy-aware wearable layers. */
+.avatar-inline{position:relative!important;display:inline-block!important;width:var(--avatar-size,48px)!important;height:var(--avatar-size,48px)!important;overflow:visible!important;contain:none!important;isolation:isolate!important;vertical-align:middle!important}
+.avatar-svg,.avatar-back-accessory,.avatar-accessory{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;overflow:visible!important;contain:none!important;pointer-events:none!important}
+.avatar-svg{z-index:10!important}
+.avatar-back-accessory{z-index:2!important}
+.avatar-accessory{z-index:20!important}
+.avatar-main-img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;display:block!important;object-fit:contain!important;object-position:50% 50%!important}
+.avatar-accessory-img{position:absolute!important;display:block!important;height:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:50% 50%!important;pointer-events:none!important;user-select:none!important}
+.avatar-option-art,.showcase-stage{overflow:visible!important;contain:none!important}
+.avatar-option-art .avatar-main-img{object-position:50% 50%!important}
+.showcase-stage{display:grid!important;place-items:center!important;overflow:visible!important;min-height:220px!important}
+.showcase-stage .avatar-inline{--avatar-size:clamp(220px,23vw,300px)!important}
+.avatar-showcase-panel{overflow:visible!important;contain:none!important}
+.avatar-picker-screen{overflow:auto!important}
+@media(max-width:700px){.showcase-stage{min-height:210px!important}.showcase-stage .avatar-inline{--avatar-size:min(54vw,250px)!important}.avatar-option-art{height:112px!important;min-height:112px!important}.avatar-option-art .avatar-main-img{height:108px!important}.avatar-picker-bottom{position:sticky!important;bottom:0!important;z-index:100!important}}
