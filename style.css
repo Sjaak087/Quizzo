@@ -708,26 +708,41 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
 /* Asset images must never be softened by global effects. */
 .avatar-main-img,.accessory-art-img,.avatar-accessory-img{filter:none!important;image-rendering:auto!important;}
 
-/* Maintenance overlay */
-html.quizzo-maintenance-locked, html.quizzo-maintenance-locked body{overflow:hidden!important}
-#quizzo-maintenance{position:fixed;inset:0;z-index:2147483647;font-family:Montserrat,system-ui,sans-serif}
-.maintenance-screen{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(135deg,#46178f 0%,#2c0e64 100%);padding:24px;box-sizing:border-box}
-.maintenance-card{width:min(620px,calc(100vw - 48px));box-sizing:border-box;background:#fff;color:#2d2440;border-radius:28px;padding:42px 34px 36px;text-align:center;box-shadow:0 22px 70px rgba(0,0,0,.3)}
-.maintenance-logo{font-weight:900;letter-spacing:.16em;color:#46178f;font-size:15px;margin-bottom:18px}
-.maintenance-icon{font-size:54px;line-height:1;margin-bottom:18px}
-.maintenance-card h1{margin:0 0 14px;font-size:clamp(30px,5vw,48px);line-height:1.05;font-weight:900;color:#30214d}
-.maintenance-card p{margin:0 auto 28px;max-width:480px;font-size:18px;line-height:1.5;color:#6c6380;font-weight:700}
-.maintenance-login-btn,.maintenance-submit,.maintenance-cancel{border:0;border-radius:13px;padding:12px 22px;font:800 16px Montserrat,system-ui,sans-serif;cursor:pointer}
-.maintenance-login-btn{background:#46178f;color:#fff;box-shadow:0 5px 0 #311061}
-.maintenance-login-btn:active,.maintenance-submit:active{transform:translateY(2px);box-shadow:none}
-.maintenance-modal{position:absolute;inset:0;background:rgba(18,8,37,.65);display:grid;place-items:center;padding:20px;box-sizing:border-box}
-.maintenance-login-card{width:min(420px,calc(100vw - 40px));box-sizing:border-box;background:#fff;color:#30214d;border-radius:22px;padding:28px;box-shadow:0 20px 70px rgba(0,0,0,.35)}
-.maintenance-login-card h2{margin:0 0 8px;font-size:28px;font-weight:900}
-.maintenance-login-card p{margin:0 0 18px;color:#6c6380;font-weight:600}
-.maintenance-login-card input{width:100%;box-sizing:border-box;border:2px solid #ddd6eb;border-radius:12px;padding:13px 14px;font:700 16px Montserrat,system-ui,sans-serif;outline:none}
-.maintenance-login-card input:focus{border-color:#46178f}
-.maintenance-error{min-height:22px;padding-top:8px;color:#c62828;font-weight:800;font-size:14px}
-.maintenance-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:10px}
-.maintenance-cancel{background:#eeeaf4;color:#4c425e}
-.maintenance-submit{background:#46178f;color:#fff}
-@media(max-width:600px){.maintenance-card{padding:30px 22px 26px;border-radius:22px}.maintenance-card p{font-size:16px}.maintenance-actions{flex-direction:column-reverse}.maintenance-actions button{width:100%}}
+
+/* QUIZZO v78 — Kahoot-inspired character editor: responsive full-body stage, no clipping, wearable cards show the selected character. */
+.avatar-picker-screen{height:100dvh!important;min-height:100dvh!important;overflow:hidden!important}
+.avatar-picker-main{grid-template-columns:minmax(300px,34vw) minmax(0,1fr)!important;gap:16px!important;min-width:0!important}
+.avatar-showcase-panel,.avatar-catalog-panel{min-width:0!important}
+.avatar-showcase-panel{overflow:hidden!important}
+.showcase-stage{height:clamp(280px,48vh,460px)!important;min-height:280px!important;max-height:none!important;padding:12px!important;box-sizing:border-box!important;overflow:hidden!important}
+.showcase-stage .avatar-inline{--avatar-size:min(42vh,28vw,350px)!important;max-width:100%!important;max-height:100%!important}
+.avatar-catalog-grid{grid-template-columns:repeat(5,minmax(118px,1fr))!important;gap:10px!important}
+.avatar-option,.accessory-option{min-height:158px!important}
+.avatar-option-art{height:108px!important;min-height:108px!important}
+.avatar-option-art .avatar-main-img{width:100%!important;height:108px!important}
+.accessory-option-art{height:112px!important;min-height:112px!important;display:grid!important;place-items:center!important;overflow:hidden!important}
+.accessory-option-art .avatar-inline{--avatar-size:92px!important;width:92px!important;height:92px!important;overflow:visible!important}
+.accessory-option-art .avatar-main-img{object-fit:contain!important;width:100%!important;height:100%!important}
+.accessory-option strong{font-size:13px!important;line-height:1.1!important;text-align:center!important}
+.avatar-accessory-img{transform-origin:center center!important;height:auto!important}
+@media(max-width:1180px){
+  .avatar-picker-main{grid-template-columns:minmax(270px,31vw) minmax(0,1fr)!important}
+  .avatar-catalog-grid{grid-template-columns:repeat(4,minmax(110px,1fr))!important}
+}
+@media(max-width:900px){
+  .avatar-picker-screen{overflow:auto!important}
+  .avatar-picker-main{grid-template-columns:1fr!important;height:auto!important;overflow:visible!important}
+  .avatar-showcase-panel{height:auto!important;min-height:330px!important}
+  .showcase-stage{height:340px!important;min-height:340px!important}
+  .showcase-stage .avatar-inline{--avatar-size:min(52vw,310px)!important}
+  .avatar-catalog-grid{grid-template-columns:repeat(4,minmax(90px,1fr))!important}
+}
+@media(max-width:650px){
+  .avatar-picker-top{padding:13px 14px!important}
+  .avatar-top-brand p,.avatar-phone-badge{display:none!important}
+  .avatar-picker-main{padding:10px!important;gap:10px!important}
+  .showcase-stage{height:280px!important;min-height:280px!important}
+  .showcase-stage .avatar-inline{--avatar-size:min(66vw,255px)!important}
+  .avatar-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .avatar-picker-bottom{padding:10px 12px!important}
+}
