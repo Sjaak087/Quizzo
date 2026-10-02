@@ -1,15 +1,6 @@
-Quizzo V74 — asset loader fix
-
-Deze update is opnieuw gebaseerd op de originele V67-bestanden.
-
-Aangepast:
-- app.js gebruikt import.meta.url als basis voor alle theme/avatar/accessoire-assets.
-- Theme previews proberen automatisch alle juiste bestandsextensies en fallbacks.
-- Achtergronden gebruiken dezelfde robuuste resolver tijdens het spelen.
-- Avatar/accessoire URLs worden niet meer afhankelijk van document.baseURI opgebouwd.
-- maintenance.js vereist na iedere volledige pagina-load opnieuw het wachtwoord.
-- enabled=true toont onderhoud; enabled=false verbergt het.
-
-Ongewijzigde assetmappen blijven nodig:
-- themes/
-- avatars/
+Quizzo V76
+- Exacte V67 achtergronden, avatars en accessoires zijn ingebed in app.js als data-URLs.
+- Daardoor vraagt de app deze afbeeldingen niet meer via /Quizzo/avatars of /Quizzo/themes en kunnen deze 404-fouten niet meer optreden.
+- Onderhoud staat standaard aan via maintenance.js. Zet enabled op false om uit te schakelen.
+- Inloggen verschijnt alleen nadat op de knop Inloggen is gedrukt. Wachtwoord: Mijnsiteisbeter.
+- Niets wordt opgeslagen; na elke nieuwe pagina-load is opnieuw inloggen nodig.
