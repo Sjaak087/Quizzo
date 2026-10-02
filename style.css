@@ -644,3 +644,13 @@ html.avatar-picker-open,body.avatar-picker-open{overflow:hidden}
  .accessory-option-art .accessory-art-img{max-height:98px!important;}
  .avatar-picker-bottom{position:sticky!important;bottom:0!important;z-index:60!important;}
 }
+
+/* V57 accessory layering/fitting overrides */
+.avatar-inline{overflow:visible!important;contain:layout!important;isolation:isolate!important;position:relative!important}
+.avatar-svg{z-index:6!important;overflow:visible!important;position:absolute!important;inset:0!important}
+.avatar-accessory{z-index:1;overflow:visible!important;position:absolute!important;inset:0!important}
+.avatar-accessory-img{position:absolute!important;display:block!important;height:auto!important;max-width:none!important;max-height:none!important;width:var(--accessory-width,auto);object-fit:contain!important;object-position:center!important;transform-origin:center center!important;pointer-events:none!important}
+.showcase-stage .avatar-inline{overflow:visible!important}
+.showcase-stage{overflow:visible!important;clip-path:none!important}
+/* Keep accessories and the whole character inside the showcase; the catalog remains scrollable. */
+.avatar-picker-screen .showcase-stage{padding:10px 10px 4px;min-height:220px}

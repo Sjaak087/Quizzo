@@ -1,1 +1,2 @@
-Quizzo v56 final avatar/accessory fitting patch. Replace app.js and style.css only. Keep existing avatars.js, themes/, firebase.js and index.html.
+Quizzo v57: complete avatar/accessory fitting rework.
+Replace app.js, style.css and avatars.js. Do not replace themes/.
