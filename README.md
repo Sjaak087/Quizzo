@@ -1,6 +1,14 @@
-Quizzo v63 patch
+# Quizzo v64 – complete stable release
 
-Fix voor: "Uncaught ReferenceError: cleanup is not defined".
+Vervang voor deze release de rootbestanden en de `avatars/` map met de bestanden in deze zip.
+Laat je bestaande `themes/` map staan: die wordt bewust niet opnieuw meegeleverd.
 
-Vervang alleen app.js in de bestaande repository. Laat index.html, firebase.js, style.css, avatars.js, avatars/ en themes/ staan.
-De cleanup-functie is nu centraal en veilig gedeclareerd vóór home() en run().
+Root:
+- index.html
+- app.js
+- style.css
+- firebase.js
+- avatars.js
+- avatars/
+
+De bestaande Quizzo-themes blijven uit de zip zodat ze niet opnieuw hoeven te worden geupload.

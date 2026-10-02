@@ -495,77 +495,179 @@ html.avatar-picker-open,body.avatar-picker-open{overflow:hidden}
 @media(max-width:700px){.avatar-picker-top{padding:14px 14px 12px;align-items:flex-start}.avatar-top-icon{width:42px;height:42px}.avatar-top-brand p{font-size:11px}.avatar-phone-badge{display:none}.avatar-picker-main{padding:10px;gap:10px}.avatar-showcase-panel{min-height:440px;padding:14px;border-radius:18px}.showcase-stage .avatar-inline{--avatar-size:min(78vw,310px)}.catalog-toolbar{padding:10px;align-items:stretch;flex-direction:column}.avatar-tabs{width:100%;display:grid;grid-template-columns:1fr 1fr}.avatar-tab{width:100%}.avatar-search{min-width:0;width:100%}.catalog-scroll{padding:10px}.catalog-heading h2{font-size:20px}.avatar-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.avatar-option{min-height:144px}.accessory-option{min-height:154px}.avatar-option-art{height:100px}.accessory-option-art{height:104px}.avatar-picker-bottom{padding:10px;flex-direction:column;align-items:stretch}.selection-status{text-align:center}.avatar-bottom-actions{display:grid;grid-template-columns:1fr 1.3fr}.avatar-bottom-actions .btn{width:100%}}
 @media(max-width:390px){.avatar-picker-top h1{font-size:20px}.avatar-top-brand p{display:none}.avatar-option,.accessory-option{padding:8px 6px}.avatar-option-art{height:88px}.accessory-option-art{height:92px}.avatar-option strong,.accessory-option span:nth-last-of-type(1){font-size:12px}.avatar-option small,.accessory-option small{font-size:9px}}
 
-
-
-/* QUIZZO V60 — clean Kahoot-style character layers; global Quizzo UI above remains unchanged. */
-.avatar-inline{position:relative;display:inline-block;width:var(--avatar-size,48px);height:var(--avatar-size,48px);flex:0 0 auto;vertical-align:middle;line-height:0;isolation:isolate;overflow:visible!important;contain:layout;}
-.avatar-svg,.avatar-back-accessory,.avatar-accessory{position:absolute;inset:0;width:100%;height:100%;overflow:visible!important;pointer-events:none;}
-.avatar-svg{z-index:3}.avatar-back-accessory{z-index:1}.avatar-accessory{z-index:4}
-.avatar-main-img{position:absolute;inset:0;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;display:block;object-fit:contain!important;object-position:50% 100%!important;}
-.avatar-accessory-img{position:absolute!important;display:block!important;height:auto;max-width:none!important;max-height:none!important;object-fit:fill!important;object-position:center!important;transform-origin:center center!important;filter:drop-shadow(0 4px 6px rgba(0,0,0,.22));pointer-events:none!important;user-select:none!important;}
-.avatar-option,.accessory-option{overflow:visible!important;min-width:0;}
-.avatar-option-art{height:118px;min-height:118px;width:100%;display:grid;place-items:end center;overflow:visible!important;padding:2px 7px 0;}
-.avatar-option-art .avatar-main-img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:50% 100%!important;}
-.accessory-option-art{height:112px;min-height:112px;width:100%;display:grid;place-items:center;overflow:visible!important;padding:6px;}
-.accessory-option-art .accessory-art-img{width:92%!important;height:auto!important;max-width:140px;max-height:108px;object-fit:contain!important;display:block!important;filter:drop-shadow(0 6px 7px rgba(0,0,0,.22));}
-.accessory-option>span:not(.accessory-option-art){font-size:14px;line-height:1.15;text-align:center;white-space:normal;overflow:visible;text-overflow:clip;max-width:100%;font-weight:950;}
-.accessory-option small,.avatar-option small{font-size:10px;color:#b9aed7;font-weight:800}
-.no-accessory-big{width:64px;height:64px;border:2px dashed rgba(255,255,255,.30);border-radius:20px;display:grid;place-items:center;color:#cfc2f3;font-size:30px;background:rgba(255,255,255,.04)}
-.avatar-reaction{position:absolute;right:-18%;top:-16%;z-index:30;display:flex;align-items:center;gap:3px;padding:4px 7px;border-radius:999px;background:rgba(25,12,62,.94);color:#fff;border:1px solid rgba(255,255,255,.22);box-shadow:0 5px 16px rgba(0,0,0,.22);font-weight:900;white-space:nowrap;animation:avatar-reaction-pop .45s cubic-bezier(.2,.8,.2,1) both;line-height:1}
+/* V55 — compact, fit-safe avatar layers and game boards */
+.avatar-inline{position:relative;display:inline-block;width:var(--avatar-size,48px);height:var(--avatar-size,48px);flex:0 0 auto;vertical-align:middle;line-height:0;isolation:isolate}
+.avatar-svg,.avatar-accessory{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible;pointer-events:none}
+.avatar-main-img{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;object-fit:contain;object-position:center bottom;max-width:none!important;max-height:none!important}
+.avatar-accessory-img{position:absolute!important;display:block!important;height:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:center!important;pointer-events:none!important;user-select:none!important;transform-origin:center center!important}
+.avatar-reaction{position:absolute;right:-18%;top:-18%;z-index:30;display:flex;align-items:center;gap:3px;padding:4px 7px;border-radius:999px;background:rgba(25,12,62,.92);color:#fff;border:1px solid rgba(255,255,255,.22);box-shadow:0 5px 16px rgba(0,0,0,.22);font-weight:900;white-space:nowrap;animation:avatar-reaction-pop .5s cubic-bezier(.2,.8,.2,1) both;line-height:1}
 .avatar-reaction b{font-size:.95em}.avatar-reaction small{font-size:.65em}
-@keyframes avatar-reaction-pop{from{opacity:0;transform:scale(.62) translateY(7px)}to{opacity:1;transform:none}}
-.avatar-inline.mood-happy{animation:avatar-happy .6s ease both}.avatar-inline.mood-rankup{animation:avatar-rankup .75s cubic-bezier(.2,.9,.2,1) both}.avatar-inline.mood-overtaken{animation:avatar-overtaken .65s ease both}.avatar-inline.mood-sad{animation:avatar-sad .55s ease both}.avatar-inline.mood-celebrate{animation:avatar-celebrate .9s cubic-bezier(.2,.8,.2,1) both}
-@keyframes avatar-happy{0%{transform:scale(1)}35%{transform:translateY(-5px) scale(1.04) rotate(-2deg)}70%{transform:translateY(1px) scale(1.01) rotate(2deg)}100%{transform:none}}
-@keyframes avatar-rankup{0%{transform:translateY(10px) scale(.96)}45%{transform:translateY(-10px) scale(1.08)}70%{transform:translateY(2px) scale(1.02)}100%{transform:none}}
-@keyframes avatar-overtaken{0%,100%{transform:none}30%{transform:translateX(-5px) rotate(-4deg)}60%{transform:translateX(5px) rotate(4deg)}}
-@keyframes avatar-sad{0%{transform:none}35%{transform:translateY(4px) rotate(-2deg)}70%{transform:translateY(2px) rotate(2deg)}100%{transform:none}}
-@keyframes avatar-celebrate{0%{transform:translateY(6px) scale(.94)}35%{transform:translateY(-9px) scale(1.08)}60%{transform:translateY(0) scale(1.02)}100%{transform:none}}
+@keyframes avatar-reaction-pop{from{opacity:0;transform:scale(.55) translateY(8px)}to{opacity:1;transform:none}}
 
-/* Avatar studio stays within the normal Quizzo visual language. */
-.avatar-picker-screen{overflow:auto!important;min-height:100dvh!important;}
-.avatar-picker-main{min-height:0;grid-template-columns:minmax(280px,.82fr) minmax(0,1.55fr);gap:14px;padding:14px 18px;overflow:hidden;}
-.avatar-showcase-panel{min-height:0;overflow:visible!important;contain:none!important;grid-template-rows:auto minmax(220px,1fr) auto auto;padding:14px;}
-.showcase-stage{min-height:220px;display:grid!important;place-items:center!important;overflow:visible!important;contain:none!important;position:relative;}
-.showcase-stage::after{pointer-events:none;}
-.showcase-stage .avatar-inline{--avatar-size:clamp(220px,23vw,300px);z-index:2;}
-.avatar-catalog-panel{min-width:0;min-height:0;}
-.catalog-scroll{overflow:auto;min-height:0;scrollbar-width:thin;}
-.avatar-catalog-grid{align-content:start;}
-.avatar-picker-bottom{position:sticky;bottom:0;z-index:50;}
+/* The picker must fit without giant previews or clipped controls. */
+.avatar-picker-main{grid-template-columns:minmax(300px,.78fr) minmax(0,1.62fr);gap:12px;padding:12px 16px}
+.avatar-showcase-panel{grid-template-rows:auto minmax(190px,1fr) auto auto;padding:14px;border-radius:20px}
+.showcase-stage{min-height:190px;max-height:390px}
+.showcase-stage .avatar-inline{--avatar-size:clamp(210px,24vw,295px)}
+.showcase-stage .avatar-main-img{object-position:center bottom}
+.showcase-name strong{font-size:22px}.showcase-name span{font-size:12px}
+.mood-strip{gap:5px;margin-top:7px}.mood-pill{padding:6px 8px;font-size:10px}
+.showcase-tip{margin-top:8px;padding:9px 10px;font-size:11px}
+.avatar-catalog-panel{min-width:0}.catalog-toolbar{padding:10px 12px 8px}.avatar-tab{padding:8px 10px;font-size:12px}.avatar-search{min-width:180px;padding:8px 10px}
+.catalog-scroll{padding:11px}.catalog-heading{margin-bottom:8px}.catalog-heading h2{font-size:20px}.avatar-catalog-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.avatar-option,.accessory-option{min-height:128px;padding:8px 6px;border-radius:14px;gap:4px}
+.avatar-option-art{height:88px}.accessory-option{min-height:136px}.accessory-option-art{height:92px}
+.accessory-option-art .accessory-art-img{width:78%!important;max-width:104px;max-height:92px}
+.avatar-option strong,.accessory-option span:nth-last-of-type(1){font-size:12px}.avatar-option small,.accessory-option small{font-size:9px}
+.no-accessory-big{width:58px;height:58px;font-size:28px;border-radius:18px}
+.avatar-picker-bottom{padding:9px 16px}.avatar-ready{min-width:120px}
 
-@media(max-width:1050px){
-  .avatar-picker-main{grid-template-columns:1fr;overflow:auto;height:auto!important;}
-  .avatar-showcase-panel{min-height:360px;}
-  .showcase-stage .avatar-inline{--avatar-size:min(58vw,300px);}
-  .avatar-catalog-panel{min-height:520px;}
-  .avatar-catalog-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
+/* Keep leaderboards readable but compact on every screen. */
+.stage.leaderboard,.center.leaderboard{width:min(700px,94vw);max-width:700px;margin:0 auto;padding:16px 12px;min-height:auto}
+.stage.leaderboard h1,.center.leaderboard h1{font-size:clamp(26px,4vw,38px);margin-bottom:12px}
+.leaderboard .row,.solo-board .row{min-height:50px;padding:8px 12px;margin-bottom:7px;font-size:16px;border-radius:10px}
+.leaderboard .lb-name,.solo-board .lb-name{display:flex;align-items:center;gap:5px;min-width:0;overflow:visible}
+.leaderboard .lb-name>b:last-of-type,.solo-board .lb-name>b:last-of-type{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leaderboard .avatar-inline,.solo-board .avatar-inline{--avatar-size:36px!important}
+.leaderboard .lb-rank,.solo-board .lb-rank{width:1.8em;height:1.8em;margin-right:2px}
+.leaderboard .lb-score,.solo-board .lb-score{font-size:15px;min-width:4.5ch}
+.pod{gap:12px;align-items:end}.pod .pl .pn .avatar-inline{--avatar-size:58px!important}
+.big-msg{font-size:clamp(30px,4.4vw,42px)}
+.p1{height:150px}.p2{height:112px}.p3{height:88px}.blk{font-size:34px}
+
+/* Compact the public quiz example so the whole card fits comfortably. */
+.public-view-card{width:min(840px,94vw);max-height:90vh;border-radius:18px}
+.public-view-head{padding:16px 18px 12px}.public-view-head h2{font-size:25px}.public-view-theme{padding:9px 18px}.public-question-list{padding:12px 18px 16px;gap:9px}.preview-q{padding:12px;border-radius:14px}.preview-q h3{font-size:19px}.preview-answer-grid{gap:7px}.preview-answer{padding:8px 10px}
+.public-view-actions{padding:10px 18px}
+
+@media(max-width:1100px){
+  .avatar-picker-main{grid-template-columns:1fr;overflow:auto}
+  .avatar-showcase-panel{min-height:380px;max-height:52dvh}
+  .showcase-stage{max-height:270px}
+  .showcase-stage .avatar-inline{--avatar-size:min(46vw,260px)}
+  .avatar-catalog-panel{min-height:0}
+  .avatar-catalog-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 }
 @media(max-width:700px){
-  .avatar-picker-top{padding:14px;align-items:flex-start;}
-  .avatar-top-brand p{font-size:11px;}
-  .avatar-phone-badge{display:none;}
-  .avatar-picker-main{padding:10px;gap:10px;}
-  .avatar-showcase-panel{min-height:330px;padding:12px;border-radius:18px;}
-  .showcase-stage{min-height:210px;}
-  .showcase-stage .avatar-inline{--avatar-size:min(60vw,240px);}
-  .catalog-toolbar{padding:10px;flex-direction:column;align-items:stretch;}
-  .avatar-tabs{display:grid;grid-template-columns:1fr 1fr;width:100%;}
-  .avatar-tab{width:100%;}
-  .avatar-search{min-width:0;width:100%;}
-  .catalog-scroll{padding:10px;}
-  .avatar-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
-  .avatar-option{min-height:138px;}
-  .accessory-option{min-height:148px;}
-  .avatar-option-art{height:104px;min-height:104px;}
-  .accessory-option-art{height:100px;min-height:100px;}
-  .accessory-option>span:not(.accessory-option-art){font-size:13px;}
-  .avatar-picker-bottom{padding:10px;flex-direction:column;align-items:stretch;}
-  .selection-status{text-align:center;}
-  .avatar-bottom-actions{display:grid;grid-template-columns:1fr 1.3fr;}
-  .avatar-bottom-actions .btn{width:100%;}
+  .avatar-showcase-panel{min-height:330px;max-height:none}
+  .showcase-stage{min-height:170px;max-height:250px}
+  .showcase-stage .avatar-inline{--avatar-size:min(52vw,230px)}
+  .avatar-catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .avatar-option,.accessory-option{min-height:122px}.accessory-option{min-height:132px}
+  .avatar-option-art{height:82px}.accessory-option-art{height:88px}
+  .leaderboard .row,.solo-board .row{font-size:14px;padding:7px 9px}.leaderboard .avatar-inline,.solo-board .avatar-inline{--avatar-size:32px!important}
+  .pod .pl .pn .avatar-inline{--avatar-size:48px!important}
 }
 
-/* Keep in-game leaderboards/podium avatars compact. */
-.leaderboard .avatar-inline,.solo-board .avatar-inline{--avatar-size:34px!important;}
-.pod .pl .pn .avatar-inline{--avatar-size:58px!important;}
-@media(max-width:700px){.leaderboard .avatar-inline,.solo-board .avatar-inline{--avatar-size:30px!important}.pod .pl .pn .avatar-inline{--avatar-size:48px!important}}
+/* V55.1 — final sizing/positioning pass */
+/* The avatar canvas is always a fixed square: accessory coordinates are therefore stable at every UI size. */
+.avatar-inline{contain:layout paint;}
+.avatar-svg,.avatar-accessory{inset:0;overflow:visible!important;}
+.avatar-main-img{object-position:50% 50%!important;}
+.avatar-accessory-img{will-change:transform,left,top;width:auto;}
+
+/* Don't let the avatar reaction bubble resize leaderboard rows. */
+.lb-name>.avatar-inline{margin-right:2px}
+.avatar-reaction{pointer-events:none}
+
+/* Compact leaderboard/podium cards: enough room for avatars and animated scores without dominating the screen. */
+.stage.leaderboard{max-height:calc(100dvh - 90px);overflow:auto;display:flex;flex-direction:column;align-items:stretch;justify-content:center;}
+.stage.leaderboard .lb-row{flex:0 0 auto}
+.stage.leaderboard .btn{align-self:center;width:min(360px,100%)}
+.stage:not(.leaderboard) .pod{max-width:760px;margin:0 auto;}
+.pod .pl{min-width:0;}
+.pod .pn{min-width:100px;}
+
+/* Avatar studio: never let the preview swallow the catalog or push the Done bar below the fold. */
+.avatar-picker-screen{min-height:0;overflow:hidden}
+.avatar-picker-main{min-height:0;height:100%;grid-template-columns:minmax(290px,.72fr) minmax(0,1.72fr);}
+.avatar-showcase-panel{min-height:0;height:100%;max-height:none;grid-template-rows:auto minmax(170px,1fr) auto auto;overflow:hidden}
+.showcase-stage{min-height:170px;max-height:330px}
+.showcase-stage .avatar-inline{--avatar-size:clamp(210px,22vw,285px)}
+.catalog-scroll{min-height:0;overflow:auto;scrollbar-width:thin}
+.avatar-catalog-grid{align-content:start}
+.avatar-picker-bottom{min-height:60px}
+
+@media(max-width:1100px){
+  .avatar-picker-screen{overflow:auto}
+  .avatar-picker-main{height:auto}
+  .avatar-showcase-panel{height:auto;min-height:340px}
+  .showcase-stage{max-height:270px}
+}
+@media(max-width:700px){
+  .avatar-picker-screen{overflow:auto}
+  .avatar-showcase-panel{min-height:300px}
+  .showcase-stage{min-height:150px;max-height:220px}
+  .showcase-stage .avatar-inline{--avatar-size:min(50vw,220px)}
+  .avatar-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .stage.leaderboard{width:100%;max-width:560px;padding:12px 8px}
+  .stage.leaderboard .lb-row{min-height:46px;padding:6px 8px;font-size:14px}
+  .stage.leaderboard .avatar-inline{--avatar-size:30px!important}
+}
+
+
+/* V56 — final avatar/accessory fit and anti-clipping overrides */
+.avatar-inline{overflow:visible!important;contain:layout!important;isolation:isolate;}
+.avatar-svg,.avatar-accessory{position:absolute!important;inset:0!important;overflow:visible!important;contain:none!important;}
+.avatar-main-img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;display:block!important;object-fit:contain!important;object-position:50% 100%!important;}
+.avatar-accessory-img{position:absolute!important;height:auto!important;max-width:none!important;max-height:none!important;display:block!important;object-fit:contain!important;object-position:50% 50%!important;pointer-events:none!important;user-select:none!important;transform-origin:center bottom!important;}
+
+/* The cards never crop a character or wearable. */
+.avatar-option,.accessory-option{overflow:visible!important;min-width:0;}
+.avatar-option-art{height:108px!important;min-height:108px!important;padding:2px 10px 0!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;overflow:visible!important;}
+.avatar-option-art .avatar-main-img{width:94%!important;height:108px!important;object-fit:contain!important;object-position:50% 100%!important;}
+.accessory-option{min-height:154px!important;height:auto!important;padding:8px 7px 10px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;}
+.accessory-option-art{width:100%!important;height:112px!important;min-height:112px!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important;padding:2px 6px!important;}
+.accessory-option-art .accessory-art-img{width:auto!important;height:auto!important;max-width:100%!important;max-height:108px!important;display:block!important;object-fit:contain!important;}
+.accessory-option>span:not(.accessory-option-art){font-size:13px!important;line-height:1.12!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;text-align:center!important;width:100%!important;}
+.accessory-option small{font-size:9px!important;line-height:1!important;}
+
+/* Stable square preview canvas; it scales without changing relative accessory positions. */
+.showcase-stage{overflow:visible!important;display:grid!important;place-items:center!important;min-height:190px;}
+.showcase-stage .avatar-inline{--avatar-size:clamp(220px,22vw,295px)!important;}
+.showcase-stage .avatar-svg,.showcase-stage .avatar-accessory{overflow:visible!important;}
+
+@media(max-width:1100px){
+ .avatar-picker-screen{overflow:auto!important;height:auto!important;min-height:100dvh!important;}
+ .avatar-picker-main{height:auto!important;grid-template-columns:1fr!important;}
+ .avatar-showcase-panel{height:auto!important;min-height:330px!important;overflow:visible!important;}
+ .avatar-catalog-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;}
+}
+@media(max-width:700px){
+ .avatar-picker-main{padding:10px!important;gap:10px!important;}
+ .showcase-stage .avatar-inline{--avatar-size:min(60vw,250px)!important;}
+ .avatar-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;}
+ .avatar-option-art{height:104px!important;min-height:104px!important;}
+ .avatar-option-art .avatar-main-img{height:104px!important;}
+ .accessory-option{min-height:146px!important;}
+ .accessory-option-art{height:102px!important;min-height:102px!important;}
+ .accessory-option-art .accessory-art-img{max-height:98px!important;}
+ .avatar-picker-bottom{position:sticky!important;bottom:0!important;z-index:60!important;}
+}
+
+/* V57 accessory layering/fitting overrides */
+.avatar-inline{overflow:visible!important;contain:layout!important;isolation:isolate!important;position:relative!important}
+.avatar-svg{z-index:6!important;overflow:visible!important;position:absolute!important;inset:0!important}
+.avatar-accessory{z-index:1;overflow:visible!important;position:absolute!important;inset:0!important}
+.avatar-accessory-img{position:absolute!important;display:block!important;height:auto!important;max-width:none!important;max-height:none!important;width:var(--accessory-width,auto);object-fit:contain!important;object-position:center!important;transform-origin:center center!important;pointer-events:none!important}
+.showcase-stage .avatar-inline{overflow:visible!important}
+.showcase-stage{overflow:visible!important;clip-path:none!important}
+/* Keep accessories and the whole character inside the showcase; the catalog remains scrollable. */
+.avatar-picker-screen .showcase-stage{padding:10px 10px 4px;min-height:220px}
+
+
+/* V58 — Kahoot-style character composition: full-body, anatomy-aware wearable layers. */
+.avatar-inline{position:relative!important;display:inline-block!important;width:var(--avatar-size,48px)!important;height:var(--avatar-size,48px)!important;overflow:visible!important;contain:none!important;isolation:isolate!important;vertical-align:middle!important}
+.avatar-svg,.avatar-back-accessory,.avatar-accessory{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;overflow:visible!important;contain:none!important;pointer-events:none!important}
+.avatar-svg{z-index:10!important}
+.avatar-back-accessory{z-index:2!important}
+.avatar-accessory{z-index:20!important}
+.avatar-main-img{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;display:block!important;object-fit:contain!important;object-position:50% 50%!important}
+.avatar-accessory-img{position:absolute!important;display:block!important;height:auto!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:50% 50%!important;pointer-events:none!important;user-select:none!important}
+.avatar-option-art,.showcase-stage{overflow:visible!important;contain:none!important}
+.avatar-option-art .avatar-main-img{object-position:50% 50%!important}
+.showcase-stage{display:grid!important;place-items:center!important;overflow:visible!important;min-height:220px!important}
+.showcase-stage .avatar-inline{--avatar-size:clamp(220px,23vw,300px)!important}
+.avatar-showcase-panel{overflow:visible!important;contain:none!important}
+.avatar-picker-screen{overflow:auto!important}
+@media(max-width:700px){.showcase-stage{min-height:210px!important}.showcase-stage .avatar-inline{--avatar-size:min(54vw,250px)!important}.avatar-option-art{height:112px!important;min-height:112px!important}.avatar-option-art .avatar-main-img{height:108px!important}.avatar-picker-bottom{position:sticky!important;bottom:0!important;z-index:100!important}}
