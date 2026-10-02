@@ -1,15 +1,18 @@
-Quizzo — aangepaste bestanden V68
+# Quizzo V69 — character studio rebuild
 
-Deze ZIP bevat alleen de bestanden die voor V68 zijn aangepast. De bestaande `avatars/`- en `themes/`-mappen hoeven niet opnieuw te worden vervangen. Kopieer deze bestanden over de huidige bestanden in de root van je GitHub Pages-repository.
+Aangepast in deze versie:
+- Avatarkeuze is opnieuw opgebouwd als een duidelijke character-studio met een eigen Personages-tab en Accessoires-tab.
+- Accessoirevoorbeelden tonen nu het geselecteerde personage mét dat accessoire, in plaats van alleen een los accessoireplaatje.
+- Geselecteerde items hebben een duidelijke rand/checkmark en hover-state.
+- De grote live preview toont het volledige personage en het gekozen accessoire samen.
+- De avatarpresentatie is visueel aangescherpt richting de huidige Kahoot-interactie: deelnemers kiezen een character en daarna accessories; dezelfde character kan in lobby/scoreboard/podium worden gebruikt.
+- Cacheversie verhoogd naar V69 zodat oude CSS/JS niet opnieuw uit de browsercache wordt gebruikt.
+- Bestaande Quizzo-assets blijven behouden; er zijn geen Kahoot-assets gekopieerd.
 
-## Wijzigingen V68 — 404 assets + Kahoot-achtige avatars
-- `app.js`: asset-routes zijn gekoppeld aan de locatie van `app.js`, zodat GitHub Pages onder een repository-pad correct blijft werken.
-- `app.js`: avatar-, accessoire- en themabestandsnamen worden automatisch naar de juiste map genormaliseerd.
-- `app.js`: oudere opgeslagen avatarprofielen blijven werken wanneer ze alleen `avatar-#.webp` of `accessory-#.webp` bevatten.
-- `app.js`: veilige avatar-fallback toegevoegd wanneer een lokale avatarafbeelding toch niet bereikbaar is.
-- `app.js`: extra controle voor lokale avatar-, accessoire- en Classic-assets toegevoegd.
-- `index.html`: lokale CSS/JS krijgen `?v=68` cache-busting, zodat een oude v67-cache niet meer de oude assetpaden gebruikt.
-- `style.css`: avatarpicker visueel aangescherpt naar een Kahoot-achtige paarse/witte kaartstijl met duidelijke selectie, diepte en responsive gedrag.
+Gewijzigde bestanden in deze ZIP:
+- app.js
+- index.html
+- style.css
+- README.md
 
-## Belangrijk
-Gebruik de bestanden uit deze ZIP in dezelfde mapstructuur als de bestaande website. De echte afbeeldingen blijven staan in `avatars/` en `themes/`.
+Laat de bestaande `avatars/`, `avatars.js`, `themes/` en `firebase.js` bestanden staan.

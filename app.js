@@ -45,7 +45,7 @@ function cleanup(){
 // V68: resolve assets relative to the deployed app module, not the browser document URL.
 const QUIZZO_APP_BASE=new URL(".",import.meta.url);
 const QUIZZO_ASSET_BASE=new URL(".",QUIZZO_APP_BASE);
-const QUIZZO_VERSION="68";
+const QUIZZO_VERSION="69";
 
 const THEMES={
  classic:{name:"Quizzo Klassiek",icon:"🎉"},
@@ -333,12 +333,18 @@ function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getI
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
 
 let avatarPickerCallback=null,avatarDraft={...DEFAULT_PROFILE},avatarPickerSearch="",avatarPickerTab="avatars";
+function avatarCardMarkup(i, accessory=null){
+  return avatarMarkup({avatar:i,accessory},112);
+}
+function accessoryCardMarkup(i){
+  return avatarMarkup({avatar:avatarDraft.avatar,accessory:i},112);
+}
 function accessoryChoiceMarkup(){
-  const items=[`<button class="accessory-option none-option ${avatarDraft.accessory===null?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="-1"><span class="accessory-option-art"><span class="no-accessory-big">×</span></span><span>Geen accessoire</span><small>Standaard</small></button>`];
+  const items=[`<button class="accessory-option none-option ${avatarDraft.accessory===null?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="-1" aria-label="Geen accessoire"><span class="accessory-option-preview">${avatarCardMarkup(avatarDraft.avatar,null)}</span><span>Geen</span><small>Zonder accessoire</small></button>`];
   for(let i=0;i<ACCESSORY_COUNT;i++){
     const a=QUIZZO_AVATAR_CATALOG.accessories[i]||{};
     if(avatarPickerSearch&&!String(a.name||"").toLowerCase().includes(avatarPickerSearch.toLowerCase()))continue;
-    items.push(`<button class="accessory-option ${i===avatarDraft.accessory?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="${i}" aria-label="${esc(a.name||`Accessoire ${i+1}`)}"><span class="accessory-option-art">${accessorySvg(i,avatarDraft.avatar,true)}</span><span>${esc(a.name||`Accessoire ${i+1}`)}</span><small>${esc(wearableDef(a.name).kind)}</small></button>`);
+    items.push(`<button class="accessory-option ${i===avatarDraft.accessory?"selected":""}" data-a="pickAvatar" data-kind="accessory" data-index="${i}" aria-label="${esc(a.name||`Accessoire ${i+1}`)}"><span class="accessory-option-preview">${accessoryCardMarkup(i)}</span><span>${esc(a.name||`Accessoire ${i+1}`)}</span><small>Voorbeeld op ${esc(AVATAR_NAMES[avatarDraft.avatar]||"je personage")}</small></button>`);
   }
   return items.join("");
 }
@@ -347,7 +353,7 @@ function avatarChoiceMarkup(){
   for(let i=0;i<AVATAR_COUNT;i++){
     const a=QUIZZO_AVATAR_CATALOG.avatars[i]||{};
     if(avatarPickerSearch&&!String(a.name||"").toLowerCase().includes(avatarPickerSearch.toLowerCase()))continue;
-    items.push(`<button class="avatar-option ${i===avatarDraft.avatar?"selected":""}" data-a="pickAvatar" data-kind="avatar" data-index="${i}" aria-label="${esc(a.name||`Avatar ${i+1}`)}"><span class="avatar-option-art">${avatarSvg(i)}</span><strong>${esc(a.name||`Avatar ${i+1}`)}</strong><small>Personage</small></button>`);
+    items.push(`<button class="avatar-option ${i===avatarDraft.avatar?"selected":""}" data-a="pickAvatar" data-kind="avatar" data-index="${i}" aria-label="${esc(a.name||`Avatar ${i+1}`)}"><span class="avatar-option-preview">${avatarCardMarkup(i,null)}</span><strong>${esc(a.name||`Avatar ${i+1}`)}</strong><small>Personage</small></button>`);
   }
   return items.join("");
 }
@@ -357,8 +363,8 @@ function openAvatarPicker(initial,done,title="Kies je avatar"){
   const m=document.createElement("div");m.className="avatar-modal avatar-modal-full";
   m.innerHTML=`<div class="avatar-picker-screen">
     <header class="avatar-picker-top">
-      <div class="avatar-top-brand"><span class="avatar-top-icon">🐾</span><div><span class="eyebrow">QUIZZO</span><h1>${esc(title)}</h1><p>Kies eerst je personage. Daarna kun je een accessoire kiezen.</p></div></div>
-      <div class="avatar-top-actions"><span class="avatar-phone-badge">📱 Telefoon ondersteund</span><button class="avatar-close-btn" data-a="closeAvatarPicker" aria-label="Sluiten">×</button></div>
+      <div class="avatar-top-brand"><span class="avatar-top-icon">Q</span><div><span class="eyebrow">QUIZZO CHARACTER</span><h1>${esc(title)}</h1><p>Kies een personage en pas daarna je accessoire aan.</p></div></div>
+      <div class="avatar-top-actions"><button class="avatar-close-btn" data-a="closeAvatarPicker" aria-label="Sluiten">×</button></div>
     </header>
     <main class="avatar-picker-main">
       <section class="avatar-showcase-panel">
