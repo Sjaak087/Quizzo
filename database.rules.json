@@ -13,8 +13,8 @@
       }
     },
     "quizzes": {
+      ".read": true,
       "$u": {
-        ".read": true,
         ".write": true
       }
     },

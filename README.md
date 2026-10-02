@@ -1,11 +1,10 @@
-# Quizzo V81
+# Quizzo V82
 
-Changed only the character/avatar system and the site-management avatar badge permissions.
-
-- Uses the original V67 avatar WebP artwork, embedded locally in avatars.js.
-- Removes accessories from the avatar profile.
-- 20 image-backed characters are available.
-- Avatar images no longer depend on /Quizzo/avatars/... URLs, preventing the previous 404 failures.
-- Sitebeheer -> Avatar badges can toggle Nieuw per avatar without logging the administrator out.
-- database.rules.json adds proof-authenticated writes for avatarBadges. Publish these rules in Firebase Realtime Database.
-- Cache version updated to V81.
+- Public quiz discovery fixed: `/quizzes` now has a readable parent rule so the existing "Ontdek quizzen" view no longer gets `PERMISSION_DENIED`.
+- Sitebeheer can read the quiz collection without being kicked out when changing avatar badges.
+- Restored the original V67 avatar artwork (embedded in `avatars.js`) for the existing 20 avatars.
+- Added 5 extra avatar artworks based on the previously generated character set: Sneeuwpop, Zon, Meisje, Jongen and Giraf.
+- Total avatar count is now 25.
+- Accessories remain removed.
+- Avatar badge settings remain per-avatar and are stored under `avatarBadges/<index>`.
+- Cache version bumped to V82.
