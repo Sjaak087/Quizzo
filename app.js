@@ -232,7 +232,11 @@ function avatarLayout(index,size){
 function avatarMarkup(p,size=48,emotion=""){
   const v=normalizeProfile(p),src=avatarSrc(v.avatar),L=avatarLayout(v.avatar,size);
   const st=`--avatar-size:${L.S}px;--avatar-img-size:${L.render}px;--avatar-img-left:${L.left}px;--avatar-img-top:${L.top}px`;
-  return `<span class="avatar-inline ${emotion?`mood-${emotion}`:""}" style="${st}"><img class="avatar-svg-img" src="${src}" alt="" draggable="false" decoding="async">${avatarReaction(emotion)}</span>`;
+  // Multiplayer host-schermen tonen alleen het avatar zelf. Reactie-badges zoals “Goed!”
+  // zijn alleen voor het spelersscherm bedoeld. In solo is dezelfde speler tegelijk host+player,
+  // dus daar blijven reacties zichtbaar.
+  const showReaction=!!emotion&&(!HOST||G?.mode==="solo");
+  return `<span class="avatar-inline ${emotion?`mood-${emotion}`:""}" style="${st}"><img class="avatar-svg-img" src="${src}" alt="" draggable="false" decoding="async">${showReaction?avatarReaction(emotion):""}</span>`;
 }
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return {...DEFAULT_PROFILE}}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
@@ -631,7 +635,7 @@ function paint(){
   else if(G.state=="question")h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="hbar"><div class="tcirc" id="tm"></div><div class="cnt">${Object.keys(ANS()).length}<small>antwoorden</small></div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles()}</div></div>`;
   else if(G.state=="reveal"){const ps=P();h=`<div class="stage"><div class="qhead">${esc(q.text)}</div><div class="agrid big ${q.type=='tf'?"tf":""}">${tiles("",true)}</div><div class="two"><div><h3>Goed ✓</h3>${ps.filter(p=>p.ok).map(p=>`${avatarMarkup(p,30,"happy")} ${esc(p.name)}`).join(" · ")||"Niemand"}</div><div><h3>Fout ✗</h3>${ps.filter(p=>!p.ok).map(p=>`${avatarMarkup(p,30,"sad")} ${esc(p.name)}`).join(" · ")||"Niemand"}</div></div><button class="btn b" data-a="next">Volgende</button></div>`}
   else if(G.state=="board")h=`<div class="stage leaderboard"><h1>Tussenstand</h1>${boardRows(sorted().slice(0,5))}<button class="btn b" data-a="next">Volgende vraag</button></div>`;
-  else{const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn">${avatarMarkup(t[i],72,"celebrate")}<b>${esc(t[i].name)}</b><small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Quiz afsluiten</button></div>`}
+  else{const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn pod-player pod-player-${i+1}" style="--pod-player-delay:${["2s","2.8s","1.2s"][i]}">${avatarMarkup(t[i],72)}<b>${esc(t[i].name)}</b><small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Quiz afsluiten</button></div>`}
  }else{
   if(G.state=="lobby")h=`<div class="center"><div class="game-avatar-large">${avatarMarkup(me,104)}</div><div class="big-msg">Je zit erin, ${esc(me?.name)}!</div><p>Wachten tot de host het spel start</p><button class="btn w" data-a="customizeAvatar">🎨 Avatar aanpassen</button></div>`;
   else if(G.state=="countdown")h=countdown(true);

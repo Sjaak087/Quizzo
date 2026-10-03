@@ -872,3 +872,8 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
 .game-avatar-large .avatar-inline{--avatar-size:min(150px,42vw)!important;}
 .center .game-avatar-large + .big-msg{margin-top:12px;}
 @media(max-width:600px){.game-avatar-large{width:min(132px,45vw);height:min(132px,45vw);}.game-avatar-large .avatar-inline{--avatar-size:min(132px,45vw)!important;}.center .game-avatar-large + .big-msg{font-size:clamp(28px,8vw,38px);}}
+
+/* V87 — podium: reveal avatar only after its podium block has fully risen. */
+.pod-player{opacity:0;transform:translateY(18px);animation:podPlayerReveal .45s ease-out both;animation-delay:var(--pod-player-delay,1.2s);}
+@keyframes podPlayerReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.pod-player{opacity:1;transform:none;animation:none!important}}
