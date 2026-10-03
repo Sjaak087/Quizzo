@@ -1,7 +1,9 @@
-Quizzo V84
+Quizzo V85 – mobile avatar picker fix
 
-- Leaderboard enlarged and locked to exactly the top 5 visible rows.
-- Host and solo leaderboard views render only top 5.
-- No leaderboard scrolling on supported screen sizes.
-- Mobile responsive fallback keeps all five rows visible in a compact form.
-- Cache version bumped to v84.
+Gewijzigd:
+- Mobiele avatar-kiezer gebruikt nu één pagina-scroll.
+- Alle 25 avatars kunnen volledig worden bekeken door naar beneden te scrollen.
+- De beschrijving van de quiz achter de picker kan niet meer door de avatarpagina heen komen.
+- De knop “Klaar” staat na de volledige lijst en blijft sticky onderaan tijdens het scrollen.
+- Cacheversies verhoogd naar V85.
+- Tekst aangepast van 20 naar 25 personages.
