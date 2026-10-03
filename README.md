@@ -1,9 +1,15 @@
-Quizzo V85 – mobile avatar picker fix
+# Quizzo V86
 
-Gewijzigd:
-- Mobiele avatar-kiezer gebruikt nu één pagina-scroll.
-- Alle 25 avatars kunnen volledig worden bekeken door naar beneden te scrollen.
-- De beschrijving van de quiz achter de picker kan niet meer door de avatarpagina heen komen.
-- De knop “Klaar” staat na de volledige lijst en blijft sticky onderaan tijdens het scrollen.
-- Cacheversies verhoogd naar V85.
-- Tekst aangepast van 20 naar 25 personages.
+Avatar-positioning fix across the whole app.
+
+## Changed
+- Normalized all 25 avatar images using their actual transparent-pixel bounds from the V83 avatar assets.
+- The same rendering is now used by the avatar picker, pre-start lobby, player chips, result screens, leaderboard and podium.
+- Fixed the pre-start lobby avatar frame and responsive sizing.
+- Cache version bumped to V86.
+
+Only these files are included because they are the only files changed in V86:
+- app.js
+- style.css
+- index.html
+- README.md

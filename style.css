@@ -863,3 +863,12 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
   .avatar-catalog-panel{overflow:visible !important;}
   .catalog-scroll{overflow:auto !important;}
 }
+
+
+/* V86 — normalized avatar artwork across lobby, picker, results, leaderboard and podium. */
+.avatar-inline{position:relative!important;display:inline-block!important;width:var(--avatar-size)!important;height:var(--avatar-size)!important;overflow:visible!important;vertical-align:middle!important;flex:0 0 auto!important;}
+.avatar-svg-img{position:absolute!important;left:var(--avatar-img-left)!important;top:var(--avatar-img-top)!important;width:var(--avatar-img-size)!important;height:var(--avatar-img-size)!important;max-width:none!important;max-height:none!important;object-fit:contain!important;object-position:50% 50%!important;display:block!important;margin:0!important;}
+.game-avatar-large{width:min(150px,42vw);height:min(150px,42vw);display:grid;place-items:center;margin:2px auto 8px;overflow:visible!important;}
+.game-avatar-large .avatar-inline{--avatar-size:min(150px,42vw)!important;}
+.center .game-avatar-large + .big-msg{margin-top:12px;}
+@media(max-width:600px){.game-avatar-large{width:min(132px,45vw);height:min(132px,45vw);}.game-avatar-large .avatar-inline{--avatar-size:min(132px,45vw)!important;}.center .game-avatar-large + .big-msg{font-size:clamp(28px,8vw,38px);}}

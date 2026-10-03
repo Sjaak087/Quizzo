@@ -202,9 +202,37 @@ const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:
 function avatarSrc(i){return QUIZZO_AVATAR_CATALOG.avatars?.[clampIndex(i,AVATAR_COUNT)]?.src||"";}
 function avatarBadge(i){return AVATAR_NEW_BADGES[String(i)]===true||AVATAR_NEW_BADGES[i]===true?'<span class="avatar-choice-new">Nieuw</span>':''}
 function avatarReaction(emotion){const map={happy:['✨','Goed!'],celebrate:['🎉','Winnaar!'],sad:['💧','Oei!'],rankup:['⬆️','Omhoog!'],overtaken:['😵','Ingehaald!']};const v=map[emotion];return v?`<span class="avatar-reaction reaction-${emotion}" aria-hidden="true"><b>${v[0]}</b><small>${v[1]}</small></span>`:""}
+
+// All 25 avatar source files use a 512x512 transparent canvas, but their visible artwork
+// has different transparent margins. A plain object-fit:contain therefore makes some
+// characters look too high, too low, too large or too small. These source-space alpha
+// bounds normalize the visible character to one consistent frame in every UI location.
+const AVATAR_BBOXES=[
+  [128,32,467,467],[101,46,471,468],[146,32,462,464],[147,32,459,467],[70,72,471,470],
+  [150,32,459,464],[122,32,465,467],[102,43,471,468],[73,89,471,467],[150,32,469,465],
+  [82,66,471,469],[112,33,471,467],[173,32,453,467],[156,32,456,467],[58,32,453,502],
+  [148,34,471,471],[112,36,471,461],[41,75,471,502],[83,55,471,463],[137,32,465,457],
+  [130,24,381,494],[106,24,405,494],[149,25,362,494],[158,24,368,494],[133,25,379,493]
+];
+function avatarLayout(index,size){
+  const S=Math.max(28,Number(size)||48);
+  const b=AVATAR_BBOXES[clampIndex(index,AVATAR_BBOXES.length)]||[0,0,512,512];
+  const bw=Math.max(1,b[2]-b[0]), bh=Math.max(1,b[3]-b[1]);
+  // Keep the visible artwork inside a consistent visual box: ~82% wide and ~90% high.
+  const scale=Math.min((S*0.82)/bw,(S*0.90)/bh);
+  const render=S===0?512:512*scale;
+  const visualW=bw*scale, visualH=bh*scale;
+  const left=(S-visualW)/2-b[0]*scale;
+  const bottom=S*0.94;
+  const top=bottom-visualH-b[1]*scale+(b[3]-b[1])*scale;
+  // Equivalent to aligning the artwork's visible bottom at 94% of the frame.
+  const top2=S*0.94-b[3]*scale;
+  return {S,render,left,top:top2};
+}
 function avatarMarkup(p,size=48,emotion=""){
-  const v=normalizeProfile(p),src=avatarSrc(v.avatar);
-  return `<span class="avatar-inline ${emotion?`mood-${emotion}`:""}" style="--avatar-size:${Math.max(28,Number(size)||48)}px"><img class="avatar-svg-img" src="${src}" alt="" draggable="false" decoding="async">${avatarReaction(emotion)}</span>`;
+  const v=normalizeProfile(p),src=avatarSrc(v.avatar),L=avatarLayout(v.avatar,size);
+  const st=`--avatar-size:${L.S}px;--avatar-img-size:${L.render}px;--avatar-img-left:${L.left}px;--avatar-img-top:${L.top}px`;
+  return `<span class="avatar-inline ${emotion?`mood-${emotion}`:""}" style="${st}"><img class="avatar-svg-img" src="${src}" alt="" draggable="false" decoding="async">${avatarReaction(emotion)}</span>`;
 }
 function savedProfile(){try{return normalizeProfile(JSON.parse(localStorage.getItem("quizzo_avatar")||"null"))}catch(_){return {...DEFAULT_PROFILE}}}
 function saveProfile(p){localStorage.setItem("quizzo_avatar",JSON.stringify(normalizeProfile(p)))}
