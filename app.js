@@ -457,7 +457,16 @@ function editorView(){
  <div class="theme-strip"><span class="theme-strip-icon">${THEMES[safeTheme(Q.theme)].icon}</span><b>${esc(THEMES[safeTheme(Q.theme)].name)}</b><small>Dit thema zie je tijdens het spelen op het scherm van de host en op telefoons.</small></div>
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn();wireThemePreviews()}
 function side(){
- $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":q.type=="typing"?"Typen":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
+ const total=Q.questions.length;
+ $("#side").innerHTML=Q.questions.map((q,i)=>{
+   const last=i===total-1;
+   const checked=q.leaderboard!==false;
+   const lb=last
+     ? `<div class="side-leaderboard last"><span class="side-leaderboard-icon">🏁</span><span><b>Laatste vraag</b><small>Geen tussenstand · direct naar podium/resultaat</small></span></div>`
+     : `<label class="side-leaderboard ${checked?"is-on":""}" data-i="${i}"><span class="side-check"><input type="checkbox" data-a="toggleLeaderboard" data-i="${i}" ${checked?"checked":""} aria-label="Tussenstand na vraag ${i+1}"><b></b></span><span><b>Tussenstand na deze vraag</b><small>${checked?"Leaderboard wordt getoond":"Leaderboard wordt overgeslagen"}</small></span></label>`;
+   return `<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":q.type=="typing"?"Typen":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button>${lb}</div>`;
+ }).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`
+}
 function leaderboardSetting(index){
  const last=index===Q.questions.length-1;
  if(last)return `<div class="leaderboard-setting disabled"><span class="leaderboard-label"><b>🏆 Tussenstand na deze vraag</b><small>De laatste vraag gaat altijd direct naar het podium/resultaat.</small></span><span class="leaderboard-lock">Niet beschikbaar</span></div>`;
@@ -468,13 +477,13 @@ function leaderboardSetting(index){
 function mainQ(){
  const q=Q.questions[SEL];
  if(!q)return $("#main").innerHTML=`<div class="empty"><div class="big-msg">Nog geen vragen</div><p>Voeg je eerste vraag toe.</p><button class="btn b" data-a="newq">+ Vraag toevoegen</button></div>`;
- if(q.type==="dia"){$("#main").innerHTML=`<div class="slide-editor card"><div class="type-badge dia">🖼️ DIA</div><input class="qbig" data-f="text" placeholder="Titel van de dia" value="${esc(q.text)}"><textarea class="qinfo" data-f="info" rows="8" placeholder="Schrijf hier de informatie die je wilt laten zien...">${esc(q.info||"")}</textarea><div class="opts"><label>Duur van de dia (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label>${leaderboardSetting(SEL)}</div><div class="slide-preview"><div class="slide-kicker">DIA</div><h2>${esc(q.text)||"Jouw titel"}</h2><p>${esc(q.info)||"Jouw informatie verschijnt hier."}</p></div></div>`;return}
+ if(q.type==="dia"){$("#main").innerHTML=`<div class="slide-editor card"><div class="type-badge dia">🖼️ DIA</div><input class="qbig" data-f="text" placeholder="Titel van de dia" value="${esc(q.text)}"><textarea class="qinfo" data-f="info" rows="8" placeholder="Schrijf hier de informatie die je wilt laten zien...">${esc(q.info||"")}</textarea><div class="opts"><label>Duur van de dia (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label></div><div class="slide-preview"><div class="slide-kicker">DIA</div><h2>${esc(q.text)||"Jouw titel"}</h2><p>${esc(q.info)||"Jouw informatie verschijnt hier."}</p></div></div>`;return}
  if(q.type==="typing"){$("#main").innerHTML=`<div class="type-badge typing">⌨️ TYPEN</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
- <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button>${leaderboardSetting(SEL)}</div>
+ <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
  <div class="typing-answers card"><div class="typing-answer-head"><div><b>Goede antwoorden</b><small>Hoofdletters en leestekens worden genegeerd.</small></div><button class="btn b sm" data-a="addtypeanswer">+ Antwoord toevoegen</button></div><div class="typing-answer-list">${q.a.map((t,i)=>`<div class="typing-answer-row"><span class="typing-index">${i+1}</span><input data-f="a" data-i="${i}" maxlength="160" placeholder="Goed antwoord ${i+1}" value="${esc(t)}"><button class="btn w sm icon-btn" data-a="deltypeanswer" data-i="${i}" ${q.a.length<=1?"disabled":""} aria-label="Antwoord verwijderen">×</button></div>`).join("")}</div></div>
  <p class="typing-help">Elke ingevulde regel telt als een goed antwoord. Je kunt onbeperkt mogelijke antwoorden toevoegen. <b>Punten zijn altijd 1000.</b></p>`;return}
  $("#main").innerHTML=`<div class="type-badge ${q.type==="tf"?"tf":"quiz"}">${q.type==="tf"?"✓ ✗ WAAR OF NIET WAAR":"▲ QUIZVRAAG"}</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
- <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button>${leaderboardSetting(SEL)}</div>
+ <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
  <div class="agrid ${q.type==="tf"?"tf":""}">${q.type==="tf"?q.a.map((t,i)=>`<div class="ans ${["g","r"][i]}"><span>${["✓","✗"][i]}</span><em>${esc(t)}</em><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join(""):q.a.map((t,i)=>`<div class="ans ${COL[i]}"><span>${SYM[i]}</span><input data-f="a" data-i="${i}" placeholder="Antwoord ${"ABCD"[i]}" value="${esc(t)}"><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join("")}</div>
  <p style="color:var(--ink)">Selecteer het rondje bij het goede antwoord. <b>Punten zijn altijd 1000.</b></p>`}
 const saveBtn=()=>{const b=$("#sv");if(b)b.disabled=!valid()};
@@ -482,9 +491,16 @@ document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)r
  if(f=="settingsTitle"){Q.title=t.value;const qt=document.querySelector(".qtitle");if(qt)qt.value=t.value;saveBtn();return;}
  if(f=="settingsDescription"){Q.description=t.value;return;}
  if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="info")q.info=t.value;else if(f=="time")q.time=t.value===""?NaN:+t.value;
- else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;else if(f=="leaderboard")q.leaderboard=t.checked;
+ else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;
  side();saveBtn()});
 act.sel=d=>{SEL=+d.i;side();mainQ()};
+act.toggleLeaderboard=d=>{
+ const i=+d.i, q=Q?.questions?.[i];
+ if(!q||i===Q.questions.length-1)return;
+ q.leaderboard=document.querySelector(`.side-leaderboard input[data-i="${i}"]`)?.checked!==false;
+ side();
+ saveBtn();
+};
 act.dq=d=>{Q.questions.splice(+d.i,1);SEL=Math.min(SEL,Q.questions.length-1);side();mainQ();saveBtn()};
 act.settings=()=>{
  const m=document.createElement("div");m.className="modal";

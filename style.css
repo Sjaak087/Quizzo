@@ -892,3 +892,23 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
 .leaderboard-label small{font-size:11px;color:#746a83;}
 .leaderboard-lock{font-size:11px;font-weight:800;color:#746a83;padding:4px 8px;background:#f1edf6;border-radius:999px;white-space:nowrap;}
 @media(max-width:700px){.leaderboard-setting{min-width:0;width:100%;}.leaderboard-label small{font-size:10px;}}
+
+/* V89 — leaderboard choice lives directly under each question in the editor sidebar. */
+.side-leaderboard{display:flex;align-items:center;gap:9px;margin-top:8px;padding:8px 9px;border:1px solid #e2dbea;border-radius:9px;background:#f8f5fc;color:var(--ink,#2c2140);cursor:pointer;box-sizing:border-box;transition:border-color .15s,background .15s,box-shadow .15s;}
+.side-leaderboard:hover{border-color:var(--b,#46178f);background:#f4effb;}
+.side-leaderboard.is-on{border-color:rgba(70,23,143,.35);background:#f1ebfb;}
+.side-leaderboard.last{cursor:default;opacity:.72;background:#f3f0f6;}
+.side-leaderboard-icon{font-size:15px;line-height:1;}
+.side-leaderboard>span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.side-leaderboard b{font-size:11px;line-height:1.15;}
+.side-leaderboard small{font-size:9px!important;line-height:1.2;color:#746a83!important;margin:0!important;}
+.side-check{position:relative;display:grid;place-items:center;flex:0 0 auto;}
+.side-check input{position:absolute;opacity:0;width:1px;height:1px;}
+.side-check b{display:block;width:18px;height:18px;border:2px solid #b9afc9;border-radius:5px;background:#fff;box-sizing:border-box;}
+.side-check input:checked + b{background:var(--b,#46178f);border-color:var(--b,#46178f);}
+.side-check input:checked + b:after{content:"✓";display:grid;place-items:center;width:100%;height:100%;color:#fff;font-size:12px;font-weight:900;}
+@media(max-width:700px){
+  .side-leaderboard{margin-top:7px;min-height:58px;}
+  .side-leaderboard b{font-size:10px;}
+  .side-leaderboard small{font-size:8px!important;}
+}

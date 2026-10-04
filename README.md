@@ -1,16 +1,7 @@
-Quizzo V87
+# Quizzo V89
 
-Wijzigingen:
-- Op het podium verschijnen avatars pas nadat het bijbehorende podiumblok volledig is opgekomen.
-- Multiplayer host-schermen tonen geen avatar-reactiebadges zoals “Goed!”, “Oei!”, “Winnaar!” of rank-reacties.
-- Spelers zien deze reacties wel; in solo blijft de spelerreactie zichtbaar.
-- Cacheversie verhoogd naar V87.
-
-
-## V88 wijzigingen
-- Per vraag instellen of na die vraag een tussenstand/leaderboard moet verschijnen.
-- Standaard aangevinkt voor nieuwe en bestaande vragen.
-- Bij de laatste vraag kan deze instelling niet worden gekozen.
-- Wanneer de instelling uit staat, wordt de tussenstand na die vraag overgeslagen.
-- Alleen spelen eindigt altijd met het podium.
-- Cacheversie naar V88.
+- De leaderboard/tussenstand-keuze staat nu direct onder elke vraag in de zijbalk.
+- Elke vraag behalve de laatste heeft standaard het vinkje aan.
+- Het vinkje werkt per vraag onafhankelijk.
+- Bij de laatste vraag staat geen keuze; die gaat direct naar het podium/resultaat.
+- De oude keuze uit de hoofdeditor is verwijderd om dubbele instellingen te voorkomen.
