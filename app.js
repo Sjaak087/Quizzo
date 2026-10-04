@@ -458,22 +458,17 @@ function editorView(){
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn();wireThemePreviews()}
 function side(){
  const total=Q.questions.length;
- $("#side").innerHTML=Q.questions.map((q,i)=>{
-   const last=i===total-1;
-   const checked=q.leaderboard!==false;
-   const lb=last
-     ? `<div class="side-leaderboard last"><span class="side-leaderboard-icon">🏁</span><span><b>Laatste vraag</b><small>Geen tussenstand · direct naar podium/resultaat</small></span></div>`
-     : `<label class="side-leaderboard ${checked?"is-on":""}" data-i="${i}"><span class="side-check"><input type="checkbox" data-a="toggleLeaderboard" data-i="${i}" ${checked?"checked":""} aria-label="Tussenstand na vraag ${i+1}"><b></b></span><span><b>Tussenstand na deze vraag</b><small>${checked?"Leaderboard wordt getoond":"Leaderboard wordt overgeslagen"}</small></span></label>`;
-   return `<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":q.type=="typing"?"Typen":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button>${lb}</div>`;
- }).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`
+ const items=[];
+ Q.questions.forEach((q,i)=>{
+   const typeLabel=q.type==="tf"?"Waar/niet waar":q.type==="dia"?"Dia":q.type==="typing"?"Typen":"Quiz";
+   items.push(`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${typeLabel} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`);
+   if(i<total-1){
+     const checked=q.leaderboard!==false;
+     items.push(`<div class="side-leaderboard-gap"><label class="side-leaderboard-between ${checked?"is-on":""}" data-i="${i}" aria-label="Tussenstand na vraag ${i+1}"><span class="side-check"><input type="checkbox" data-i="${i}" ${checked?"checked":""} aria-label="Tussenstand na vraag ${i+1}"><b></b></span><span class="side-leaderboard-copy"><b>Leaderboard na vraag ${i+1}</b><small>${checked?"Tussenstand tonen voordat de volgende vraag start":"Geen tussenstand na deze vraag"}</small></span></label></div>`);
+   }
+ });
+ $("#side").innerHTML=items.join("")+`<button class="btn b side-add-question" data-a="newq">+ Vraag toevoegen</button>`;
 }
-function leaderboardSetting(index){
- const last=index===Q.questions.length-1;
- if(last)return `<div class="leaderboard-setting disabled"><span class="leaderboard-label"><b>🏆 Tussenstand na deze vraag</b><small>De laatste vraag gaat altijd direct naar het podium/resultaat.</small></span><span class="leaderboard-lock">Niet beschikbaar</span></div>`;
- const checked=Q.questions[index]?.leaderboard!==false;
- return `<label class="leaderboard-setting"><span class="leaderboard-check"><input type="checkbox" data-f="leaderboard" ${checked?"checked":""}><b></b></span><span class="leaderboard-label"><b>🏆 Tussenstand na deze vraag</b><small>Laat na deze vraag het leaderboard zien voordat de volgende vraag begint.</small></span></label>`;
-}
-
 function mainQ(){
  const q=Q.questions[SEL];
  if(!q)return $("#main").innerHTML=`<div class="empty"><div class="big-msg">Nog geen vragen</div><p>Voeg je eerste vraag toe.</p><button class="btn b" data-a="newq">+ Vraag toevoegen</button></div>`;
@@ -493,14 +488,17 @@ document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)r
  if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="info")q.info=t.value;else if(f=="time")q.time=t.value===""?NaN:+t.value;
  else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;
  side();saveBtn()});
-act.sel=d=>{SEL=+d.i;side();mainQ()};
-act.toggleLeaderboard=d=>{
- const i=+d.i, q=Q?.questions?.[i];
- if(!q||i===Q.questions.length-1)return;
- q.leaderboard=document.querySelector(`.side-leaderboard input[data-i="${i}"]`)?.checked!==false;
+document.addEventListener("change",e=>{
+ const cb=e.target.closest?.(".side-leaderboard-between input[type=\"checkbox\"]");
+ if(!cb||!Q)return;
+ const i=Number(cb.dataset.i);
+ const q=Q.questions[i];
+ if(!q||i>=Q.questions.length-1)return;
+ q.leaderboard=cb.checked;
  side();
  saveBtn();
-};
+});
+act.sel=d=>{SEL=+d.i;side();mainQ()};
 act.dq=d=>{Q.questions.splice(+d.i,1);SEL=Math.min(SEL,Q.questions.length-1);side();mainQ();saveBtn()};
 act.settings=()=>{
  const m=document.createElement("div");m.className="modal";

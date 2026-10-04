@@ -879,36 +879,26 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
 @media(prefers-reduced-motion:reduce){.pod-player{opacity:1;transform:none;animation:none!important}}
 
 
-/* V88 — optional leaderboard after each question. */
-.leaderboard-setting{display:flex;align-items:center;gap:12px;min-width:min(430px,100%);padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:12px;background:var(--card,#fff);box-sizing:border-box;}
-.leaderboard-setting.disabled{opacity:.65;justify-content:space-between;}
-.leaderboard-check{position:relative;display:flex;align-items:center;flex:0 0 auto;}
-.leaderboard-check input{position:absolute;opacity:0;pointer-events:none;}
-.leaderboard-check b{display:block;width:22px;height:22px;border:2px solid #b7adca;border-radius:6px;background:#fff;position:relative;}
-.leaderboard-check input:checked + b{background:#46178f;border-color:#46178f;}
-.leaderboard-check input:checked + b::after{content:"✓";position:absolute;inset:0;color:#fff;font-size:15px;font-weight:900;display:grid;place-items:center;}
-.leaderboard-label{display:flex;flex-direction:column;gap:2px;line-height:1.2;}
-.leaderboard-label b{font-size:13px;}
-.leaderboard-label small{font-size:11px;color:#746a83;}
-.leaderboard-lock{font-size:11px;font-weight:800;color:#746a83;padding:4px 8px;background:#f1edf6;border-radius:999px;white-space:nowrap;}
-@media(max-width:700px){.leaderboard-setting{min-width:0;width:100%;}.leaderboard-label small{font-size:10px;}}
-
-/* V89 — leaderboard choice lives directly under each question in the editor sidebar. */
-.side-leaderboard{display:flex;align-items:center;gap:9px;margin-top:8px;padding:8px 9px;border:1px solid #e2dbea;border-radius:9px;background:#f8f5fc;color:var(--ink,#2c2140);cursor:pointer;box-sizing:border-box;transition:border-color .15s,background .15s,box-shadow .15s;}
-.side-leaderboard:hover{border-color:var(--b,#46178f);background:#f4effb;}
-.side-leaderboard.is-on{border-color:rgba(70,23,143,.35);background:#f1ebfb;}
-.side-leaderboard.last{cursor:default;opacity:.72;background:#f3f0f6;}
-.side-leaderboard-icon{font-size:15px;line-height:1;}
-.side-leaderboard>span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0;}
-.side-leaderboard b{font-size:11px;line-height:1.15;}
-.side-leaderboard small{font-size:9px!important;line-height:1.2;color:#746a83!important;margin:0!important;}
-.side-check{position:relative;display:grid;place-items:center;flex:0 0 auto;}
-.side-check input{position:absolute;opacity:0;width:1px;height:1px;}
-.side-check b{display:block;width:18px;height:18px;border:2px solid #b9afc9;border-radius:5px;background:#fff;box-sizing:border-box;}
+/* V90 — leaderboard choice is a real separator between question cards in the editor sidebar. */
+.side-leaderboard-gap{position:relative;width:100%;padding:8px 2px 12px;}
+.side-leaderboard-between{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border:1px solid #e2dbea;border-radius:9px;background:#f8f5fc;color:var(--ink,#2c2140);cursor:pointer;box-sizing:border-box;transition:border-color .15s,background .15s,box-shadow .15s;}
+.side-leaderboard-between:hover{border-color:var(--b,#46178f);background:#f4effb;}
+.side-leaderboard-between.is-on{border-color:rgba(70,23,143,.35);background:#f1ebfb;box-shadow:0 2px 0 rgba(70,23,143,.06);}
+.side-leaderboard-copy{display:flex;flex-direction:column;gap:2px;min-width:0;line-height:1.15;}
+.side-leaderboard-copy b{font-size:11px;}
+.side-leaderboard-copy small{font-size:9px!important;line-height:1.2;color:#746a83!important;margin:0!important;}
+.side-check{position:relative;display:grid;place-items:center;flex:0 0 auto;width:22px;height:22px;}
+.side-check input{position:absolute;opacity:0;inset:0;width:22px;height:22px;margin:0;cursor:pointer;}
+.side-check b{display:block;width:18px;height:18px;border:2px solid #b9afc9;border-radius:5px;background:#fff;box-sizing:border-box;pointer-events:none;}
 .side-check input:checked + b{background:var(--b,#46178f);border-color:var(--b,#46178f);}
 .side-check input:checked + b:after{content:"✓";display:grid;place-items:center;width:100%;height:100%;color:#fff;font-size:12px;font-weight:900;}
+.side-add-question{margin-top:2px;}
 @media(max-width:700px){
-  .side-leaderboard{margin-top:7px;min-height:58px;}
-  .side-leaderboard b{font-size:10px;}
-  .side-leaderboard small{font-size:8px!important;}
+  .edw{flex-direction:column;}
+  .edw aside{width:100%;display:block;overflow:visible;padding:10px;}
+  .edw aside .thumb{min-width:0;margin-bottom:0;}
+  .side-leaderboard-gap{padding:7px 0 11px;}
+  .side-leaderboard-between{min-height:54px;}
+  .side-leaderboard-copy b{font-size:11px;}
+  .side-leaderboard-copy small{font-size:9px!important;}
 }
