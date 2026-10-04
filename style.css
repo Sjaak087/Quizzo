@@ -877,3 +877,18 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
 .pod-player{opacity:0;transform:translateY(18px);animation:podPlayerReveal .45s ease-out both;animation-delay:var(--pod-player-delay,1.2s);}
 @keyframes podPlayerReveal{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.pod-player{opacity:1;transform:none;animation:none!important}}
+
+
+/* V88 — optional leaderboard after each question. */
+.leaderboard-setting{display:flex;align-items:center;gap:12px;min-width:min(430px,100%);padding:10px 12px;border:1px solid var(--line,#ddd);border-radius:12px;background:var(--card,#fff);box-sizing:border-box;}
+.leaderboard-setting.disabled{opacity:.65;justify-content:space-between;}
+.leaderboard-check{position:relative;display:flex;align-items:center;flex:0 0 auto;}
+.leaderboard-check input{position:absolute;opacity:0;pointer-events:none;}
+.leaderboard-check b{display:block;width:22px;height:22px;border:2px solid #b7adca;border-radius:6px;background:#fff;position:relative;}
+.leaderboard-check input:checked + b{background:#46178f;border-color:#46178f;}
+.leaderboard-check input:checked + b::after{content:"✓";position:absolute;inset:0;color:#fff;font-size:15px;font-weight:900;display:grid;place-items:center;}
+.leaderboard-label{display:flex;flex-direction:column;gap:2px;line-height:1.2;}
+.leaderboard-label b{font-size:13px;}
+.leaderboard-label small{font-size:11px;color:#746a83;}
+.leaderboard-lock{font-size:11px;font-weight:800;color:#746a83;padding:4px 8px;background:#f1edf6;border-radius:999px;white-space:nowrap;}
+@media(max-width:700px){.leaderboard-setting{min-width:0;width:100%;}.leaderboard-label small{font-size:10px;}}

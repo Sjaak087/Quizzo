@@ -389,7 +389,7 @@ act.enter=async()=>{const n=$("#nm").value.trim();if(!n)return toast("Vul een na
 act.create=()=>{const n=$("#qn").value.trim();if(!n)return toast("Geef je quiz eerst een naam.");
  Q={title:n,description:"",theme:"classic",public:true,questions:[]};QID=null;ADMIN_EDIT=null;SEL=-1;editorView()};
 act.edit=async d=>{const v=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();
- Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||user.displayName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=d.id;ADMIN_EDIT=null;SEL=0;editorView()};
+ Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||user.displayName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false}))};QID=d.id;ADMIN_EDIT=null;SEL=0;editorView()};
 act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`quizzes/${user.uid}/${d.id}`));tabView()}};
 
 async function openPlayChooser(qz,ownerId,id){
@@ -448,7 +448,7 @@ act.play=async d=>{
 };
 
 /* ---------- Editor ---------- */
-const newQ=(type="quiz")=>type==="tf"?{type:"tf",text:"",time:20,points:1000,doublePoints:false,a:["Waar","Niet waar"],correct:-1}:type==="dia"?{type:"dia",text:"",info:"",time:10,points:1000,doublePoints:false,a:[],correct:-1}:type==="typing"?{type:"typing",text:"",time:20,points:1000,doublePoints:false,a:[""],correct:-1}:{type:"quiz",text:"",time:20,points:1000,doublePoints:false,a:["","","",""],correct:-1};
+const newQ=(type="quiz")=>type==="tf"?{type:"tf",text:"",time:20,points:1000,doublePoints:false,leaderboard:true,a:["Waar","Niet waar"],correct:-1}:type==="dia"?{type:"dia",text:"",info:"",time:10,points:1000,doublePoints:false,leaderboard:true,a:[],correct:-1}:type==="typing"?{type:"typing",text:"",time:20,points:1000,doublePoints:false,leaderboard:true,a:[""],correct:-1}:{type:"quiz",text:"",time:20,points:1000,doublePoints:false,leaderboard:true,a:["","","",""],correct:-1};
 const qOk=q=>q.type==="dia"?q.text.trim()&&q.info.trim()&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.type==="typing"?q.text.trim()&&q.a.some(x=>x.trim())&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.text.trim()&&q.a.every(x=>x.trim())&&q.correct>=0&&q.time>=5&&q.time<=120&&Number.isInteger(q.time);
 const valid=()=>Q.title.trim()&&Q.questions.length&&Q.questions.every(qOk);
 function editorView(){
@@ -458,16 +458,23 @@ function editorView(){
  <div class="edw"><aside id="side"></aside><section id="main"></section></div>`;side();mainQ();saveBtn();wireThemePreviews()}
 function side(){
  $("#side").innerHTML=Q.questions.map((q,i)=>`<div class="thumb ${i==SEL?"on":""}" data-a="sel" data-i="${i}" draggable="true" data-drag-index="${i}" title="Sleep om de volgorde te veranderen"><div class="drag-handle" aria-hidden="true">⠿</div><small>${i+1} ${q.type=="tf"?"Waar/niet waar":q.type=="dia"?"Dia":q.type=="typing"?"Typen":"Quiz"} ${qOk(q)?"":'<span class="bad">! onvolledig</span>'}</small><div class="tt">${esc(q.text)||"Nieuwe vraag"}${q.doublePoints?'<span class="mini-double">2×</span>':""}</div><button class="x" data-a="dq" data-i="${i}" aria-label="Vraag verwijderen">×</button></div>`).join("")+`<button class="btn b" data-a="newq">+ Vraag toevoegen</button>`}
+function leaderboardSetting(index){
+ const last=index===Q.questions.length-1;
+ if(last)return `<div class="leaderboard-setting disabled"><span class="leaderboard-label"><b>🏆 Tussenstand na deze vraag</b><small>De laatste vraag gaat altijd direct naar het podium/resultaat.</small></span><span class="leaderboard-lock">Niet beschikbaar</span></div>`;
+ const checked=Q.questions[index]?.leaderboard!==false;
+ return `<label class="leaderboard-setting"><span class="leaderboard-check"><input type="checkbox" data-f="leaderboard" ${checked?"checked":""}><b></b></span><span class="leaderboard-label"><b>🏆 Tussenstand na deze vraag</b><small>Laat na deze vraag het leaderboard zien voordat de volgende vraag begint.</small></span></label>`;
+}
+
 function mainQ(){
  const q=Q.questions[SEL];
  if(!q)return $("#main").innerHTML=`<div class="empty"><div class="big-msg">Nog geen vragen</div><p>Voeg je eerste vraag toe.</p><button class="btn b" data-a="newq">+ Vraag toevoegen</button></div>`;
- if(q.type==="dia"){$("#main").innerHTML=`<div class="slide-editor card"><div class="type-badge dia">🖼️ DIA</div><input class="qbig" data-f="text" placeholder="Titel van de dia" value="${esc(q.text)}"><textarea class="qinfo" data-f="info" rows="8" placeholder="Schrijf hier de informatie die je wilt laten zien...">${esc(q.info||"")}</textarea><div class="opts"><label>Duur van de dia (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label></div><div class="slide-preview"><div class="slide-kicker">DIA</div><h2>${esc(q.text)||"Jouw titel"}</h2><p>${esc(q.info)||"Jouw informatie verschijnt hier."}</p></div></div>`;return}
+ if(q.type==="dia"){$("#main").innerHTML=`<div class="slide-editor card"><div class="type-badge dia">🖼️ DIA</div><input class="qbig" data-f="text" placeholder="Titel van de dia" value="${esc(q.text)}"><textarea class="qinfo" data-f="info" rows="8" placeholder="Schrijf hier de informatie die je wilt laten zien...">${esc(q.info||"")}</textarea><div class="opts"><label>Duur van de dia (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label>${leaderboardSetting(SEL)}</div><div class="slide-preview"><div class="slide-kicker">DIA</div><h2>${esc(q.text)||"Jouw titel"}</h2><p>${esc(q.info)||"Jouw informatie verschijnt hier."}</p></div></div>`;return}
  if(q.type==="typing"){$("#main").innerHTML=`<div class="type-badge typing">⌨️ TYPEN</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
- <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
+ <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button>${leaderboardSetting(SEL)}</div>
  <div class="typing-answers card"><div class="typing-answer-head"><div><b>Goede antwoorden</b><small>Hoofdletters en leestekens worden genegeerd.</small></div><button class="btn b sm" data-a="addtypeanswer">+ Antwoord toevoegen</button></div><div class="typing-answer-list">${q.a.map((t,i)=>`<div class="typing-answer-row"><span class="typing-index">${i+1}</span><input data-f="a" data-i="${i}" maxlength="160" placeholder="Goed antwoord ${i+1}" value="${esc(t)}"><button class="btn w sm icon-btn" data-a="deltypeanswer" data-i="${i}" ${q.a.length<=1?"disabled":""} aria-label="Antwoord verwijderen">×</button></div>`).join("")}</div></div>
  <p class="typing-help">Elke ingevulde regel telt als een goed antwoord. Je kunt onbeperkt mogelijke antwoorden toevoegen. <b>Punten zijn altijd 1000.</b></p>`;return}
  $("#main").innerHTML=`<div class="type-badge ${q.type==="tf"?"tf":"quiz"}">${q.type==="tf"?"✓ ✗ WAAR OF NIET WAAR":"▲ QUIZVRAAG"}</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
- <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
+ <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button>${leaderboardSetting(SEL)}</div>
  <div class="agrid ${q.type==="tf"?"tf":""}">${q.type==="tf"?q.a.map((t,i)=>`<div class="ans ${["g","r"][i]}"><span>${["✓","✗"][i]}</span><em>${esc(t)}</em><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join(""):q.a.map((t,i)=>`<div class="ans ${COL[i]}"><span>${SYM[i]}</span><input data-f="a" data-i="${i}" placeholder="Antwoord ${"ABCD"[i]}" value="${esc(t)}"><label class="chk" title="Goed antwoord"><input type="radio" name="ok" data-f="correct" data-i="${i}" ${q.correct==i?"checked":""}><b></b></label></div>`).join("")}</div>
  <p style="color:var(--ink)">Selecteer het rondje bij het goede antwoord. <b>Punten zijn altijd 1000.</b></p>`}
 const saveBtn=()=>{const b=$("#sv");if(b)b.disabled=!valid()};
@@ -475,7 +482,7 @@ document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)r
  if(f=="settingsTitle"){Q.title=t.value;const qt=document.querySelector(".qtitle");if(qt)qt.value=t.value;saveBtn();return;}
  if(f=="settingsDescription"){Q.description=t.value;return;}
  if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="info")q.info=t.value;else if(f=="time")q.time=t.value===""?NaN:+t.value;
- else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;
+ else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;else if(f=="leaderboard")q.leaderboard=t.checked;
  side();saveBtn()});
 act.sel=d=>{SEL=+d.i;side();mainQ()};
 act.dq=d=>{Q.questions.splice(+d.i,1);SEL=Math.min(SEL,Q.questions.length-1);side();mainQ();saveBtn()};
@@ -524,7 +531,7 @@ act.deltypeanswer=d=>{const q=Q.questions[SEL];if(!q||q.type!=="typing"||q.a.len
 act.exit=()=>{if(confirm("Sluiten zonder opslaan?")){const fromAdmin=!!ADMIN_EDIT;Q=null;QID=null;ADMIN_EDIT=null;if(fromAdmin){act.admin();}else{tab="mine";home()}}};
 act.save=async()=>{if(!valid())return;const ownerId=ADMIN_EDIT?.ownerId||user.uid;const id=QID||push(ref(db,"quizzes/"+ownerId)).key;
  const originalCreator=Q.creatorName||user.displayName||"Quizzo speler";
- const payload={title:Q.title.trim(),description:String(Q.description||"").trim(),theme:safeTheme(Q.theme),public:Q.public!==false,creatorName:originalCreator,questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints})),updated:Date.now()};
+ const payload={title:Q.title.trim(),description:String(Q.description||"").trim(),theme:safeTheme(Q.theme),public:Q.public!==false,creatorName:originalCreator,questions:Q.questions.map(q=>({...q,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false})),updated:Date.now()};
  try{await set(ref(db,`quizzes/${ownerId}/${id}`),payload)}catch(e){return toast(em(e))}
  const fromAdmin=!!ADMIN_EDIT;Q=null;ADMIN_EDIT=null;QID=null;if(fromAdmin){toast("Quiz van gebruiker bijgewerkt!");act.admin();return;}tab="mine";home();toast("Quiz opgeslagen!")};
 
@@ -532,7 +539,7 @@ act.save=async()=>{if(!valid())return;const ownerId=ADMIN_EDIT?.ownerId||user.ui
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
 const INTRO_MS=5000,DOUBLE_BONUS_INTRO_MS=2500;
 const randomCode=async()=>{let code;do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());return code};
-const createGame=async(qz,gameMode,playerProfile=null)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,theme:safeTheme(qz.theme),questions}};if(solo){const profile=normalizeProfile(playerProfile||savedProfile());data.players={[user.uid]:{name:user.displayName||user.email,score:0,...profile}};}await set(ref(db,"games/"+code),data);return code};
+const createGame=async(qz,gameMode,playerProfile=null)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,theme:safeTheme(qz.theme),questions}};if(solo){const profile=normalizeProfile(playerProfile||savedProfile());data.players={[user.uid]:{name:user.displayName||user.email,score:0,...profile}};}await set(ref(db,"games/"+code),data);return code};
 act.host=async d=>{try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
 act.playhost=async d=>{act.closem();act.host(d)};
 act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();openAvatarPicker(savedProfile(),async profile=>{const code=await createGame(qz,"solo",profile);run(code,true)},"Kies je avatar")}catch(e){toast(em(e))}};
@@ -568,7 +575,7 @@ function tick(){
   const q=QS()[G.q],ms=end()-now(),el=$("#slideTm");
   if(el)el.textContent=Math.max(0,Math.ceil(ms/1000));
   const b=$("#slideBar");setTimerBar(b,ms/(q.time*1000));
-  if(HOST&&ms<=0&&!busy){busy=true;update(ref(db,"games/"+CODE),{state:"board"}).catch(e=>toast(em(e))).finally(()=>busy=false)}
+  if(HOST&&ms<=0&&!busy){busy=true;Promise.resolve(act.next()).catch(e=>toast(em(e))).finally(()=>busy=false)}
   return;
  }
  if(G.state!="question")return;
@@ -581,17 +588,25 @@ async function reveal(){if(busy)return;busy=true;const q=QS()[G.q];
  P().forEach(p=>{const a=ans[p.id];const ok=q.type==="typing"?!!a&&a.t<=end()+1500&&typingCorrect(q,a):!!a&&a.c===q.correct&&a.t<=end()+1500;const earned=ok?earnedPointsFor(q,Number(a?.t)):0;u[`players/${p.id}/ok`]=ok;u[`players/${p.id}/earnedPoints`]=earned;u[`players/${p.id}/score`]=(p.score||0)+earned});
  await update(ref(db,"games/"+CODE),u)}
 act.start=()=>{const q=QS()[0];return q?.type==="dia"?update(ref(db,"games/"+CODE),{state:"slide",q:0,countdownStartedAt:null,startedAt:serverTimestamp()}):update(ref(db,"games/"+CODE),{state:"countdown",q:0,countdownStartedAt:serverTimestamp(),startedAt:null})};
+const startQuestion=(ni)=>{
+ if(ni>=QS().length)return update(ref(db,"games/"+CODE),{state:"end"});
+ const nq=QS()[ni];
+ return nq.type==="dia"
+  ?update(ref(db,"games/"+CODE),{state:"slide",q:ni,countdownStartedAt:null,startedAt:serverTimestamp()})
+  :update(ref(db,"games/"+CODE),{state:"countdown",q:ni,countdownStartedAt:serverTimestamp(),startedAt:null});
+};
 act.next=()=>{
- if(G.state==="slide")return update(ref(db,"games/"+CODE),{state:"board"});
- if(G.state==="reveal")return G.q+1<QS().length?update(ref(db,"games/"+CODE),{state:"board"}):update(ref(db,"games/"+CODE),{state:"end"});
- if(G.state=="board"){
-  const ni=G.q+1;
-  if(ni>=QS().length)return update(ref(db,"games/"+CODE),{state:"end"});
-  const nq=QS()[ni];
-  return nq.type==="dia"
-   ?update(ref(db,"games/"+CODE),{state:"slide",q:ni,countdownStartedAt:null,startedAt:serverTimestamp()})
-   :update(ref(db,"games/"+CODE),{state:"countdown",q:ni,countdownStartedAt:serverTimestamp(),startedAt:null});
+ if(G.state==="slide"){
+  const q=QS()[G.q],last=G.q+1>=QS().length;
+  if(last)return update(ref(db,"games/"+CODE),{state:"end"});
+  return q.leaderboard===false?startQuestion(G.q+1):update(ref(db,"games/"+CODE),{state:"board"});
  }
+ if(G.state==="reveal"){
+  const q=QS()[G.q],last=G.q+1>=QS().length;
+  if(last)return update(ref(db,"games/"+CODE),{state:"end"});
+  return q.leaderboard===false?startQuestion(G.q+1):update(ref(db,"games/"+CODE),{state:"board"});
+ }
+ if(G.state=="board")return startQuestion(G.q+1);
 };
 act.close=()=>remove(ref(db,"games/"+CODE));
 act.ans=d=>{if(G.state!="question"||now()>end()||ANS()[user.uid])return;const q=QS()[G.q];if(q.type==="typing")return act.typingSubmit();set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{c:+d.i,t:now()})};
@@ -641,9 +656,9 @@ function paint(){
   else if(G.state=="countdown")h=countdown(true);
   else if(G.state=="slide")h=slideView();
   else if(G.state=="question")h=ANS()[user.uid]?`<div class="center"><div class="big-msg">Antwoord verstuurd</div>Wachten op de uitslag...</div>`:q.type==="typing"?`<div class="stage answer-screen typing-player"><div class="typing-question"><div class="typing-kicker">⌨️ TYPEN</div><h1>${esc(q.text)}</h1><p>Typ het antwoord zo goed mogelijk.</p></div><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Typ je antwoord":"Typ je antwoord"}</div></div><div class="tbar"><div id="tb"></div></div><form id="typingForm" class="typing-form"><input id="typingInput" autocomplete="off" maxlength="160" placeholder="Typ hier je antwoord..." autofocus><button class="btn g typing-submit" type="submit">Antwoord versturen</button></form><p class="typing-note">Hoofdletters en leestekens maken niet uit.</p></div>`:`<div class="stage answer-screen"><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Kies je antwoord":"Kijk naar de host zijn scherm"}</div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${q.a.map((t,i)=>`<button class="ans ${cols(q)[i]}" data-a="ans" data-i="${i}"><span>${syms(q)[i]}</span><em>${esc(t)}</em></button>`).join("")}</div></div>`;
-  else if(G.state=="reveal")h=phoneSuccess(SOLO?(G.q+1<QS().length?"Naar tussenstand":"Resultaat bekijken"):"");
+  else if(G.state=="reveal")h=phoneSuccess(SOLO?(G.q+1<QS().length?(q.leaderboard===false?"Volgende vraag":"Naar tussenstand"):"Podium bekijken"):"");
   else if(G.state=="board")h=SOLO?`<div class="center leaderboard solo-board"><h1>Tussenstand</h1>${boardRows(sorted().slice(0,5))}<button class="btn b" data-a="next">Volgende vraag</button></div>`:`<div class="center"><div class="big-msg">Plek ${rank}</div><div>${me?.score||0} punten</div></div>`;
-  else if(SOLO)h=`<div class="center leaderboard solo-board"><div class="big-msg">Quiz voltooid 🎉</div>${boardRows(sorted().slice(0,5))}<button class="btn r" data-a="close">Terug naar mijn quizzen</button></div>`;
+  else if(SOLO){const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn pod-player pod-player-${i+1}" style="--pod-player-delay:${["2s","2.8s","1.2s"][i]}">${avatarMarkup(t[i],72)}<b>${esc(t[i].name)}</b><small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Terug naar mijn quizzen</button></div>`;}
   else h=`<div class="center"><div class="big-msg">${rank<=3?["🥇","🥈","🥉"][rank-1]:""} Plek ${rank}</div><div>${me?.score||0} punten</div><p>Wachten tot de host afsluit...</p></div>`}
  A.innerHTML=h;
  if(G.state==="countdown"&&q.type!=="dia"&&q.doublePoints){setTimeout(()=>$(".countdown-title.after-bonus")?.classList.add("title-live"),DOUBLE_BONUS_INTRO_MS)}
@@ -700,7 +715,7 @@ async function adminBody(){const c=$("#ac");if(!c)return;let has;
  <section class="admin-section"><div class="admin-section-head"><div><span class="eyebrow">UPDATES</span><h2>Alle updates</h2></div></div><div class="admin-update-list">${l.map(u=>`<div class="qcard"><div><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div><div><button class="btn b sm" data-a="uedit" data-id="${u.id}">Aanpassen</button> <button class="btn r sm" data-a="udel" data-id="${u.id}">Verwijderen</button></div></div>`).join("")||"Nog geen updates."}</div></section>
  <section class="admin-section"><div class="admin-section-head"><div><span class="eyebrow">PERSONAGES</span><h2>Avatar badges</h2><p>Zet per personage de kleine <b>Nieuw</b>-badge aan. De badge verschijnt rechtsboven op het personage bij het kiezen.</p></div></div><div class="admin-avatar-badge-list">${avatarBadgeRows||"Geen personages gevonden."}</div></section></div>`;
  }
-act.adminEditQuiz=async d=>{try{const owner=d.owner,id=d.id,v=(await get(ref(db,`quizzes/${owner}/${id}`))).val();if(!v)return toast("Deze quiz bestaat niet meer.");Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints}))};QID=id;ADMIN_EDIT={ownerId:owner,id};SEL=Math.max(0,Q.questions.length?0:-1);editorView()}catch(e){toast(em(e))}};
+act.adminEditQuiz=async d=>{try{const owner=d.owner,id=d.id,v=(await get(ref(db,`quizzes/${owner}/${id}`))).val();if(!v)return toast("Deze quiz bestaat niet meer.");Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false}))};QID=id;ADMIN_EDIT={ownerId:owner,id};SEL=Math.max(0,Q.questions.length?0:-1);editorView()}catch(e){toast(em(e))}};
 act.adminDeleteQuiz=async d=>{if(!confirm("Deze quiz definitief verwijderen uit de site?"))return;try{await remove(ref(db,`quizzes/${d.owner}/${d.id}`));toast("Quiz verwijderd.");adminBody()}catch(e){toast(em(e))}};
 act.asetup=async()=>{const e=$("#ae").value.trim().toLowerCase(),p=$("#ap").value;
  if(!/^\S+@\S+\.\S+$/.test(e))return toast("Vul een geldig e-mailadres in.");
