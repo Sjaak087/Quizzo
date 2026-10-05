@@ -13,11 +13,10 @@
       }
     },
     "quizzes": {
+      ".read": true,
       "$u": {
-        ".read": true,
         ".write": true
-      },
-      ".read": true
+      }
     },
     "games": {
       "$code": {
@@ -26,33 +25,23 @@
       }
     },
     "admin": {
-      ".write": "!data.exists()",
-      "salt": {
-        ".read": true
-      },
-      "email": {
-        ".read": true
-      },
-      "hash": {
-        ".read": false
-      }
+      ".read": true,
+      ".write": "!data.exists()"
     },
-    "_proof": {
+    "siteSettings": {
+      ".read": true,
       ".write": true
-    },
-    "adminPing": {
-      ".write": "!root.child('_proof').exists() && newData.parent().child('_proof').val() === root.child('admin/hash').val()"
     },
     "updates": {
       ".read": true,
       "$id": {
-        ".write": "!root.child('_proof').exists() && newData.parent().parent().child('_proof').val() === root.child('admin/hash').val()"
+        ".write": true
       }
     },
     "avatarBadges": {
       ".read": true,
       "$id": {
-        ".write": "!root.child('_proof').exists() && newData.parent().parent().child('_proof').val() === root.child('admin/hash').val()"
+        ".write": true
       }
     }
   }

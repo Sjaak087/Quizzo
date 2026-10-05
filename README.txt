@@ -1,12 +1,19 @@
-Quizzo V98
+Quizzo V99 - definitieve Sitebeheer permission fix
 
-Fixes:
-- Sitebeheer vraagt weer expliciet om e-mailadres + wachtwoord.
-- Eerste keer Sitebeheer: de ingevoerde gegevens worden opgeslagen onder /admin en daarna zijn die gegevens de vaste Sitebeheer-inlog voor iedereen.
-- Daarna moet bij iedere nieuwe Sitebeheer-sessie opnieuw e-mail + wachtwoord worden ingevoerd.
-- Normaal Quizzo-inloggen blijft apart en ongewijzigd.
-- Sitebeheer blijft binnen de normale Quizzo-interface; geen apart admin-scherm.
-- Sitebeheer-opslag gebruikt geen update() op de Firebase-root meer. Iedere wijziging wordt afzonderlijk naar het betreffende pad geschreven, waardoor root permission_denied niet meer optreedt.
-- index.html gebruikt app.js/avatars.js/style.css cacheversie 98.
+Aangepast:
+- database.rules.json toegevoegd. Dit was de ontbrekende oorzaak van permission_denied: de bestaande Firebase-regels blokkeerden siteSettings, updates en avatarBadges.
+- Sitebeheer kan siteSettings, updates en avatarBadges nu opslaan.
+- Admin kan bestaande quizzen beheren/verwijderen volgens de bestaande quiz-regels.
+- Eerste Sitebeheer-instelling slaat e-mail + wachtwoordhash op onder /admin.
+- Daarna blijft exact die Sitebeheer-login verplicht.
+- Normale Quizzo-login blijft apart.
+- Sitebeheer blijft binnen de normale Quizzo-interface.
+- Foutmeldingen tonen nu ook de echte Firebase-fout in de console.
+- Cacheversie verhoogd naar V99.
 
-Let op: Firebase Rules moeten lezen/schrijven van de gebruikte admin-, siteSettings-, updates- en quiz-paden toestaan. De app gebruikt geen root update meer.
+BELANGRIJK:
+1. Upload database.rules.json naar Firebase Realtime Database > Rules en publiceer de regels.
+2. Upload daarna app.js en index.html.
+3. Alleen app.js/index.html/database.rules.json zijn aangepast.
+
+Let op: Quizzo gebruikt een eigen login in de database en geen Firebase Authentication. Daarom kan Firebase zonder Auth niet server-side controleren of een Sitebeheer-wachtwoord correct is; de regels laten de Sitebeheer-instellingen daarom schrijven. De Sitebeheer-login zelf blijft wel verplicht in de interface.
