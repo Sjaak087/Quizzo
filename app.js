@@ -800,35 +800,35 @@ function adminAuthOverlay(mode){
  const first=mode==="setup";
  if(!document.getElementById("quizzo-admin-auth-style")){
   const st=document.createElement("style");st.id="quizzo-admin-auth-style";st.textContent=`
-   #admin-auth-overlay{position:fixed!important;inset:0!important;z-index:2147483000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:22px!important;box-sizing:border-box!important;background:radial-gradient(circle at 50% 0%,rgba(111,66,193,.42),transparent 48%),linear-gradient(135deg,rgba(19,10,45,.97),rgba(57,20,108,.96))!important;backdrop-filter:blur(14px);animation:qzaFade .22s ease both}
-   #admin-auth-overlay .qza-card{position:relative;width:min(470px,100%);box-sizing:border-box;padding:34px 34px 30px;border:1px solid rgba(255,255,255,.13);border-radius:30px;background:linear-gradient(180deg,rgba(38,27,70,.98),rgba(28,19,54,.98));color:#fff;box-shadow:0 30px 100px rgba(0,0,0,.48),0 0 0 1px rgba(255,255,255,.04) inset;overflow:hidden;animation:qzaUp .28s cubic-bezier(.2,.8,.2,1) both}
-   #admin-auth-overlay .qza-card:before{content:"";position:absolute;width:220px;height:220px;right:-100px;top:-120px;border-radius:50%;background:rgba(121,76,255,.25);filter:blur(5px)}
-   #admin-auth-overlay .qza-close{position:absolute;right:14px;top:14px;width:38px;height:38px;border:0;border-radius:12px;background:rgba(255,255,255,.07);color:#d9d2ec;font-size:22px;cursor:pointer;z-index:2;transition:.15s}
-   #admin-auth-overlay .qza-close:hover{background:rgba(255,255,255,.14);transform:scale(1.04)}
-   #admin-auth-overlay .qza-icon{position:relative;width:64px;height:64px;display:grid;place-items:center;margin:0 auto 18px;border-radius:20px;background:linear-gradient(135deg,#7650e8,#4e2ca8);box-shadow:0 12px 30px rgba(92,54,202,.38);font-size:29px}
-   #admin-auth-overlay .qza-eyebrow{text-align:center;margin:0 0 7px;color:#b9a8e8;font:800 12px/1 Montserrat,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
-   #admin-auth-overlay .qza-title{text-align:center;margin:0;font:900 clamp(28px,6vw,34px)/1.05 Montserrat,system-ui,sans-serif;letter-spacing:-.03em}
-   #admin-auth-overlay .qza-sub{text-align:center;margin:12px auto 24px;max-width:370px;color:#bcb4ce;font:600 14px/1.55 Montserrat,system-ui,sans-serif}
-   #admin-auth-overlay .qza-setup{display:flex;align-items:center;gap:9px;margin:0 0 20px;padding:11px 13px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.045);color:#ddd5ee;font:700 12px/1.35 Montserrat,system-ui,sans-serif}
+   #admin-auth-overlay{position:fixed!important;inset:0!important;z-index:2147483000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:22px!important;box-sizing:border-box!important;background:radial-gradient(circle at 12% 12%,rgba(70,23,143,.72),transparent 34%),radial-gradient(circle at 88% 86%,rgba(25,193,255,.20),transparent 30%),linear-gradient(135deg,#24104f 0%,#46178f 48%,#25104f 100%)!important;backdrop-filter:blur(16px);animation:qzaFade .22s ease both}
+   #admin-auth-overlay .qza-card{position:relative;width:min(470px,100%);box-sizing:border-box;padding:36px 34px 30px;border:0;border-radius:28px;background:#fff;color:#2f1b4d;box-shadow:0 30px 100px rgba(24,8,55,.48),0 12px 0 rgba(49,16,97,.18);overflow:hidden;animation:qzaUp .28s cubic-bezier(.2,.8,.2,1) both}
+   #admin-auth-overlay .qza-card:before{content:"";position:absolute;left:-70px;top:-95px;width:210px;height:210px;border-radius:50%;background:rgba(70,23,143,.08)} #admin-auth-overlay .qza-card:after{content:"";position:absolute;right:-70px;bottom:-100px;width:210px;height:210px;border-radius:50%;background:rgba(25,193,255,.10)}
+   #admin-auth-overlay .qza-close{position:absolute;right:14px;top:14px;width:38px;height:38px;border:0;border-radius:12px;background:#f0ebf7;color:#5a4670;font-size:22px;cursor:pointer;z-index:2;transition:.15s}
+   #admin-auth-overlay .qza-close:hover{background:#e5ddf0;transform:scale(1.04)}
+   #admin-auth-overlay .qza-icon{position:relative;width:70px;height:70px;display:grid;place-items:center;margin:0 auto 16px;border-radius:22px;background:linear-gradient(135deg,#46178f,#7650e8);box-shadow:0 9px 0 #311061,0 18px 32px rgba(70,23,143,.24);font-size:30px}
+   #admin-auth-overlay .qza-eyebrow{text-align:center;margin:0 0 7px;color:#46178f;font:800 12px/1 Montserrat,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+   #admin-auth-overlay .qza-title{text-align:center;margin:0;color:#2f174d;font:900 clamp(28px,6vw,34px)/1.05 Montserrat,system-ui,sans-serif;letter-spacing:-.035em}
+   #admin-auth-overlay .qza-sub{text-align:center;margin:12px auto 24px;max-width:370px;color:#766b83;font:600 14px/1.55 Montserrat,system-ui,sans-serif}
+   #admin-auth-overlay .qza-setup{display:flex;align-items:center;gap:9px;margin:0 0 20px;padding:11px 13px;border:1px solid #e5dff0;border-radius:14px;background:#f7f3fb;color:#5b4a6c;font:700 12px/1.35 Montserrat,system-ui,sans-serif}
    #admin-auth-overlay .qza-setup-dot{width:9px;height:9px;flex:none;border-radius:50%;background:#9b78ff;box-shadow:0 0 12px rgba(155,120,255,.8)}
    #admin-auth-overlay .qza-field{margin-top:15px}
-   #admin-auth-overlay .qza-label{display:flex;justify-content:space-between;margin:0 0 8px;color:#eee8f7;font:800 13px/1 Montserrat,system-ui,sans-serif}
+   #admin-auth-overlay .qza-label{display:flex;justify-content:space-between;margin:0 0 8px;color:#3e2a51;font:800 13px/1 Montserrat,system-ui,sans-serif}
    #admin-auth-overlay .qza-input-wrap{position:relative}
-   #admin-auth-overlay .qza-input{width:100%;height:52px;box-sizing:border-box;padding:0 15px;border:1px solid rgba(255,255,255,.13);border-radius:14px;outline:none;background:rgba(255,255,255,.065);color:#fff;font:700 15px Montserrat,system-ui,sans-serif;transition:.15s}
+   #admin-auth-overlay .qza-input{width:100%;height:52px;box-sizing:border-box;padding:0 15px;border:2px solid #e4dced;border-radius:14px;outline:none;background:#faf8fc;color:#2f174d;font:700 15px Montserrat,system-ui,sans-serif;transition:.15s}
    #admin-auth-overlay .qza-input.password{padding-right:54px}
-   #admin-auth-overlay .qza-input::placeholder{color:#8f879f}
-   #admin-auth-overlay .qza-input:focus{border-color:#8b69ef;background:rgba(255,255,255,.09);box-shadow:0 0 0 4px rgba(120,78,225,.16)}
+   #admin-auth-overlay .qza-input::placeholder{color:#a39aab}
+   #admin-auth-overlay .qza-input:focus{border-color:#46178f;background:#fff;box-shadow:0 0 0 4px rgba(70,23,143,.12)}
    #admin-auth-overlay .qza-eye{position:absolute;right:7px;top:7px;width:38px;height:38px;border:0;border-radius:10px;background:transparent;color:#a9a0bb;cursor:pointer;font-size:17px}
    #admin-auth-overlay .qza-eye:hover{background:rgba(255,255,255,.07);color:#fff}
    #admin-auth-overlay .qza-error{min-height:20px;margin:9px 2px 0;color:#ff8f9b;font:700 12px/1.45 Montserrat,system-ui,sans-serif}
    #admin-auth-overlay .qza-actions{display:flex;gap:10px;margin-top:8px}
    #admin-auth-overlay .qza-btn{width:100%;height:50px;border:0;border-radius:14px;font:900 14px Montserrat,system-ui,sans-serif;cursor:pointer;transition:.15s}
-   #admin-auth-overlay .qza-btn.cancel{background:rgba(255,255,255,.07);color:#d9d2e7}
-   #admin-auth-overlay .qza-btn.cancel:hover{background:rgba(255,255,255,.12)}
-   #admin-auth-overlay .qza-btn.primary{color:#fff;background:linear-gradient(135deg,#7b55ed,#5831bc);box-shadow:0 9px 22px rgba(91,50,190,.32)}
-   #admin-auth-overlay .qza-btn.primary:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(91,50,190,.4)}
+   #admin-auth-overlay .qza-btn.cancel{background:#eeeaf4;color:#4f405e}
+   #admin-auth-overlay .qza-btn.cancel:hover{background:#e3dceb}
+   #admin-auth-overlay .qza-btn.primary{color:#fff;background:linear-gradient(135deg,#46178f,#6b2fc0);box-shadow:0 5px 0 #311061,0 12px 24px rgba(70,23,143,.24)}
+   #admin-auth-overlay .qza-btn.primary:hover{transform:translateY(-1px);box-shadow:0 6px 0 #311061,0 15px 28px rgba(70,23,143,.30)}
    #admin-auth-overlay .qza-btn:disabled{opacity:.62;cursor:wait;transform:none!important}
-   #admin-auth-overlay .qza-foot{text-align:center;margin:18px 0 0;color:#756c87;font:600 11px Montserrat,system-ui,sans-serif}
+   #admin-auth-overlay .qza-foot{text-align:center;margin:18px 0 0;color:#8b8195;font:600 11px Montserrat,system-ui,sans-serif}
    @keyframes qzaFade{from{opacity:0}to{opacity:1}}
    @keyframes qzaUp{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
    @media(max-width:520px){#admin-auth-overlay{padding:14px!important}#admin-auth-overlay .qza-card{padding:28px 20px 23px;border-radius:24px}#admin-auth-overlay .qza-actions{flex-direction:column-reverse}#admin-auth-overlay .qza-icon{width:58px;height:58px;border-radius:18px}}
@@ -836,8 +836,8 @@ function adminAuthOverlay(mode){
  }
  const o=document.createElement("div");o.id="admin-auth-overlay";o.className="modal-overlay";o.innerHTML=`<div class="qza-card" role="dialog" aria-modal="true" aria-labelledby="qza-title">
    <button type="button" class="qza-close" data-a="adminAuthCancel" aria-label="Sluiten">×</button>
-   <div class="qza-icon">⚙️</div>
-   <div class="qza-eyebrow">QUIZZO • BEHEER</div>
+   <div class="qza-icon">👑</div>
+   <div class="qza-eyebrow">QUIZZO • SITEBEHEER</div>
    <h2 class="qza-title" id="qza-title">${first?"Sitebeheer instellen":"Sitebeheer"}</h2>
    <p class="qza-sub">${first?"Maak de vaste beheerderslogin aan. Deze gegevens worden vanaf nu gebruikt om Sitebeheer te openen.":"Log in om toegang te krijgen tot het volledige Sitebeheer."}</p>
    ${first?'<div class="qza-setup"><span class="qza-setup-dot"></span><span>Eerste configuratie · je gegevens worden voor Sitebeheer opgeslagen</span></div>':""}
@@ -855,9 +855,10 @@ function adminAuthOverlay(mode){
 }
 act.adminAuthCancel=()=>document.getElementById("admin-auth-overlay")?.remove();
 act.adminAuthSubmit=async()=>{
- const email=$("#admin-auth-email")?.value.trim().toLowerCase(),pw=$("#admin-auth-password")?.value||"",err=$("#admin-auth-error"),btn=document.querySelector("#admin-auth-overlay .btn-primary");
+ const email=$("#admin-auth-email")?.value.trim().toLowerCase(),pw=$("#admin-auth-password")?.value||"",err=$("#admin-auth-error"),btn=document.querySelector("#admin-auth-overlay .qza-btn.primary");
  if(!/^\S+@\S+\.\S+$/.test(email))return err.textContent="Vul een geldig e-mailadres in.";
  if(pw.length<6)return err.textContent="Wachtwoord moet minimaal 6 tekens zijn.";
+ if(!btn)return;
  btn.disabled=true;
  try{
   const adminEmailSnap=await get(ref(db,"admin/email"));

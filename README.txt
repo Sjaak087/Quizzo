@@ -1,15 +1,13 @@
-Quizzo V102 – vernieuwde Sitebeheer-login
+Quizzo V103 – Sitebeheer login gefixt en Quizzo-stijl verbeterd
 
 Aangepast:
-- Sitebeheer opent nu in een volledig apart, modern login-scherm boven de hele Quizzo-interface.
-- Nieuwe donkere/paarse Quizzo-stijl met animatie, afgeronde kaart, icoon en duidelijke hiërarchie.
-- Eerste keer Sitebeheer instellen heeft een aparte duidelijke configuratie-indicatie.
-- E-mailadres en wachtwoord hebben verbeterde invoervelden en focus-effecten.
-- Wachtwoord kan met één knop tijdelijk zichtbaar/verborgen worden gemaakt.
-- Enter werkt om in te loggen; Escape sluit het scherm.
-- Op mobiel past het scherm zich netjes aan en staan de knoppen onder elkaar.
-- Bestaande Sitebeheer-login, opgeslagen beheerdersgegevens en werking van de rest van de site zijn niet gewijzigd.
-- Cacheversies verhoogd naar V102.
+- De Sitebeheer-knop werkte niet door een verkeerde CSS-selector in app.js. Dit is gefixt: de echte primaire knop (.qza-btn.primary) wordt nu correct gevonden en uitgeschakeld tijdens het inloggen.
+- De aparte Sitebeheer-login blijft een fullscreen overlay.
+- De vormgeving is aangepast naar een duidelijkere Quizzo-look: Quizzo-paars, witte kaart, speelse afgeronde vormen, paarse knop met diepte en Quizzo-achtige kleurcombinatie.
+- Het Sitebeheer-scherm heeft nu een kroon als centraal icoon en duidelijke QUIZZO • SITEBEHEER branding.
+- Wachtwoord tonen/verbergen en Enter om in te loggen blijven werken.
+- De normale Quizzo-login en overige Sitebeheer-functionaliteit zijn niet aangepast.
+- Cacheversies zijn verhoogd naar V103.
 
 Aangepaste bestanden:
 - app.js
