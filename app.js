@@ -540,12 +540,23 @@ document.addEventListener("pointerdown",e=>{const h=e.target.closest(".drag-hand
 document.addEventListener("pointermove",e=>{if(pointerDrag.start<0)return;if(!pointerDrag.timer&&!pointerDrag.active)return;const t=document.elementFromPoint(e.clientX,e.clientY)?.closest?.("[data-drag-index]");if(!t||!Q)return;if(!pointerDrag.active)return;pointerDrag.target=+t.dataset.dragIndex;document.querySelectorAll(".thumb.drag-over").forEach(x=>x.classList.remove("drag-over"));if(pointerDrag.target!==pointerDrag.start)t.classList.add("drag-over")});
 document.addEventListener("pointerup",e=>{if(pointerDrag.start<0){clearPointerDrag();return}if(pointerDrag.active&&pointerDrag.target>=0&&pointerDrag.target!==pointerDrag.start&&Q){const from=pointerDrag.start,to=pointerDrag.target,moved=Q.questions.splice(from,1)[0];Q.questions.splice(to,0,moved);SEL=Q.questions.indexOf(moved);side();mainQ();saveBtn()}clearPointerDrag()});
 document.addEventListener("pointercancel",clearPointerDrag);
-act.newq=async()=>{await loadSiteConfig();const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card type-picker"><div class="picker-head"><div><span class="eyebrow">NIEUWE INHOUD</span><h2>Kies een vraagtype</h2><p>Vraagtypes die offline staan kunnen hier niet worden toegevoegd.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div><div class="type-grid">
-  <button class="type-option blue" data-a="addq" ${typeOnline("quiz")?"":"disabled"}><span class="type-art"><span class="art-shape">▲</span><span class="art-shape small">◆</span><span class="art-shape tiny">●</span></span><span class="type-name">Quizvraag ${SITE_CFG.questionTypes?.quiz?.new?"<i class="site-new-badge">Nieuw</i>":""}</span><span class="type-desc">4 antwoorden • 1000 punten • snel spelen</span><span class="type-chip">QUIZ</span></button>
-  <button class="type-option green" data-a="addtf" ${typeOnline("tf")?"":"disabled"}><span class="type-art tf-art"><span>✓</span><span>✕</span></span><span class="type-name">Waar of niet waar ${SITE_CFG.questionTypes?.tf?.new?"<i class="site-new-badge">Nieuw</i>":""}</span><span class="type-desc">2 keuzes • 1000 punten • simpel en snel</span><span class="type-chip">WAAR / NIET WAAR</span></button>
-  <button class="type-option purple" data-a="adddia" ${typeOnline("dia")?"":"disabled"}><span class="type-art dia-art">🖼️</span><span class="type-name">Dia ${SITE_CFG.questionTypes?.dia?.new?"<i class="site-new-badge">Nieuw</i>":""}</span><span class="type-desc">Titel + informatie • geen antwoord • geen punten</span><span class="type-chip">DIA</span></button>
-  <button class="type-option orange" data-a="addtyping" ${typeOnline("typing")?"":"disabled"}><span class="type-art typing-art">⌨️</span><span class="type-name">Typen ${SITE_CFG.questionTypes?.typing?.new?"<i class="site-new-badge">Nieuw</i>":""}</span><span class="type-desc">Speler typt woord of zin • 1000 punten • zoveel goede antwoorden als je wilt</span><span class="type-chip">TYPEN</span></button>
- </div></div>`;document.body.append(m)};
+act.newq=async()=>{await loadSiteConfig();const m=document.createElement("div");m.className="modal";
+const card=document.createElement("div");card.className="card type-picker";
+const head=document.createElement("div");head.className="picker-head";
+const intro=document.createElement("div");
+const eyebrow=document.createElement("span");eyebrow.className="eyebrow";eyebrow.textContent="NIEUWE INHOUD";
+const title=document.createElement("h2");title.textContent="Kies een vraagtype";
+const desc=document.createElement("p");desc.textContent="Vraagtypes die offline staan kunnen hier niet worden toegevoegd.";
+intro.append(eyebrow,title,desc);
+const close=document.createElement("button");close.className="btn w sm picker-close";close.dataset.a="closem";close.textContent="×";
+head.append(intro,close);
+const grid=document.createElement("div");grid.className="type-grid";
+const makeOption=(cls,action,type,art,artClass,name,descText,chip)=>{const b=document.createElement("button");b.className=`type-option ${cls}`;b.dataset.a=action;b.disabled=!typeOnline(type);const artWrap=document.createElement("span");artWrap.className=`type-art ${artClass||""}`;if(Array.isArray(art)){art.forEach((x,i)=>{const a=document.createElement("span");a.className=x.className||"";a.textContent=x.text;artWrap.append(a)})}else{artWrap.textContent=art}const n=document.createElement("span");n.className="type-name";n.textContent=name;if(SITE_CFG.questionTypes?.[type]?.new){const nb=document.createElement("i");nb.className="site-new-badge";nb.textContent="Nieuw";n.append(" ",nb)}const d=document.createElement("span");d.className="type-desc";d.textContent=descText;const c=document.createElement("span");c.className="type-chip";c.textContent=chip;b.append(artWrap,n,d,c);return b};
+grid.append(makeOption("blue","addq","quiz",[{text:"▲",className:"art-shape"},{text:"◆",className:"art-shape small"},{text:"●",className:"art-shape tiny"}],"","Quizvraag","4 antwoorden • 1000 punten • snel spelen","QUIZ"));
+grid.append(makeOption("green","addtf","tf",[{text:"✓"},{text:"✕"}],"tf-art","Waar of niet waar","2 keuzes • 1000 punten • simpel en snel","WAAR / NIET WAAR"));
+grid.append(makeOption("purple","adddia","dia","🖼️","dia-art","Dia","Titel + informatie • geen antwoord • geen punten","DIA"));
+grid.append(makeOption("orange","addtyping","typing","⌨️","typing-art","Typen","Speler typt woord of zin • 1000 punten • zoveel goede antwoorden als je wilt","TYPEN"));
+card.append(head,grid);m.append(card);document.body.append(m)};
 act.closem=()=>document.querySelector(".modal")?.remove();
 const addQ=t=>{act.closem();Q.questions.push(newQ(t));SEL=Q.questions.length-1;side();mainQ();saveBtn()};
 act.addq=()=>typeOnline("quiz")?addQ("quiz"):toast("Quizvraag staat offline.");
