@@ -288,8 +288,17 @@ async function hashPw(pw,salt){const k=await crypto.subtle.importKey("raw",enc.e
  return hex(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:enc.encode(salt),iterations:100000},k,256))}
 const mailKey=e=>e.toLowerCase().replace(/\./g,",");
 const userKey=n=>encodeURIComponent(n.toLowerCase()).replace(/\./g,"%2E");
-function login(key,name,email){user={uid:key,displayName:name,email};localStorage.setItem("quizzo_user",JSON.stringify(user));home()}
-try{user=JSON.parse(localStorage.getItem("quizzo_user"))}catch(e){user=null}
+async function login(key,name,email){
+ user={uid:key,displayName:name,email};
+ // Login is intentionally not persisted: after a full refresh the normal login screen appears again.
+ ADM=null;
+ try{
+  const adminEmail=(await get(ref(db,"admin/email"))).val();
+  if(adminEmail&&String(adminEmail).toLowerCase()===String(email||"").toLowerCase()) ADM={uid:key,email};
+ }catch(_){ADM=null}
+ home();
+} 
+user=null;
 setTimeout(home,0);
 function authView(){
  const reg=mode=="reg";
@@ -315,17 +324,23 @@ function authView(){
     login(key,u.username,u.email)}
   }catch(err){toast(typeof err=="string"?err:em(err));btn.disabled=false}}}
 act.mode=()=>{mode=mode=="reg"?"login":"reg";authView()};
-act.out=()=>{localStorage.removeItem("quizzo_user");sessionStorage.removeItem("quizzo_adm");ADM=null;user=null;home()};
+act.out=()=>{localStorage.removeItem("quizzo_user");sessionStorage.removeItem("quizzo_adm");ADM=null;user=null;tab="join";home()};
 
 /* ---------- Home ---------- */
 function home(){
  cleanup();Q=null;joinCode=null;if(!user)return authView();
  A.innerHTML=`<header><b class="logo s">Quizzo!</b><span class="hr"><button class="btn w sm ib" data-a="log" title="Updatelog" aria-label="Updatelog">📢</button><button class="btn w sm" data-a="admin" title="Sitebeheer">⚙ ${ADM?"Sitebeheer actief":"Sitebeheer"}</button><button class="btn w sm" data-a="menu">${esc(user.displayName||user.email)} ▾</button></span></header>
- <nav class="tabs">${[["join","Quiz joinen"],["discover","Ontdek quizzen"],["make","Quiz maken"],["mine","Gemaakte quizzen"]].map(([k,l])=>`<button data-a="tab" data-k="${k}" class="${tab==k?"on":""}">${l}</button>`).join("")}</nav><main id="tc" class="wrap"></main>`;
+ <nav class="tabs">${[["join","Quiz joinen"],["discover","Ontdek quizzen"],["make","Quiz maken"],["mine","Gemaakte quizzen"],...(ADM?[["admin","Sitebeheer"]]:[])].map(([k,l])=>`<button data-a="tab" data-k="${k}" class="${tab==k?"on":""}">${l}</button>`).join("")}</nav><main id="tc" class="wrap"></main>`;
  tabView()}
 act.tab=d=>{tab=d.k;joinCode=null;home()};
 async function tabView(){
  const c=$("#tc");
+ if(tab=="admin"){
+  if(!ADM){tab="join";return tabView()}
+  adminOverlay();
+  renderAdminTabs();
+  return renderAdminDashboard();
+ }
  if(tab=="join"){
   c.innerHTML=joinCode?`<div class="card narrow"><h2>Kies je naam</h2><input id="nm" maxlength="20" placeholder="Jouw naam" value="${esc(user.displayName||"")}"><button class="btn g" data-a="enter">Meedoen</button></div>`
   :`<div class="card narrow"><h2>Quiz joinen</h2><input id="code" inputmode="numeric" maxlength="6" placeholder="Spelcode"><button class="btn b" data-a="check">Verder</button></div>`;
@@ -729,10 +744,10 @@ async function priv(paths){if(!ADM)throw new Error("Geen beheerder ingelogd.");a
 const adminFail=(err)=>{console.error("Sitebeheer-opslag mislukt",err);toast(em(err)||"Opslaan mislukt. Je blijft ingelogd in Sitebeheer.");};
 
 function adminOverlay(){
-  document.querySelectorAll(".quizzo-admin-overlay").forEach(x=>x.remove());
-  const m=document.createElement("div");m.className="quizzo-admin-overlay";
-  m.innerHTML=`<div class="quizzo-admin-shell"><header class="quizzo-admin-top"><div><div class="admin-kicker">QUIZZO</div><h1>Sitebeheer</h1><p>Beheer de inhoud en beschikbaarheid van je hele site.</p></div><div class="admin-top-actions"><span class="admin-online-dot">● Beheerder ingelogd</span><button class="btn w sm" data-a="adminClose">Sluiten</button><button class="btn r sm" data-a="adminLogout">Uitloggen</button></div></header><nav class="quizzo-admin-tabs" id="adminTabs"></nav><main id="adminPanel" class="quizzo-admin-panel">Laden...</main></div>`;
-  document.body.append(m);
+  const c=$("#tc");
+  if(!c)return;
+  c.className="wrap sitebeheer-inline";
+  c.innerHTML=`<div class="quizzo-admin-shell"><header class="quizzo-admin-top"><div><div class="admin-kicker">QUIZZO</div><h1>Sitebeheer</h1><p>Beheer de inhoud en beschikbaarheid van je hele site.</p></div><div class="admin-top-actions"><span class="admin-online-dot">● Sitebeheer actief</span></div></header><nav class="quizzo-admin-tabs" id="adminTabs"></nav><main id="adminPanel" class="quizzo-admin-panel">Laden...</main></div>`;
 }
 const adminTabLabels={dashboard:"Dashboard",updates:"Updatelog",quizzes:"Openbare quizzen",beheer:"Beheer"};
 let adminTab="dashboard";
@@ -770,10 +785,10 @@ act.log=async()=>{act.closem();const m=document.createElement("div");m.className
 function showLog(l){if(l)LOGL=l;const c=$("#logc");if(!c)return;c.innerHTML=LOGL.length?LOGL.map(u=>`<div class="urow" data-a="uopen" data-id="${u.id}"><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div>`).join(""):"Nog geen updates."}
 act.uopen=d=>{const u=UPD[d.id];if(!u)return;$("#logc").innerHTML=`<button class="btn w sm" data-a="ulist">← Terug</button><h2 style="margin-top:14px">${esc(u.title)}</h2><small>${fd(u.date)} · ${esc(u.time)}</small><p class="ubody">${esc(u.body)}</p>`};
 act.ulist=()=>showLog();
-act.logNewUpdate=async()=>{if(!ADM)return toast("Log eerst in bij Sitebeheer.");act.closem();adminOverlay();adminTab="updates";renderAdminTabs();EDITU=null;updateEditorHtml()};
-act.admin=async()=>{if(!user)return authView();if(!ADM){try{const adminEmail=(await get(ref(db,"admin/email"))).val();if(adminEmail&&String(adminEmail).toLowerCase()===String(user.email||"").toLowerCase()){ADM={uid:user.uid,email:user.email};adminTab="dashboard";home();toast("Sitebeheer ingelogd.");return}toast("Dit account heeft geen Sitebeheer-toegang.")}catch(e){console.error("Sitebeheer toegang controleren mislukt",e);toast(em(e)||"Sitebeheer kon niet worden geopend.")}return}adminOverlay();renderAdminTabs();renderAdminDashboard()};
-act.adminClose=()=>{document.querySelectorAll(".quizzo-admin-overlay").forEach(x=>x.remove());EDITU=null};
-act.adminLogout=()=>{ADM=null;EDITU=null;ADMIN_EDIT=null;Q=null;QID=null;sessionStorage.removeItem("quizzo_adm");document.querySelectorAll(".quizzo-admin-overlay").forEach(x=>x.remove());home();toast("Uitgelogd bij Sitebeheer.")};
+act.logNewUpdate=async()=>{if(!ADM)return toast("Je hebt geen Sitebeheer-toegang.");tab="admin";home();adminTab="updates";renderAdminTabs();EDITU=null;updateEditorHtml()};
+act.admin=async()=>{if(!user)return authView();if(!ADM){try{const adminEmail=(await get(ref(db,"admin/email"))).val();if(adminEmail&&String(adminEmail).toLowerCase()===String(user.email||"").toLowerCase()){ADM={uid:user.uid,email:user.email};tab="admin";home();return}toast("Dit account heeft geen Sitebeheer-toegang.")}catch(e){console.error("Sitebeheer toegang controleren mislukt",e);toast(em(e)||"Sitebeheer kon niet worden geopend.")}return}tab="admin";home()};
+act.adminClose=()=>{EDITU=null;tab="join";home()};
+act.adminLogout=()=>{ADM=null;EDITU=null;ADMIN_EDIT=null;Q=null;QID=null;tab="join";home();toast("Sitebeheer afgesloten.")};
 act.adminTab=async d=>{if(!ADM)return;adminTab=d.tab;renderAdminTabs();if(adminTab==="dashboard")return renderAdminDashboard();if(adminTab==="updates"){LOGL=await loadUpdates().catch(()=>[]);return renderUpdateLogAdmin()}if(adminTab==="quizzes")return renderAdminQuizzes();return renderBeheer()};
 act.beheerSub=async d=>{if(!ADM)return;await renderBeheer();beheerSub=d.sub;document.querySelectorAll(".beheer-subtab").forEach(b=>b.classList.toggle("active",b.dataset.sub===beheerSub));/* renderBeheer already rebuilt the content; rebuild requested tab from fresh config */
  const panel=$("#beheerSubPanel");if(!panel)return;const fake={};await renderBeheerSubFresh(beheerSub)};
@@ -790,7 +805,7 @@ act.adminEditQuiz=async d=>{if(!ADM)return;try{const owner=d.owner,id=d.id,v=(aw
 async function renderAdminQuizzes(){const c=$("#adminPanel");if(!c)return;let rows=[];try{const all=(await get(ref(db,"quizzes"))).val()||{};Object.entries(all).forEach(([owner,qs])=>Object.entries(qs||{}).forEach(([id,q])=>q&&typeof q==="object"&&rows.push({owner,id,q})));}catch(e){return c.innerHTML=`<section class="admin-card"><h2>Openbare quizzen</h2><p>De quizdatabase kon niet geladen worden.</p></section>`}rows.sort((a,b)=>(Number(b.q.updated)||0)-(Number(a.q.updated)||0));c.innerHTML=`<section class="admin-card"><div class="admin-card-head"><div><span class="eyebrow">QUIZZEN</span><h2>Alle quizzen</h2><p>Elke opgeslagen quiz staat hier. Je kunt ze openen en aanpassen.</p></div><span class="admin-count">${rows.length} quizzen</span></div><div class="admin-quiz-list">${rows.map(x=>`<div class="admin-quiz-row"><div class="admin-quiz-info"><div class="admin-quiz-title"><b>${esc(x.q.title||"Naamloze quiz")}</b><span class="admin-visibility ${x.q.public===false?"private":"public"}">${x.q.public===false?"🔒 Privé":"🌍 Openbaar"}</span></div><small>👤 ${esc(x.q.creatorName||x.owner)} · ${arr(x.q.questions).length} onderdelen</small></div><div class="admin-quiz-actions"><button class="btn b sm" data-a="adminEditQuiz" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Bewerken</button>${gameOnline("solo")?`<button class="btn g sm" data-a="adminTestSolo" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Test solo</button>`:""}${gameOnline("multiplayer")?`<button class="btn g sm" data-a="adminTestHost" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Test host</button>`:""}<button class="btn r sm" data-a="adminDeleteQuiz" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Verwijderen</button></div></div>`).join("")||`<div class="admin-empty">Nog geen quizzen.</div>`}</div></section>`}
 act.adminDeleteQuiz=async d=>{if(!ADM||!confirm("Deze quiz definitief verwijderen?"))return;try{await priv({[`quizzes/${d.owner}/${d.id}`]:null,[`siteSettings/quizAccess/${d.owner}/${d.id}`]:null});toast("Quiz verwijderd.");renderAdminQuizzes()}catch(e){adminFail()}};
 act.asetup=async()=>{const e=$("#ae")?.value.trim().toLowerCase(),p=$("#ap")?.value;if(!/^\S+@\S+\.\S+$/.test(e||""))return toast("Vul een geldig e-mailadres in.");if((p||"").length<6)return toast("Wachtwoord: minimaal 6 tekens.");if(p!==$("#ap2")?.value)return toast("De wachtwoorden zijn niet gelijk.");const salt=hex(crypto.getRandomValues(new Uint8Array(16))),hash=await hashPw(p,salt);try{await set(ref(db,"admin"),{email:e,salt,hash});ADM=hash;toast("Beheerder ingesteld!");act.admin()}catch(err){toast("Beheerder instellen mislukt. Controleer de Firebase-regels.")}};
-act.alogin=async()=>{const e=$("#ae")?.value.trim().toLowerCase(),p=$("#ap")?.value;try{const [se,ss]=await Promise.all([get(ref(db,"admin/email")),get(ref(db,"admin/salt"))]);if(se.val()!==e)throw 0;const h=await hashPw(p,ss.val());/* alleen in RAM, nooit meer bewaren */ADM=h;toast("Ingelogd bij Sitebeheer.");adminTab="dashboard";adminOverlay();renderAdminTabs();renderAdminDashboard()}catch(err){ADM=null;toast("E-mailadres of wachtwoord klopt niet.")}};
+act.alogin=async()=>{toast("Sitebeheer gebruikt je normale Quizzo-account. Log eerst normaal in.")};
 act.newUpdate=()=>{if(!ADM)return;EDITU=null;updateEditorHtml()};
 act.usave=async()=>{if(!ADM)return;const t=$("#ut")?.value.trim(),d=$("#ud")?.value,h=$("#uh")?.value,b=$("#ub")?.value.trim();if(!t||!d||!h||!b)return toast("Vul titel, datum, tijd en beschrijving in.");const id=EDITU||push(ref(db,"updates")).key;try{await priv({[`updates/${id}`]:{title:t,date:d,time:h,body:b}})}catch(e){return adminFail()}EDITU=null;toast("Update opgeslagen!");adminTab="updates";LOGL=await loadUpdates();renderAdminTabs();renderUpdateLogAdmin()};
 act.uedit=d=>{if(!ADM)return;EDITU=d.id;updateEditorHtml()};act.ucancel=()=>{EDITU=null;adminTab="updates";loadUpdates().then(()=>{renderAdminTabs();renderUpdateLogAdmin()})};
