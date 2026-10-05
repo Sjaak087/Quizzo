@@ -200,7 +200,7 @@ const clampIndex=(v,max)=>{const n=Number(v);return Number.isInteger(n)&&n>=0&&n
 const normalizeProfile=p=>({avatar:clampIndex(p?.avatar,AVATAR_COUNT),accessory:null});
 const randProfile=()=>({avatar:Math.floor(Math.random()*AVATAR_COUNT),accessory:null});
 function avatarSrc(i){return QUIZZO_AVATAR_CATALOG.avatars?.[clampIndex(i,AVATAR_COUNT)]?.src||"";}
-function avatarBadge(i){return AVATAR_NEW_BADGES[String(i)]===true||AVATAR_NEW_BADGES[i]===true?'<span class="avatar-choice-new">Nieuw</span>':''}
+function avatarBadge(i){const n=SITE_CFG?.avatars?.[i]?.new===true;return n?'<span class="avatar-choice-new">Nieuw</span>':''}
 function avatarReaction(emotion){const map={happy:['✨','Goed!'],celebrate:['🎉','Winnaar!'],sad:['💧','Oei!'],rankup:['⬆️','Omhoog!'],overtaken:['😵','Ingehaald!']};const v=map[emotion];return v?`<span class="avatar-reaction reaction-${emotion}" aria-hidden="true"><b>${v[0]}</b><small>${v[1]}</small></span>`:""}
 
 // All 25 avatar source files use a 512x512 transparent canvas, but their visible artwork
@@ -245,6 +245,7 @@ function avatarChoiceMarkup(){
   const items=[];
   for(let i=0;i<AVATAR_COUNT;i++){
     const a=QUIZZO_AVATAR_CATALOG.avatars[i]||{};
+    if(SITE_CFG?.avatars?.[i]?.online!==true)continue;
     if(avatarPickerSearch&&!String(a.name||"").toLowerCase().includes(avatarPickerSearch.toLowerCase()))continue;
     const badge=avatarBadge(i);
     items.push(`<button class="avatar-option ${i===avatarDraft.avatar?'selected':''}" data-a="pickAvatar" data-index="${i}" aria-label="${esc(a.name||`Avatar ${i+1}`)}"><span class="avatar-option-art avatar-character-preview">${avatarMarkup({avatar:i},112)}${badge}</span><strong>${esc(a.name||`Avatar ${i+1}`)}</strong><small>${a.kind==='human'?'Menselijk':a.kind==='snowman'?'Sneeuwpop':a.kind==='skeleton'?'Skelet':'Dier'}</small></button>`);
@@ -331,6 +332,7 @@ async function tabView(){
   return;
  }
  if(tab=="discover"){
+  await loadSiteConfig();
   c.innerHTML=`<div class="discover-head"><div><span class="eyebrow">OPENBAAR</span><h2>Ontdek quizzen</h2><p>Bekijk, lees en speel alle openbare quizzen. Klik op een quiz om de vragen en antwoorden te bekijken. Je kunt openbare quizzen alleen spelen, nooit bewerken.</p></div><div class="discover-badge">🌍 Iedereen kan spelen</div></div><div id="publicQuizList" class="discover-grid"><div class="card narrow loading-card">Quizzen laden...</div></div>`;
   const qsSnap=await get(ref(db,"quizzes")).catch(e=>(toast(em(e)),null));
   const all=qsSnap?.val()||{};
@@ -340,7 +342,7 @@ async function tabView(){
     if(!ownerQuizzes || typeof ownerQuizzes!=="object")return;
     Object.entries(ownerQuizzes).forEach(([id,qz])=>{
       // Oude quizzen hebben soms nog geen public-veld: die behandelen we als openbaar.
-      if(!qz||typeof qz!=="object"||qz.public===false)return;
+      if(!qz||typeof qz!=="object"||qz.public===false||!quizAllowed(ownerId,id))return;
       const count=arr(qz.questions).length;
       if(!String(qz.title||"").trim()||!count)return;
       ownerIds.add(ownerId);
@@ -394,9 +396,10 @@ act.delq=async d=>{if(confirm("Deze quiz verwijderen?")){await remove(ref(db,`qu
 
 async function openPlayChooser(qz,ownerId,id){
  if(!qz)return toast("Deze quiz kon niet worden geladen.");
+ await loadSiteConfig();
  document.querySelectorAll(".modal").forEach(x=>x.remove());
  const m=document.createElement("div");m.className="modal";
- m.innerHTML=`<div class="card mode-card"><div class="public-mode-badge">🌍 Openbare quiz</div><h2>${esc(qz.title)}</h2><p>Kies hoe je deze quiz wilt spelen. De quiz blijft alleen-lezen voor jou.</p><button class="btn b" data-a="publicSolo" data-owner="${esc(ownerId)}" data-id="${esc(id)}">👤 Alleen spelen</button><button class="btn g" data-a="publicHost" data-owner="${esc(ownerId)}" data-id="${esc(id)}">🎮 Multiplayer hosten</button><button class="btn w" data-a="closem">Annuleren</button></div>`;
+ m.innerHTML=`<div class="card mode-card"><div class="public-mode-badge">🌍 Openbare quiz</div><h2>${esc(qz.title)}</h2><p>Kies hoe je deze quiz wilt spelen. De quiz blijft alleen-lezen voor jou.</p><button class="btn b" data-a="publicSolo" data-owner="${esc(ownerId)}" data-id="${esc(id)}" ${gameOnline("solo")?"":"disabled"}>👤 Alleen spelen ${SITE_CFG.gameTypes?.solo?.new?"<i class="site-new-badge">Nieuw</i>":""}</button><button class="btn g" data-a="publicHost" data-owner="${esc(ownerId)}" data-id="${esc(id)}" ${gameOnline("multiplayer")?"":"disabled"}>🎮 Multiplayer hosten ${SITE_CFG.gameTypes?.multiplayer?.new?"<i class="site-new-badge">Nieuw</i>":""}</button><button class="btn w" data-a="closem">Annuleren</button></div>`;
  document.body.append(m);
 }
 function publicQuestionHtml(q,i){
@@ -429,18 +432,18 @@ async function openPublicQuiz(qz,ownerId,id){
  m.innerHTML=`<div class="card public-view-card"><div class="public-view-head"><div><span class="eyebrow">🌍 OPENBARE QUIZ</span><h2>${esc(qz.title||"Quiz")}</h2><p class="public-view-description">${esc(qz.description||"Geen beschrijving toegevoegd.")}</p><p>Gemaakt door <b>${esc(qz.creatorName||"Quizzo speler")}</b> · ${countLabel(qs)}</p></div><button class="btn w sm" data-a="closem">Sluiten</button></div><div class="public-view-theme"><span>${THEMES[safeTheme(qz.theme)].icon}</span><b>${esc(THEMES[safeTheme(qz.theme)].name)}</b><small>Vragen en antwoorden bekijken</small></div><div class="public-question-list">${qs.length?qs.map(publicQuestionHtml).join(""):`<div class="card narrow"><p>Deze quiz heeft nog geen onderdelen.</p></div>`}</div><div class="public-view-actions"><button class="btn b" data-a="publicPlay" data-owner="${esc(ownerId)}" data-id="${esc(id)}">▶ Spelen</button><button class="btn w" data-a="closem">Sluiten</button></div></div>`;
  document.body.append(m);
 }
-act.publicView=async d=>{try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");await openPublicQuiz(qz,d.owner,d.id)}catch(e){toast(em(e))}};
+act.publicView=async d=>{try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false||!quizAllowed(d.owner,d.id))return toast("Deze quiz is niet online beschikbaar.");await openPublicQuiz(qz,d.owner,d.id)}catch(e){toast(em(e))}};
 
 act.publicPlay=async d=>{
- try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(qz?.public===false)return toast("Deze quiz is niet openbaar.");await openPlayChooser(qz,d.owner,d.id)}catch(e){toast(em(e))}
+ try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(qz?.public===false||!quizAllowed(d.owner,d.id))return toast("Deze quiz is niet online beschikbaar.");await openPlayChooser(qz,d.owner,d.id)}catch(e){toast(em(e))}
 };
 act.publicSolo=async d=>{
  act.closem();
- try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");openAvatarPicker(savedProfile(),async profile=>{const code=await createGame(qz,"solo",profile);run(code,true)},"Kies je avatar")}catch(e){toast(em(e))}
+ try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false||!quizAllowed(d.owner,d.id))return toast("Deze quiz is niet online beschikbaar.");if(!gameOnline("solo"))return toast("Alleen spelen staat momenteel offline.");if(arr(qz.questions).some(q=>!typeOnline(q.type)))return toast("Deze quiz gebruikt een vraagtype dat momenteel offline staat.");openAvatarPicker(savedProfile(),async profile=>{const code=await createGame(qz,"solo",profile);run(code,true)},"Kies je avatar")}catch(e){toast(em(e))}
 };
 act.publicHost=async d=>{
  act.closem();
- try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false)return toast("Deze quiz is niet openbaar.");const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}
+ try{const qz=(await get(ref(db,`quizzes/${d.owner}/${d.id}`))).val();if(!qz||qz.public===false||!quizAllowed(d.owner,d.id))return toast("Deze quiz is niet online beschikbaar.");if(!gameOnline("multiplayer"))return toast("Multiplayer staat momenteel offline.");if(arr(qz.questions).some(q=>!typeOnline(q.type)))return toast("Deze quiz gebruikt een vraagtype dat momenteel offline staat.");const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}
 };
 act.play=async d=>{
  const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();if(!qz)return toast("Deze quiz kon niet worden geladen.");
@@ -527,18 +530,18 @@ document.addEventListener("pointerdown",e=>{const h=e.target.closest(".drag-hand
 document.addEventListener("pointermove",e=>{if(pointerDrag.start<0)return;if(!pointerDrag.timer&&!pointerDrag.active)return;const t=document.elementFromPoint(e.clientX,e.clientY)?.closest?.("[data-drag-index]");if(!t||!Q)return;if(!pointerDrag.active)return;pointerDrag.target=+t.dataset.dragIndex;document.querySelectorAll(".thumb.drag-over").forEach(x=>x.classList.remove("drag-over"));if(pointerDrag.target!==pointerDrag.start)t.classList.add("drag-over")});
 document.addEventListener("pointerup",e=>{if(pointerDrag.start<0){clearPointerDrag();return}if(pointerDrag.active&&pointerDrag.target>=0&&pointerDrag.target!==pointerDrag.start&&Q){const from=pointerDrag.start,to=pointerDrag.target,moved=Q.questions.splice(from,1)[0];Q.questions.splice(to,0,moved);SEL=Q.questions.indexOf(moved);side();mainQ();saveBtn()}clearPointerDrag()});
 document.addEventListener("pointercancel",clearPointerDrag);
-act.newq=()=>{const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card type-picker"><div class="picker-head"><div><span class="eyebrow">NIEUWE INHOUD</span><h2>Kies een vraagtype</h2><p>Maak je quiz afwisselend met vragen en informatieve dia's.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div><div class="type-grid">
-  <button class="type-option blue" data-a="addq"><span class="type-art"><span class="art-shape">▲</span><span class="art-shape small">◆</span><span class="art-shape tiny">●</span></span><span class="type-name">Quizvraag</span><span class="type-desc">4 antwoorden • 1000 punten • snel spelen</span><span class="type-chip">QUIZ</span></button>
-  <button class="type-option green" data-a="addtf"><span class="type-art tf-art"><span>✓</span><span>✕</span></span><span class="type-name">Waar of niet waar</span><span class="type-desc">2 keuzes • 1000 punten • simpel en snel</span><span class="type-chip">WAAR / NIET WAAR</span></button>
-  <button class="type-option purple" data-a="adddia"><span class="type-art dia-art">🖼️</span><span class="type-name">Dia</span><span class="type-desc">Titel + informatie • geen antwoord • geen punten</span><span class="type-chip">DIA</span></button>
-  <button class="type-option orange" data-a="addtyping"><span class="type-art typing-art">⌨️</span><span class="type-name">Typen</span><span class="type-desc">Speler typt woord of zin • 1000 punten • zoveel goede antwoorden als je wilt</span><span class="type-chip">TYPEN</span></button>
+act.newq=async()=>{await loadSiteConfig();const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card type-picker"><div class="picker-head"><div><span class="eyebrow">NIEUWE INHOUD</span><h2>Kies een vraagtype</h2><p>Vraagtypes die offline staan kunnen hier niet worden toegevoegd.</p></div><button class="btn w sm picker-close" data-a="closem">×</button></div><div class="type-grid">
+  <button class="type-option blue" data-a="addq" ${typeOnline("quiz")?"":"disabled"}><span class="type-art"><span class="art-shape">▲</span><span class="art-shape small">◆</span><span class="art-shape tiny">●</span></span><span class="type-name">Quizvraag ${SITE_CFG.questionTypes?.quiz?.new?"<i class="site-new-badge">Nieuw</i>":""}</span><span class="type-desc">4 antwoorden • 1000 punten • snel spelen</span><span class="type-chip">QUIZ</span></button>
+  <button class="type-option green" data-a="addtf" ${typeOnline("tf")?"":"disabled"}><span class="type-art tf-art"><span>✓</span><span>✕</span></span><span class="type-name">Waar of niet waar ${SITE_CFG.questionTypes?.tf?.new?"<i class="site-new-badge">Nieuw</i>":""}</span><span class="type-desc">2 keuzes • 1000 punten • simpel en snel</span><span class="type-chip">WAAR / NIET WAAR</span></button>
+  <button class="type-option purple" data-a="adddia" ${typeOnline("dia")?"":"disabled"}><span class="type-art dia-art">🖼️</span><span class="type-name">Dia ${SITE_CFG.questionTypes?.dia?.new?"<i class="site-new-badge">Nieuw</i>":""}</span><span class="type-desc">Titel + informatie • geen antwoord • geen punten</span><span class="type-chip">DIA</span></button>
+  <button class="type-option orange" data-a="addtyping" ${typeOnline("typing")?"":"disabled"}><span class="type-art typing-art">⌨️</span><span class="type-name">Typen ${SITE_CFG.questionTypes?.typing?.new?"<i class="site-new-badge">Nieuw</i>":""}</span><span class="type-desc">Speler typt woord of zin • 1000 punten • zoveel goede antwoorden als je wilt</span><span class="type-chip">TYPEN</span></button>
  </div></div>`;document.body.append(m)};
 act.closem=()=>document.querySelector(".modal")?.remove();
 const addQ=t=>{act.closem();Q.questions.push(newQ(t));SEL=Q.questions.length-1;side();mainQ();saveBtn()};
-act.addq=()=>addQ("quiz");
-act.addtf=()=>addQ("tf");
-act.adddia=()=>addQ("dia");
-act.addtyping=()=>addQ("typing");
+act.addq=()=>typeOnline("quiz")?addQ("quiz"):toast("Quizvraag staat offline.");
+act.addtf=()=>typeOnline("tf")?addQ("tf"):toast("Waar/niet waar staat offline.");
+act.adddia=()=>typeOnline("dia")?addQ("dia"):toast("Dia staat offline.");
+act.addtyping=()=>typeOnline("typing")?addQ("typing"):toast("Typen staat offline.");
 act.double=()=>{const q=Q.questions[SEL];if(!q||q.type==="dia")return;q.doublePoints=!q.doublePoints;mainQ();side()};
 act.addtypeanswer=()=>{const q=Q.questions[SEL];if(!q||q.type!=="typing")return;q.a.push("");mainQ();setTimeout(()=>document.querySelector('.typing-answer-row:last-child input')?.focus(),0);saveBtn()};
 act.deltypeanswer=d=>{const q=Q.questions[SEL];if(!q||q.type!=="typing"||q.a.length<=1)return;q.a.splice(+d.i,1);mainQ();saveBtn()};
@@ -553,10 +556,10 @@ act.save=async()=>{if(!valid())return;const ownerId=ADMIN_EDIT?.ownerId||user.ui
 const cols=q=>q.type=="tf"?["g","r"]:COL,syms=q=>q.type=="tf"?["✓","✗"]:SYM;
 const INTRO_MS=5000,DOUBLE_BONUS_INTRO_MS=2500;
 const randomCode=async()=>{let code;do{code=String(Math.floor(100000+Math.random()*900000))}while((await get(ref(db,"games/"+code))).exists());return code};
-const createGame=async(qz,gameMode,playerProfile=null)=>{const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,theme:safeTheme(qz.theme),questions}};if(solo){const profile=normalizeProfile(playerProfile||savedProfile());data.players={[user.uid]:{name:user.displayName||user.email,score:0,...profile}};}await set(ref(db,"games/"+code),data);return code};
-act.host=async d=>{try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
+const createGame=async(qz,gameMode,playerProfile=null)=>{await loadSiteConfig();if(!gameOnline(gameMode))throw new Error(`${gameMode==="solo"?"Alleen spelen":"Multiplayer"} staat momenteel offline.`);if(arr(qz?.questions).some(q=>!typeOnline(q.type)))throw new Error("Deze quiz gebruikt een vraagtype dat momenteel offline staat.");const code=await randomCode();const solo=gameMode=="solo";const questions=arr(qz.questions).map(q=>({...q,a:arr(q.a),time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false,info:q.info||""}));const first=questions[0];const firstIsSlide=first?.type==="dia";const data={host:user.uid,mode:gameMode,createdAt:Date.now(),lastActiveAt:Date.now(),state:solo?(firstIsSlide?"slide":"countdown"):"lobby",q:0,countdownStartedAt:solo&&!firstIsSlide?serverTimestamp():null,startedAt:solo&&firstIsSlide?serverTimestamp():null,quiz:{title:qz.title,theme:safeTheme(qz.theme),questions}};if(solo){const profile=normalizeProfile(playerProfile||savedProfile());data.players={[user.uid]:{name:user.displayName||user.email,score:0,...profile}};}await set(ref(db,"games/"+code),data);return code};
+act.host=async d=>{try{await loadSiteConfig();if(!gameOnline("multiplayer"))return toast("Multiplayer staat momenteel offline.");const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();if(!qz)return toast("Deze quiz kon niet worden geladen.");if(arr(qz.questions).some(q=>!typeOnline(q.type)))return toast("Deze quiz gebruikt een vraagtype dat momenteel offline staat.");const code=await createGame(qz,"multiplayer");run(code,true)}catch(e){toast(em(e))}};
 act.playhost=async d=>{act.closem();act.host(d)};
-act.solo=async d=>{act.closem();try{const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();openAvatarPicker(savedProfile(),async profile=>{const code=await createGame(qz,"solo",profile);run(code,true)},"Kies je avatar")}catch(e){toast(em(e))}};
+act.solo=async d=>{act.closem();try{await loadSiteConfig();if(!gameOnline("solo"))return toast("Alleen spelen staat momenteel offline.");const qz=(await get(ref(db,`quizzes/${user.uid}/${d.id}`))).val();if(!qz)return toast("Deze quiz kon niet worden geladen.");if(arr(qz.questions).some(q=>!typeOnline(q.type)))return toast("Deze quiz gebruikt een vraagtype dat momenteel offline staat.");openAvatarPicker(savedProfile(),async profile=>{const code=await createGame(qz,"solo",profile);run(code,true)},"Kies je avatar")}catch(e){toast(em(e))}};
 function run(code,host){cleanup();CODE=code;HOST=host;
  unsub=onValue(ref(db,"games/"+code),s=>{G=s.val();if(!G){if(!host&&CODE)toast("De quiz is afgesloten.");return home()}paint()});
  timer=setInterval(tick,250)}
@@ -603,7 +606,7 @@ async function reveal(){if(busy)return;busy=true;const q=QS()[G.q];
  await update(ref(db,"games/"+CODE),u)}
 act.start=()=>{const q=QS()[0];return q?.type==="dia"?update(ref(db,"games/"+CODE),{state:"slide",q:0,countdownStartedAt:null,startedAt:serverTimestamp()}):update(ref(db,"games/"+CODE),{state:"countdown",q:0,countdownStartedAt:serverTimestamp(),startedAt:null})};
 const startQuestion=(ni)=>{
- if(ni>=QS().length)return update(ref(db,"games/"+CODE),{state:"end"});
+ if(ni>=QS().length)return remove(ref(db,"games/"+CODE));
  const nq=QS()[ni];
  return nq.type==="dia"
   ?update(ref(db,"games/"+CODE),{state:"slide",q:ni,countdownStartedAt:null,startedAt:serverTimestamp()})
@@ -612,12 +615,12 @@ const startQuestion=(ni)=>{
 act.next=()=>{
  if(G.state==="slide"){
   const q=QS()[G.q],last=G.q+1>=QS().length;
-  if(last)return update(ref(db,"games/"+CODE),{state:"end"});
+  if(last)return remove(ref(db,"games/"+CODE));
   return q.leaderboard===false?startQuestion(G.q+1):update(ref(db,"games/"+CODE),{state:"board"});
  }
  if(G.state==="reveal"){
   const q=QS()[G.q],last=G.q+1>=QS().length;
-  if(last)return update(ref(db,"games/"+CODE),{state:"end"});
+  if(last)return remove(ref(db,"games/"+CODE));
   return q.leaderboard===false?startQuestion(G.q+1):update(ref(db,"games/"+CODE),{state:"board"});
  }
  if(G.state=="board")return startQuestion(G.q+1);
@@ -682,80 +685,100 @@ function paint(){
  tick()}
 
 /* ---------- Menu, updatelog en sitebeheer ---------- */
-let ADM=sessionStorage.getItem("quizzo_adm"),EDITU=null,UPD={},LOGL=[];
+let ADM=null,EDITU=null,UPD={},LOGL=[];
+/* Sitebeheer gebruikt bewust alleen RAM/session state: na een refresh is de beheerder automatisch uitgelogd. */
+const SITE_DEFAULT={
+  avatars:{},
+  questionTypes:{quiz:{online:false,new:false},tf:{online:false,new:false},dia:{online:false,new:false},typing:{online:false,new:false}},
+  gameTypes:{solo:{online:false,new:false},multiplayer:{online:false,new:false}},
+  quizAccess:{}
+};
+let SITE_CFG=JSON.parse(JSON.stringify(SITE_DEFAULT));
 const pad=n=>String(n).padStart(2,"0"),fd=d=>String(d).split("-").reverse().join("-");
 const nowDT=()=>{const d=new Date();return{date:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,time:`${pad(d.getHours())}:${pad(d.getMinutes())}`}};
-async function loadUpdates(){const v=(await get(ref(db,"updates"))).val()||{};UPD=v;
- return Object.entries(v).map(([id,u])=>({id,...u})).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))}
-/* Schrijven als beheerder: het bewijs (_proof) gaat mee in dezelfde schrijfactie en wordt daarna weer gewist. */
-async function priv(paths){await remove(ref(db,"_proof")).catch(()=>{});
- try{await update(ref(db),{_proof:ADM,...paths})}finally{await remove(ref(db,"_proof")).catch(()=>{})}}
-const adminFail=()=>{ADM=null;sessionStorage.removeItem("quizzo_adm");toast("Geen toegang. Log opnieuw in als beheerder.");adminBody()};
+const deepSiteMerge=(base,val)=>{
+  const out=JSON.parse(JSON.stringify(base));
+  const merge=(a,b)=>{if(!b||typeof b!=="object")return a;Object.entries(b).forEach(([k,v])=>{if(v&&typeof v==="object"&&!Array.isArray(v))a[k]=merge(a[k]&&typeof a[k]==="object"?a[k]:{},v);else a[k]=v});return a};
+  return merge(out,val||{});
+};
+async function loadSiteConfig(){try{SITE_CFG=deepSiteMerge(SITE_DEFAULT,(await get(ref(db,"siteSettings"))).val()||{});}catch(_){SITE_CFG=JSON.parse(JSON.stringify(SITE_DEFAULT))}return SITE_CFG}
+function typeOnline(type){return SITE_CFG.questionTypes?.[type]?.online===true}
+function gameOnline(mode){return SITE_CFG.gameTypes?.[mode]?.online===true}
+function quizAllowed(owner,id){const v=SITE_CFG.quizAccess?.[owner]?.[id];return v!==false}
+async function loadUpdates(){const v=(await get(ref(db,"updates"))).val()||{};UPD=v;return Object.entries(v).map(([id,u])=>({id,...u})).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))}
+async function priv(paths){if(!ADM)throw new Error("Geen beheerder ingelogd.");await update(ref(db),{_proof:ADM,...paths});await remove(ref(db,"_proof")).catch(()=>{})}
+const adminFail=()=>{ADM=null;EDITU=null;ADMIN_EDIT=null;sessionStorage.removeItem("quizzo_adm");toast("Geen toegang. Log opnieuw in als beheerder.");document.querySelectorAll(".quizzo-admin-overlay").forEach(x=>x.remove());act.admin()};
 
-act.menu=()=>{const old=$("#menu");if(old)return old.remove();const m=document.createElement("div");m.id="menu";m.className="menu";
- m.innerHTML=`<button data-a="admin">⚙ Sitebeheer</button><button data-a="log">📢 Updatelog</button><hr><button data-a="out">Uitloggen</button>`;$(".hr").append(m)};
+function adminOverlay(){
+  document.querySelectorAll(".quizzo-admin-overlay").forEach(x=>x.remove());
+  const m=document.createElement("div");m.className="quizzo-admin-overlay";
+  m.innerHTML=`<div class="quizzo-admin-shell"><header class="quizzo-admin-top"><div><div class="admin-kicker">QUIZZO</div><h1>Sitebeheer</h1><p>Beheer de inhoud en beschikbaarheid van je hele site.</p></div><div class="admin-top-actions"><span class="admin-online-dot">● Beheerder ingelogd</span><button class="btn w sm" data-a="adminClose">Sluiten</button><button class="btn r sm" data-a="adminLogout">Uitloggen</button></div></header><nav class="quizzo-admin-tabs" id="adminTabs"></nav><main id="adminPanel" class="quizzo-admin-panel">Laden...</main></div>`;
+  document.body.append(m);
+}
+const adminTabLabels={dashboard:"Dashboard",updates:"Updatelog",quizzes:"Openbare quizzen",beheer:"Beheer"};
+let adminTab="dashboard";
+function renderAdminTabs(){const n=$("#adminTabs");if(!n)return;n.innerHTML=Object.entries(adminTabLabels).map(([k,v])=>`<button class="admin-main-tab ${adminTab===k?"active":""}" data-a="adminTab" data-tab="${k}">${k==="dashboard"?"🏠":k==="updates"?"📢":k==="quizzes"?"🌍":"⚙️"} ${v}</button>`).join("")}
+function renderAdminDashboard(){
+ const c=$("#adminPanel");if(!c)return;
+ c.innerHTML=`<div class="admin-dashboard-grid"><button class="admin-dash-card" data-a="adminTab" data-tab="updates"><span>📢</span><b>Updatelog</b><small>Nieuwe updates plaatsen en bestaande updates aanpassen.</small></button><button class="admin-dash-card" data-a="adminTab" data-tab="quizzes"><span>🌍</span><b>Openbare quizzen</b><small>Bekijk en bewerk iedere opgeslagen quiz.</small></button><button class="admin-dash-card" data-a="adminTab" data-tab="beheer"><span>⚙️</span><b>Beheer</b><small>Avatars, vraagtypes, speltypes en quiztoegang.</small></button></div>`;
+}
+function renderUpdateLogAdmin(){
+ const c=$("#adminPanel");if(!c)return;const l=LOGL;
+ c.innerHTML=`<section class="admin-card"><div class="admin-card-head"><div><span class="eyebrow">UPDATES</span><h2>Updatelog</h2><p>Maak hier een nieuwe update of pas een bestaande update aan.</p></div><button class="btn g" data-a="newUpdate">+ Nieuwe update</button></div><div class="admin-update-list">${l.map(u=>`<div class="qcard admin-update-row"><div><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small><p>${esc(u.body).slice(0,180)}${String(u.body||"").length>180?"…":""}</p></div><div><button class="btn b sm" data-a="uedit" data-id="${u.id}">Aanpassen</button> <button class="btn r sm" data-a="udel" data-id="${u.id}">Verwijderen</button></div></div>`).join("")||`<div class="admin-empty">Nog geen updates.</div>`}</div></section>`;
+}
+function updateEditorHtml(){
+ const c=$("#adminPanel"),e=EDITU&&UPD[EDITU],n=nowDT();if(!c)return;
+ c.innerHTML=`<section class="admin-card admin-update-editor"><div class="admin-card-head"><div><span class="eyebrow">UPDATEREN</span><h2>${e?"Update aanpassen":"Nieuwe update"}</h2></div><button class="btn w sm" data-a="adminTab" data-tab="updates">← Terug</button></div><label>Titel<input id="ut" maxlength="80" placeholder="Titel van de update" value="${esc(e?.title||"")}"></label><div class="opts"><label>Datum<input id="ud" type="date" value="${e?.date||n.date}"></label><label>Tijd<input id="uh" type="time" value="${e?.time||n.time}"></label></div><label>Beschrijving<textarea id="ub" rows="9" placeholder="Wat is er veranderd?">${esc(e?.body||"")}</textarea><div class="admin-form-actions"><button class="btn g" data-a="usave">${e?"Wijzigingen opslaan":"Update plaatsen"}</button>${e?'<button class="btn w" data-a="ucancel">Annuleren</button>':""}</div></section>`;
+}
+function settingSwitch(path,value,label){return `<button class="admin-setting-switch ${value?"on":"off"}" data-a="toggleSetting" data-path="${esc(path)}"><span class="switch-dot"></span><b>${value?"ONLINE":"OFFLINE"}</b><span>${esc(label)}</span></button>`}
+const qtypeMeta={quiz:["Quizvraag","4 antwoorden"],tf:["Waar of niet waar","2 keuzes"],dia:["Dia","Titel + informatie"],typing:["Typen","Getypt antwoord"]};
+const gameMeta={solo:["Alleen spelen","Speler speelt zelfstandig"],multiplayer:["Multiplayer","Host + spelers"]};
+async function renderBeheer(){
+ const c=$("#adminPanel");if(!c)return;await loadSiteConfig();
+ const av=QUIZZO_AVATAR_CATALOG.avatars||[];
+ const avatarCards=av.map((x,i)=>{const s=SITE_CFG.avatars?.[i]||{};return `<div class="admin-control-card"><div class="admin-control-main">${avatarMarkup({avatar:i},64)}<div><b>${i+1}. ${esc(x.name||AVATAR_NAMES[i]||"Avatar")}</b><small>${s.online===true?"Beschikbaar voor spelers":"Niet beschikbaar voor spelers"}</small></div></div><div class="admin-control-actions">${settingSwitch(`avatars.${i}.online`,s.online===true,"Beschikbaar")} ${settingSwitch(`avatars.${i}.new`,s.new===true,"Nieuw-badge")}</div></div>`}).join("");
+ const qtypes=Object.entries(qtypeMeta).map(([k,m])=>{const s=SITE_CFG.questionTypes?.[k]||{};return `<div class="admin-control-card"><div class="admin-control-main"><div class="admin-control-icon">${k==="quiz"?"▲":k==="tf"?"✓✕":k==="dia"?"🖼️":"⌨️"}</div><div><b>${m[0]}</b><small>${m[1]}</small></div></div><div class="admin-control-actions">${settingSwitch(`questionTypes.${k}.online`,s.online===true,"Online")} ${settingSwitch(`questionTypes.${k}.new`,s.new===true,"Nieuw-badge")}</div></div>`}).join("");
+ const games=Object.entries(gameMeta).map(([k,m])=>{const s=SITE_CFG.gameTypes?.[k]||{};return `<div class="admin-control-card"><div class="admin-control-main"><div class="admin-control-icon">${k==="solo"?"👤":"🎮"}</div><div><b>${m[0]}</b><small>${m[1]}</small></div></div><div class="admin-control-actions">${settingSwitch(`gameTypes.${k}.online`,s.online===true,"Online")} ${settingSwitch(`gameTypes.${k}.new`,s.new===true,"Nieuw-badge")}</div></div>`}).join("");
+ let quizPerm="";try{const all=(await get(ref(db,"quizzes"))).val()||{};const rows=[];Object.entries(all).forEach(([owner,qs])=>Object.entries(qs||{}).forEach(([id,q])=>{if(q&&typeof q==="object")rows.push({owner,id,q})}));rows.sort((a,b)=>(a.q.title||"").localeCompare(b.q.title||""));quizPerm=rows.map(x=>{const ok=quizAllowed(x.owner,x.id);return `<div class="admin-control-card"><div class="admin-control-main"><div class="admin-control-icon">🌍</div><div><b>${esc(x.q.title||"Naamloze quiz")}</b><small>${esc(x.q.creatorName||x.owner)} · ${arr(x.q.questions).length} onderdelen</small></div></div>${settingSwitch(`quizAccess.${x.owner}.${x.id}`,ok,"Online toegestaan")}</div>`}).join("")||`<div class="admin-empty">Nog geen quizzen gevonden.</div>`}catch(e){quizPerm=`<div class="admin-empty">Quizzen konden niet worden geladen.</div>`}
+ c.innerHTML=`<div class="beheer-intro"><span class="eyebrow">BEHEER</span><h2>Alles wat spelers kunnen gebruiken</h2><p>Nieuwe onderdelen staan standaard offline. Zet ze hier bewust online.</p></div><div class="beheer-subtabs"><button class="beheer-subtab active" data-a="beheerSub" data-sub="avatars">👤 Poppetjes</button><button class="beheer-subtab" data-a="beheerSub" data-sub="questions">❓ Vraagtypes</button><button class="beheer-subtab" data-a="beheerSub" data-sub="games">🎮 Speltypes</button><button class="beheer-subtab" data-a="beheerSub" data-sub="quizzes">🌍 Quiztoestemming</button></div><div id="beheerSubPanel"></div>`;
+ renderBeheerSub("avatars",{avatarCards,qtypes,games,quizPerm});
+}
+let beheerSub="avatars";
+function renderBeheerSub(sub,cache){beheerSub=sub;document.querySelectorAll(".beheer-subtab").forEach(b=>b.classList.toggle("active",b.dataset.sub===sub));const c=$("#beheerSubPanel");if(!c)return;const title=sub==="avatars"?"Poppetjes":sub==="questions"?"Vraagtypes":sub==="games"?"Speltypes":"Toestemming per quiz";const intro=sub==="avatars"?"Bepaal per personage of het online is en of de Nieuw-badge zichtbaar is.":sub==="questions"?"Vraagtypes zijn standaard offline. Zet ze online wanneer spelers ze mogen gebruiken.":sub==="games"?"Speltypes zijn standaard offline. Zet ze online wanneer spelers ze mogen gebruiken.":"Blokkeer hier per quiz of die quiz online beschikbaar mag zijn.";let html="";if(sub==="avatars")html=cache?.avatarCards||"";else if(sub==="questions")html=cache?.qtypes||"";else if(sub==="games")html=cache?.games||"";else html=cache?.quizPerm||"";c.innerHTML=`<section class="admin-card"><div class="admin-card-head"><div><h3>${title}</h3><p>${intro}</p></div></div><div class="admin-control-list">${html}</div></section>`}
 
-act.log=async()=>{act.closem();const m=document.createElement("div");m.className="modal";
- m.innerHTML=`<div class="card wide"><div class="mh"><h2>Updatelog</h2><button class="btn w sm" data-a="closem">Sluiten</button></div><div id="logc">Laden...</div></div>`;document.body.append(m);
- let l;try{l=await loadUpdates()}catch(e){$("#logc").textContent="Kon de updates niet laden.";return toast(em(e))}showLog(l)};
-function showLog(l){if(l)LOGL=l;const c=$("#logc");if(!c)return;
- c.innerHTML=LOGL.length?LOGL.map(u=>`<div class="urow" data-a="uopen" data-id="${u.id}"><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div>`).join(""):"Nog geen updates."}
-act.uopen=d=>{const u=UPD[d.id];if(!u)return;
- $("#logc").innerHTML=`<button class="btn w sm" data-a="ulist">← Terug</button><h2 style="margin-top:14px">${esc(u.title)}</h2><small>${fd(u.date)} · ${esc(u.time)}</small><p class="ubody">${esc(u.body)}</p>`};
+act.menu=()=>{const old=$("#menu");if(old)return old.remove();const m=document.createElement("div");m.id="menu";m.className="menu";m.innerHTML=`<button data-a="admin">⚙ Sitebeheer</button><button data-a="log">📢 Updatelog</button><hr><button data-a="out">Uitloggen</button>`;$(".hr")?.append(m)};
+act.log=async()=>{act.closem();const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="card wide"><div class="mh"><h2>Updatelog</h2><div><button class="btn g sm" data-a="logNewUpdate" ${ADM?"":"style=\"display:none\""}>+ Nieuwe update</button> <button class="btn w sm" data-a="closem">Sluiten</button></div></div><div id="logc">Laden...</div></div>`;document.body.append(m);try{showLog(await loadUpdates())}catch(e){$("#logc").textContent="Kon de updates niet laden.";toast(em(e))}};
+function showLog(l){if(l)LOGL=l;const c=$("#logc");if(!c)return;c.innerHTML=LOGL.length?LOGL.map(u=>`<div class="urow" data-a="uopen" data-id="${u.id}"><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div>`).join(""):"Nog geen updates."}
+act.uopen=d=>{const u=UPD[d.id];if(!u)return;$("#logc").innerHTML=`<button class="btn w sm" data-a="ulist">← Terug</button><h2 style="margin-top:14px">${esc(u.title)}</h2><small>${fd(u.date)} · ${esc(u.time)}</small><p class="ubody">${esc(u.body)}</p>`};
 act.ulist=()=>showLog();
-
-act.admin=()=>{A.innerHTML=`<header><b class="logo s">Sitebeheer</b><button class="btn w sm" data-a="back">Terug</button></header><main id="ac" class="wrap">Laden...</main>`;adminBody()};
-act.back=()=>{ADM=null;EDITU=null;ADMIN_EDIT=null;Q=null;QID=null;sessionStorage.removeItem("quizzo_adm");home()};
-async function adminBody(){const c=$("#ac");if(!c)return;let has;
- try{has=await get(ref(db,"admin/salt"))}catch(e){return c.innerHTML=`<div class="card narrow">Geen toegang tot de database. Controleer of de nieuwe database-regels zijn gepubliceerd.</div>`}
- if(!has.exists()){EDITU=null;return c.innerHTML=`<div class="card narrow"><h2>Beheerder instellen</h2><p>Stel het e-mailadres en wachtwoord voor sitebeheer in. Dit kan maar één keer.</p><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord (minimaal 6 tekens)"><input id="ap2" type="password" placeholder="Herhaal wachtwoord"><button class="btn g" data-a="asetup">Instellen</button></div>`}
- if(!ADM)return c.innerHTML=`<div class="card narrow"><h2>Inloggen voor sitebeheer</h2><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord"><button class="btn b" data-a="alogin">Inloggen</button></div>`;
- const l=await loadUpdates().catch(()=>[]),e=EDITU&&UPD[EDITU],n=nowDT();
- const avatarBadges=(await get(ref(db,"avatarBadges")).catch(()=>({val:()=>({})}))).val()||{};
- const avatarBadgeRows=(QUIZZO_AVATAR_CATALOG.avatars||[]).map((av,i)=>`<div class="admin-avatar-badge-row"><div class="admin-avatar-badge-person">${avatarMarkup({avatar:i},52)}<div><b>${esc(av.name||`Avatar ${i+1}`)}</b><small>${av.kind==="animal"?"Dier":av.kind==="human"?"Menselijk":av.kind==="snowman"?"Sneeuwpop":"Skelet"}</small></div></div><button class="btn ${avatarBadges[i]===true?"g":"w"} sm" data-a="toggleAvatarNew" data-index="${i}">${avatarBadges[i]===true?"✓ Nieuw zichtbaar":"Nieuw tonen"}</button></div>`).join("");
- let quizRows="";
- try{
-  const all=((await get(ref(db,"quizzes"))).val()||{});
-  const owners=Object.keys(all);
-  const ownerNames={};
-  await Promise.all(owners.map(async ownerId=>{try{const u=(await get(ref(db,"users/"+ownerId))).val();ownerNames[ownerId]=u?.username||"Onbekende gebruiker"}catch(_){ownerNames[ownerId]="Onbekende gebruiker"}}));
-  const rows=[];
-  Object.entries(all).forEach(([ownerId,qs])=>{if(!qs||typeof qs!=="object")return;Object.entries(qs).forEach(([id,qz])=>{if(!qz||typeof qz!=="object")return;rows.push({ownerId,id,qz,ownerName:qz.creatorName||ownerNames[ownerId]||"Onbekende gebruiker"})})});
-  rows.sort((a,b)=>(Number(b.qz.updated)||0)-(Number(a.qz.updated)||0));
-  quizRows=rows.map(x=>`<div class="admin-quiz-row"><div class="admin-quiz-info"><div class="admin-quiz-title"><b>${esc(x.qz.title||"Naamloze quiz")}</b><span class="admin-visibility ${x.qz.public===false?"private":"public"}">${x.qz.public===false?"🔒 Privé":"🌍 Openbaar"}</span></div><small>👤 ${esc(x.ownerName)} · ${countLabel(x.qz.questions)}${x.qz.description?" · "+esc(x.qz.description).slice(0,90):""}</small></div><div class="admin-quiz-actions"><button class="btn b sm" data-a="adminEditQuiz" data-owner="${esc(x.ownerId)}" data-id="${esc(x.id)}">Bewerken</button><button class="btn r sm" data-a="adminDeleteQuiz" data-owner="${esc(x.ownerId)}" data-id="${esc(x.id)}">Verwijderen</button></div></div>`).join("");
- }catch(err){quizRows=`<div class="card narrow">De quizdatabase kon niet geladen worden: ${esc(em(err))}</div>`}
- c.innerHTML=`<div class="admin-layout"><section class="card wide admin-panel"><div class="admin-section-head"><div><span class="eyebrow">SITEBEHEER</span><h2>${e?"Update aanpassen":"Nieuwe update"}</h2><p>Beheer updates en alle quizzen op deze site.</p></div></div><input id="ut" maxlength="80" placeholder="Titel" value="${esc(e?.title)}"><div class="opts"><label>Datum<input id="ud" type="date" value="${e?e.date:n.date}"></label><label>Tijd<input id="uh" type="time" value="${e?e.time:n.time}"></label></div><textarea id="ub" rows="6" placeholder="Beschrijving">${esc(e?.body)}</textarea><button class="btn g" data-a="usave">${e?"Wijzigingen opslaan":"Update plaatsen"}</button>${e?'<button class="btn w" data-a="ucancel">Annuleren</button>':""}</section>
- <section class="admin-section"><div class="admin-section-head"><div><span class="eyebrow">QUIZZEN</span><h2>Alle quizzen</h2><p>Je kunt hier iedere quiz bekijken, bewerken, openbaar/privé maken, de beschrijving aanpassen en vragen wijzigen.</p></div><div class="admin-count">${quizRows?"Alle opgeslagen quizzen":"0 quizzen"}</div></div><div class="admin-quiz-list">${quizRows||"<div class=\"card narrow\">Nog geen quizzen.</div>"}</div></section>
- <section class="admin-section"><div class="admin-section-head"><div><span class="eyebrow">UPDATES</span><h2>Alle updates</h2></div></div><div class="admin-update-list">${l.map(u=>`<div class="qcard"><div><b>${esc(u.title)}</b><small>${fd(u.date)} · ${esc(u.time)}</small></div><div><button class="btn b sm" data-a="uedit" data-id="${u.id}">Aanpassen</button> <button class="btn r sm" data-a="udel" data-id="${u.id}">Verwijderen</button></div></div>`).join("")||"Nog geen updates."}</div></section>
- <section class="admin-section"><div class="admin-section-head"><div><span class="eyebrow">PERSONAGES</span><h2>Avatar badges</h2><p>Zet per personage de kleine <b>Nieuw</b>-badge aan. De badge verschijnt rechtsboven op het personage bij het kiezen.</p></div></div><div class="admin-avatar-badge-list">${avatarBadgeRows||"Geen personages gevonden."}</div></section></div>`;
- }
-act.adminEditQuiz=async d=>{try{const owner=d.owner,id=d.id,v=(await get(ref(db,`quizzes/${owner}/${id}`))).val();if(!v)return toast("Deze quiz bestaat niet meer.");Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false}))};QID=id;ADMIN_EDIT={ownerId:owner,id};SEL=Math.max(0,Q.questions.length?0:-1);editorView()}catch(e){toast(em(e))}};
-act.adminDeleteQuiz=async d=>{if(!confirm("Deze quiz definitief verwijderen uit de site?"))return;try{await remove(ref(db,`quizzes/${d.owner}/${d.id}`));toast("Quiz verwijderd.");adminBody()}catch(e){toast(em(e))}};
-act.asetup=async()=>{const e=$("#ae").value.trim().toLowerCase(),p=$("#ap").value;
- if(!/^\S+@\S+\.\S+$/.test(e))return toast("Vul een geldig e-mailadres in.");
- if(p.length<6)return toast("Wachtwoord: minimaal 6 tekens.");
- if(p!==$("#ap2").value)return toast("De wachtwoorden zijn niet gelijk.");
- const salt=hex(crypto.getRandomValues(new Uint8Array(16))),hash=await hashPw(p,salt);
- try{await set(ref(db,"admin"),{email:e,salt,hash})}catch(err){toast("Het beheerdersaccount bestaat al of de database-regels zijn niet bijgewerkt.");return adminBody()}
- ADM=hash;sessionStorage.setItem("quizzo_adm",hash);toast("Beheerder ingesteld!");adminBody()};
-act.alogin=async()=>{const e=$("#ae").value.trim().toLowerCase(),p=$("#ap").value;
- try{const [se,ss]=await Promise.all([get(ref(db,"admin/email")),get(ref(db,"admin/salt"))]);
-  if(se.val()!==e)throw 0;const h=await hashPw(p,ss.val());ADM=h;await priv({adminPing:Date.now()});
-  sessionStorage.setItem("quizzo_adm",h);adminBody()}catch(err){ADM=null;toast("E-mailadres of wachtwoord klopt niet.")}};
-act.toggleAvatarNew=async d=>{const i=Number(d.index);if(!Number.isInteger(i)||i<0||i>=AVATAR_COUNT)return;const next=!(AVATAR_NEW_BADGES[i]===true);try{await priv({[`avatarBadges/${i}`]:next});AVATAR_NEW_BADGES[i]=next;toast(`${AVATAR_NAMES[i]||"Avatar"}: ${next?"Nieuw-badge aangezet":"Nieuw-badge uitgezet"}`);adminBody()}catch(e){console.error("avatarBadges",e);toast("De Nieuw-badge kon niet worden opgeslagen. Controleer de Firebase-regels.")}};
-act.usave=async()=>{const t=$("#ut").value.trim(),d=$("#ud").value,h=$("#uh").value,b=$("#ub").value.trim();
- if(!t||!d||!h||!b)return toast("Vul titel, datum, tijd en beschrijving in.");
- const id=EDITU||push(ref(db,"updates")).key;
- try{await priv({["updates/"+id]:{title:t,date:d,time:h,body:b}})}catch(e){return adminFail()}
- EDITU=null;toast("Update opgeslagen!");adminBody()};
-act.uedit=d=>{EDITU=d.id;adminBody();scrollTo(0,0)};
-act.ucancel=()=>{EDITU=null;adminBody()};
-act.udel=async d=>{if(!confirm("Deze update verwijderen?"))return;
- try{await priv({["updates/"+d.id]:null})}catch(e){return adminFail()}
- if(EDITU==d.id)EDITU=null;adminBody()};
-
+act.logNewUpdate=async()=>{if(!ADM)return toast("Log eerst in bij Sitebeheer.");act.closem();adminOverlay();adminTab="updates";renderAdminTabs();EDITU=null;updateEditorHtml()};
+act.admin=async()=>{adminOverlay();if(!ADM){adminTab="dashboard";renderAdminTabs();const c=$("#adminPanel");c.innerHTML=`<section class="admin-card admin-login-card"><div class="admin-lock">🔐</div><span class="eyebrow">SITEBEHEER</span><h2>Inloggen als beheerder</h2><p>Na verversen wordt deze sessie automatisch beëindigd.</p><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord"><button class="btn b" data-a="alogin">Inloggen</button></section>`;try{const has=await get(ref(db,"admin/salt"));if(!has.exists())c.innerHTML=`<section class="admin-card admin-login-card"><div class="admin-lock">🛠️</div><h2>Beheerder instellen</h2><p>Dit kan maar één keer.</p><input id="ae" type="email" placeholder="E-mailadres"><input id="ap" type="password" placeholder="Wachtwoord (minimaal 6 tekens)"><input id="ap2" type="password" placeholder="Herhaal wachtwoord"><button class="btn g" data-a="asetup">Instellen</button></section>`}catch(e){toast(em(e))}return}renderAdminTabs();renderAdminDashboard()};
+act.adminClose=()=>{document.querySelectorAll(".quizzo-admin-overlay").forEach(x=>x.remove());EDITU=null};
+act.adminLogout=()=>{ADM=null;EDITU=null;ADMIN_EDIT=null;Q=null;QID=null;sessionStorage.removeItem("quizzo_adm");document.querySelectorAll(".quizzo-admin-overlay").forEach(x=>x.remove());toast("Uitgelogd bij Sitebeheer.")};
+act.adminTab=async d=>{if(!ADM)return;adminTab=d.tab;renderAdminTabs();if(adminTab==="dashboard")return renderAdminDashboard();if(adminTab==="updates"){LOGL=await loadUpdates().catch(()=>[]);return renderUpdateLogAdmin()}if(adminTab==="quizzes")return renderAdminQuizzes();return renderBeheer()};
+act.beheerSub=async d=>{if(!ADM)return;await renderBeheer();beheerSub=d.sub;document.querySelectorAll(".beheer-subtab").forEach(b=>b.classList.toggle("active",b.dataset.sub===beheerSub));/* renderBeheer already rebuilt the content; rebuild requested tab from fresh config */
+ const panel=$("#beheerSubPanel");if(!panel)return;const fake={};await renderBeheerSubFresh(beheerSub)};
+async function renderBeheerSubFresh(sub){await loadSiteConfig();const c=$("#beheerSubPanel");if(!c)return;const av=QUIZZO_AVATAR_CATALOG.avatars||[];const make=(path,val,label)=>settingSwitch(path,val,label);let html="";
+ if(sub==="avatars")html=av.map((x,i)=>{const s=SITE_CFG.avatars?.[i]||{};return `<div class="admin-control-card"><div class="admin-control-main">${avatarMarkup({avatar:i},64)}<div><b>${i+1}. ${esc(x.name||AVATAR_NAMES[i]||"Avatar")}</b><small>${s.online===true?"Beschikbaar voor spelers":"Niet beschikbaar voor spelers"}</small></div></div><div class="admin-control-actions">${make(`avatars.${i}.online`,s.online===true,"Beschikbaar")} ${make(`avatars.${i}.new`,s.new===true,"Nieuw-badge")}</div></div>`}).join("");
+ if(sub==="questions")html=Object.entries(qtypeMeta).map(([k,m])=>{const s=SITE_CFG.questionTypes?.[k]||{};return `<div class="admin-control-card"><div class="admin-control-main"><div class="admin-control-icon">${k==="quiz"?"▲":k==="tf"?"✓✕":k==="dia"?"🖼️":"⌨️"}</div><div><b>${m[0]}</b><small>${m[1]}</small></div></div><div class="admin-control-actions">${make(`questionTypes.${k}.online`,s.online===true,"Online")} ${make(`questionTypes.${k}.new`,s.new===true,"Nieuw-badge")}</div></div>`}).join("");
+ if(sub==="games")html=Object.entries(gameMeta).map(([k,m])=>{const s=SITE_CFG.gameTypes?.[k]||{};return `<div class="admin-control-card"><div class="admin-control-main"><div class="admin-control-icon">${k==="solo"?"👤":"🎮"}</div><div><b>${m[0]}</b><small>${m[1]}</small></div></div><div class="admin-control-actions">${make(`gameTypes.${k}.online`,s.online===true,"Online")} ${make(`gameTypes.${k}.new`,s.new===true,"Nieuw-badge")}</div></div>`}).join("");
+ if(sub==="quizzes"){const all=(await get(ref(db,"quizzes"))).val()||{};const rows=[];Object.entries(all).forEach(([owner,qs])=>Object.entries(qs||{}).forEach(([id,q])=>q&&typeof q==="object"&&rows.push({owner,id,q})));html=rows.map(x=>make(`quizAccess.${x.owner}.${x.id}`,quizAllowed(x.owner,x.id),"Online toegestaan").replace('<button','<div class="admin-perm-wrap"><div><b>'+esc(x.q.title||"Naamloze quiz")+'</b><small>'+esc(x.q.creatorName||x.owner)+'</small></div><button')).map(x=>x+'</div>').join("")||`<div class="admin-empty">Nog geen quizzen.</div>`}
+ const title=sub==="avatars"?"Poppetjes":sub==="questions"?"Vraagtypes":sub==="games"?"Speltypes":"Toestemming per quiz";c.innerHTML=`<section class="admin-card"><div class="admin-card-head"><div><h3>${title}</h3><p>${sub==="avatars"?"Per personage online/offline en Nieuw-badge.":sub==="questions"?"Zet vraagtypes online en beheer hun Nieuw-badge.":sub==="games"?"Zet speltypes online en beheer hun Nieuw-badge.":"Blokkeer of geef toestemming om een quiz online te zetten."}</p></div></div><div class="admin-control-list">${html}</div></section>`}
+act.toggleSetting=async d=>{if(!ADM)return;const parts=String(d.path||"").split(".");if(parts.length<2)return;let valuePath=parts;let cur=SITE_CFG;for(let i=0;i<parts.length-1;i++)cur=cur?.[parts[i]];const key=parts[parts.length-1];const next=cur?.[key]===true?false:true;try{await priv({[`siteSettings/${parts.join("/")}`]:next});await loadSiteConfig();toast("Beheerinstelling opgeslagen.");await renderBeheerSubFresh(beheerSub)}catch(e){adminFail()}};
+act.adminEditQuiz=async d=>{if(!ADM)return;try{const owner=d.owner,id=d.id,v=(await get(ref(db,`quizzes/${owner}/${id}`))).val();if(!v)return toast("Deze quiz bestaat niet meer.");Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false}))};QID=id;ADMIN_EDIT={ownerId:owner,id};SEL=Math.max(0,Q.questions.length?0:-1);editorView()}catch(e){toast(em(e))}};
+async function renderAdminQuizzes(){const c=$("#adminPanel");if(!c)return;let rows=[];try{const all=(await get(ref(db,"quizzes"))).val()||{};Object.entries(all).forEach(([owner,qs])=>Object.entries(qs||{}).forEach(([id,q])=>q&&typeof q==="object"&&rows.push({owner,id,q})));}catch(e){return c.innerHTML=`<section class="admin-card"><h2>Openbare quizzen</h2><p>De quizdatabase kon niet geladen worden.</p></section>`}rows.sort((a,b)=>(Number(b.q.updated)||0)-(Number(a.q.updated)||0));c.innerHTML=`<section class="admin-card"><div class="admin-card-head"><div><span class="eyebrow">QUIZZEN</span><h2>Alle quizzen</h2><p>Elke opgeslagen quiz staat hier. Je kunt ze openen en aanpassen.</p></div><span class="admin-count">${rows.length} quizzen</span></div><div class="admin-quiz-list">${rows.map(x=>`<div class="admin-quiz-row"><div class="admin-quiz-info"><div class="admin-quiz-title"><b>${esc(x.q.title||"Naamloze quiz")}</b><span class="admin-visibility ${x.q.public===false?"private":"public"}">${x.q.public===false?"🔒 Privé":"🌍 Openbaar"}</span></div><small>👤 ${esc(x.q.creatorName||x.owner)} · ${arr(x.q.questions).length} onderdelen</small></div><div class="admin-quiz-actions"><button class="btn b sm" data-a="adminEditQuiz" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Bewerken</button><button class="btn r sm" data-a="adminDeleteQuiz" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Verwijderen</button></div></div>`).join("")||`<div class="admin-empty">Nog geen quizzen.</div>`}</div></section>`}
+act.adminDeleteQuiz=async d=>{if(!ADM||!confirm("Deze quiz definitief verwijderen?"))return;try{await priv({[`quizzes/${d.owner}/${d.id}`]:null,[`siteSettings/quizAccess/${d.owner}/${d.id}`]:null});toast("Quiz verwijderd.");renderAdminQuizzes()}catch(e){adminFail()}};
+act.asetup=async()=>{const e=$("#ae")?.value.trim().toLowerCase(),p=$("#ap")?.value;if(!/^\S+@\S+\.\S+$/.test(e||""))return toast("Vul een geldig e-mailadres in.");if((p||"").length<6)return toast("Wachtwoord: minimaal 6 tekens.");if(p!==$("#ap2")?.value)return toast("De wachtwoorden zijn niet gelijk.");const salt=hex(crypto.getRandomValues(new Uint8Array(16))),hash=await hashPw(p,salt);try{await set(ref(db,"admin"),{email:e,salt,hash});ADM=hash;toast("Beheerder ingesteld!");act.admin()}catch(err){toast("Beheerder instellen mislukt. Controleer de Firebase-regels.")}};
+act.alogin=async()=>{const e=$("#ae")?.value.trim().toLowerCase(),p=$("#ap")?.value;try{const [se,ss]=await Promise.all([get(ref(db,"admin/email")),get(ref(db,"admin/salt"))]);if(se.val()!==e)throw 0;const h=await hashPw(p,ss.val());/* alleen in RAM, nooit meer bewaren */ADM=h;await priv({adminPing:Date.now()});toast("Ingelogd bij Sitebeheer.");adminTab="dashboard";renderAdminTabs();renderAdminDashboard()}catch(err){ADM=null;toast("E-mailadres of wachtwoord klopt niet.")}};
+act.newUpdate=()=>{if(!ADM)return;EDITU=null;updateEditorHtml()};
+act.usave=async()=>{if(!ADM)return;const t=$("#ut")?.value.trim(),d=$("#ud")?.value,h=$("#uh")?.value,b=$("#ub")?.value.trim();if(!t||!d||!h||!b)return toast("Vul titel, datum, tijd en beschrijving in.");const id=EDITU||push(ref(db,"updates")).key;try{await priv({[`updates/${id}`]:{title:t,date:d,time:h,body:b}})}catch(e){return adminFail()}EDITU=null;toast("Update opgeslagen!");adminTab="updates";LOGL=await loadUpdates();renderAdminTabs();renderUpdateLogAdmin()};
+act.uedit=d=>{if(!ADM)return;EDITU=d.id;updateEditorHtml()};act.ucancel=()=>{EDITU=null;adminTab="updates";loadUpdates().then(()=>{renderAdminTabs();renderUpdateLogAdmin()})};
+act.udel=async d=>{if(!ADM||!confirm("Deze update verwijderen?"))return;try{await priv({[`updates/${d.id}`]:null})}catch(e){return adminFail()}if(EDITU===d.id)EDITU=null;LOGL=await loadUpdates();renderUpdateLogAdmin()};
+act.back=act.adminClose;
+act.out=act.adminLogout;
 
 /* ---------- Global interaction + boot ---------- */
+
 function dispatchAction(el,event){
   if(!el) return;
   const name=el.dataset?.a;
@@ -782,6 +805,8 @@ document.addEventListener("click",e=>{
   dispatchAction(el,e);
 });
 
+window.addEventListener("beforeunload",()=>{if(HOST&&CODE){try{remove(ref(db,"games/"+CODE))}catch(_){}}});
+
 document.addEventListener("keydown",e=>{
   if((e.key==="Enter"||e.key===" ") && e.target.matches?.('[role="button"][data-a]')){
     e.preventDefault();
@@ -800,7 +825,10 @@ try{
 // Start only after every action handler has been registered.
 queueMicrotask(async()=>{
   try{
+    sessionStorage.removeItem("quizzo_adm");
+    ADM=null;
     await ensureAvatarCatalog();
+    await loadSiteConfig();
     if(!window.QUIZZO_AVATAR_CATALOG?.avatars?.length){
       console.warn('Quizzo: avatarcatalogus ontbreekt; de rest van de app start wel.');
     }
