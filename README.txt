@@ -1,15 +1,12 @@
-Quizzo v95 – Sitebeheer/login/zichtbaarheid fix
+Quizzo v96 – Sitebeheer permission denied fix
 
 Aangepast:
-- Sitebeheer gebruikt nu de normale Quizzo-accountlogin. Er verschijnt geen tweede vreemd beheer-loginformulier meer.
-- Na succesvolle Sitebeheer-toegang ga je terug naar het normale Quizzo-scherm; Sitebeheer blijft beschikbaar als beheerdersmodus.
-- Sitebeheer blijft ingelogd tijdens wijzigingen. Een fout bij opslaan gooit je niet meer uit Sitebeheer.
-- Uitloggen uit Sitebeheer brengt je terug naar het normale scherm.
-- In Openbare quizzen kan een ingelogde beheerder quizzen direct testen met Solo of Host.
-- Offline spelmodi worden niet meer getoond.
-- Offline vraagtypes worden niet meer getoond in de vraagtype-keuze.
-- Openbare quizzen waarvoor online toegang is uitgezet worden uit Ontdek quizzen verwijderd.
-- Speelknoppen verdwijnen wanneer geen spelmodus online staat.
-- Beheer-testknoppen verschijnen alleen voor spelmodi die online staan.
+- Sitebeheer gebruikt de normale Quizzo-login; er wordt geen tweede wachtwoord-login gevraagd.
+- De beheerder wordt herkend aan het normale ingelogde Quizzo-account en het bestaande admin/email-record.
+- De extra tijdelijke root-write naar _proof/adminPing is verwijderd. Die veroorzaakte Firebase "PERMISSION_DENIED" bij het openen van Sitebeheer.
+- Beheerinstellingen worden rechtstreeks naar hun eigen databasepaden opgeslagen in plaats van via een root-update met _proof.
+- Na toegang blijft Sitebeheer in dezelfde normale Quizzo-interface beschikbaar.
 
-Alleen gewijzigde bestanden zitten in deze ZIP.
+Alleen gewijzigd:
+- app.js
+- README.txt
