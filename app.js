@@ -245,7 +245,7 @@ function avatarChoiceMarkup(){
   const items=[];
   for(let i=0;i<AVATAR_COUNT;i++){
     const a=QUIZZO_AVATAR_CATALOG.avatars[i]||{};
-    if(SITE_CFG?.avatars?.[i]?.online!==true)continue;
+    if(!ADM && SITE_CFG?.avatars?.[i]?.online!==true)continue;
     if(avatarPickerSearch&&!String(a.name||"").toLowerCase().includes(avatarPickerSearch.toLowerCase()))continue;
     const badge=avatarBadge(i);
     items.push(`<button class="avatar-option ${i===avatarDraft.avatar?'selected':''}" data-a="pickAvatar" data-index="${i}" aria-label="${esc(a.name||`Avatar ${i+1}`)}"><span class="avatar-option-art avatar-character-preview">${avatarMarkup({avatar:i},112)}${badge}</span><strong>${esc(a.name||`Avatar ${i+1}`)}</strong><small>${a.kind==='human'?'Menselijk':a.kind==='snowman'?'Sneeuwpop':a.kind==='skeleton'?'Skelet':'Dier'}</small></button>`);
@@ -742,8 +742,8 @@ const deepSiteMerge=(base,val)=>{
   return merge(out,val||{});
 };
 async function loadSiteConfig(){try{SITE_CFG=deepSiteMerge(SITE_DEFAULT,(await get(ref(db,"siteSettings"))).val()||{});}catch(_){SITE_CFG=JSON.parse(JSON.stringify(SITE_DEFAULT))}return SITE_CFG}
-function typeOnline(type){return SITE_CFG.questionTypes?.[type]?.online===true}
-function gameOnline(mode){return SITE_CFG.gameTypes?.[mode]?.online===true}
+function typeOnline(type){return !!ADM || SITE_CFG.questionTypes?.[type]?.online===true}
+function gameOnline(mode){return !!ADM || SITE_CFG.gameTypes?.[mode]?.online===true}
 function quizAllowed(owner,id){const v=SITE_CFG.quizAccess?.[owner]?.[id];return v!==false}
 async function loadUpdates(){const v=(await get(ref(db,"updates"))).val()||{};UPD=v;return Object.entries(v).map(([id,u])=>({id,...u})).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))}
 async function priv(paths){if(!ADM)throw new Error("Geen beheerder ingelogd.");
