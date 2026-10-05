@@ -292,10 +292,6 @@ async function login(key,name,email){
  user={uid:key,displayName:name,email};
  // Login is intentionally not persisted: after a full refresh the normal login screen appears again.
  ADM=null;
- try{
-  const adminEmail=(await get(ref(db,"admin/email"))).val();
-  if(adminEmail&&String(adminEmail).toLowerCase()===String(email||"").toLowerCase()) ADM={uid:key,email};
- }catch(_){ADM=null}
  home();
 } 
 user=null;
@@ -740,7 +736,10 @@ function typeOnline(type){return SITE_CFG.questionTypes?.[type]?.online===true}
 function gameOnline(mode){return SITE_CFG.gameTypes?.[mode]?.online===true}
 function quizAllowed(owner,id){const v=SITE_CFG.quizAccess?.[owner]?.[id];return v!==false}
 async function loadUpdates(){const v=(await get(ref(db,"updates"))).val()||{};UPD=v;return Object.entries(v).map(([id,u])=>({id,...u})).sort((a,b)=>(b.date+b.time).localeCompare(a.date+a.time))}
-async function priv(paths){if(!ADM)throw new Error("Geen beheerder ingelogd.");await update(ref(db),paths)}
+async function priv(paths){if(!ADM)throw new Error("Geen beheerder ingelogd.");
+ const entries=Object.entries(paths||{});
+ for(const [path,value] of entries){await set(ref(db,path),value)}
+}
 const adminFail=(err)=>{console.error("Sitebeheer-opslag mislukt",err);toast(em(err)||"Opslaan mislukt. Je blijft ingelogd in Sitebeheer.");};
 
 function adminOverlay(){
@@ -786,7 +785,39 @@ function showLog(l){if(l)LOGL=l;const c=$("#logc");if(!c)return;c.innerHTML=LOGL
 act.uopen=d=>{const u=UPD[d.id];if(!u)return;$("#logc").innerHTML=`<button class="btn w sm" data-a="ulist">← Terug</button><h2 style="margin-top:14px">${esc(u.title)}</h2><small>${fd(u.date)} · ${esc(u.time)}</small><p class="ubody">${esc(u.body)}</p>`};
 act.ulist=()=>showLog();
 act.logNewUpdate=async()=>{if(!ADM)return toast("Je hebt geen Sitebeheer-toegang.");tab="admin";home();adminTab="updates";renderAdminTabs();EDITU=null;updateEditorHtml()};
-act.admin=async()=>{if(!user)return authView();if(!ADM){try{const adminEmail=(await get(ref(db,"admin/email"))).val();if(adminEmail&&String(adminEmail).toLowerCase()===String(user.email||"").toLowerCase()){ADM={uid:user.uid,email:user.email};tab="admin";home();return}toast("Dit account heeft geen Sitebeheer-toegang.")}catch(e){console.error("Sitebeheer toegang controleren mislukt",e);toast(em(e)||"Sitebeheer kon niet worden geopend.")}return}tab="admin";home()};
+function adminAuthOverlay(mode){
+ const old=document.getElementById("admin-auth-overlay");if(old)old.remove();
+ const first=mode==="setup";
+ const o=document.createElement("div");o.id="admin-auth-overlay";o.className="modal-overlay";
+ o.innerHTML=`<div class="modal-box admin-auth-box"><div class="modal-title">⚙️ Sitebeheer</div><p class="modal-text">${first?"Dit is de eerste keer dat Sitebeheer wordt ingesteld. Deze e-mail en dit wachtwoord worden voortaan voor Sitebeheer gebruikt.":"Log in op Sitebeheer met de opgeslagen beheerdersgegevens."}</p><label class="modal-label">E-mailadres</label><input id="admin-auth-email" type="email" class="modal-input" autocomplete="username" placeholder="E-mailadres"><label class="modal-label">Wachtwoord</label><input id="admin-auth-password" type="password" class="modal-input" autocomplete="current-password" placeholder="Wachtwoord"><div class="modal-error" id="admin-auth-error"></div><div class="modal-actions"><button class="btn-secondary" data-a="adminAuthCancel">Annuleren</button><button class="btn-primary" data-a="adminAuthSubmit">${first?"Instellen":"Inloggen"}</button></div></div>`;
+ document.body.appendChild(o);
+}
+act.adminAuthCancel=()=>document.getElementById("admin-auth-overlay")?.remove();
+act.adminAuthSubmit=async()=>{
+ const email=$("#admin-auth-email")?.value.trim().toLowerCase(),pw=$("#admin-auth-password")?.value||"",err=$("#admin-auth-error"),btn=document.querySelector("#admin-auth-overlay .btn-primary");
+ if(!/^\S+@\S+\.\S+$/.test(email))return err.textContent="Vul een geldig e-mailadres in.";
+ if(pw.length<6)return err.textContent="Wachtwoord moet minimaal 6 tekens zijn.";
+ btn.disabled=true;
+ try{
+  const adminEmailSnap=await get(ref(db,"admin/email"));
+  const adminEmail=adminEmailSnap.val();
+  const a=adminEmail?{email:adminEmail,salt:(await get(ref(db,"admin/salt"))).val(),hash:(await get(ref(db,"admin/hash"))).val()}:null;
+  if(!a){
+   const salt=hex(crypto.getRandomValues(new Uint8Array(16))),hash=await hashPw(pw,salt);
+   await set(ref(db,"admin"),{email,salt,hash,createdAt:Date.now()});
+   ADM={uid:user?.uid||null,email};
+  }else{
+   if(String(a.email||"").toLowerCase()!==email || !a.salt || !a.hash || a.hash!==await hashPw(pw,a.salt))throw new Error("E-mailadres of wachtwoord klopt niet.");
+   ADM={uid:user?.uid||null,email};
+  }
+  document.getElementById("admin-auth-overlay")?.remove();tab="admin";home();
+ }catch(e){err.textContent=em(e)||"Sitebeheer kon niet worden geopend.";btn.disabled=false}
+};
+act.admin=async()=>{
+ if(!user)return authView();
+ if(ADM){tab="admin";home();return}
+ try{const a=(await get(ref(db,"admin"))).val();adminAuthOverlay(a?"login":"setup")}catch(e){toast(em(e)||"Sitebeheer kan niet worden gecontroleerd.")}
+};
 act.adminClose=()=>{EDITU=null;tab="join";home()};
 act.adminLogout=()=>{ADM=null;EDITU=null;ADMIN_EDIT=null;Q=null;QID=null;tab="join";home();toast("Sitebeheer afgesloten.")};
 act.adminTab=async d=>{if(!ADM)return;adminTab=d.tab;renderAdminTabs();if(adminTab==="dashboard")return renderAdminDashboard();if(adminTab==="updates"){LOGL=await loadUpdates().catch(()=>[]);return renderUpdateLogAdmin()}if(adminTab==="quizzes")return renderAdminQuizzes();return renderBeheer()};
