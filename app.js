@@ -798,9 +798,60 @@ act.logNewUpdate=async()=>{if(!ADM)return toast("Je hebt geen Sitebeheer-toegang
 function adminAuthOverlay(mode){
  const old=document.getElementById("admin-auth-overlay");if(old)old.remove();
  const first=mode==="setup";
- const o=document.createElement("div");o.id="admin-auth-overlay";o.className="modal-overlay";
- o.innerHTML=`<div class="modal-box admin-auth-box"><div class="modal-title">⚙️ Sitebeheer</div><p class="modal-text">${first?"Dit is de eerste keer dat Sitebeheer wordt ingesteld. Deze e-mail en dit wachtwoord worden voortaan voor Sitebeheer gebruikt.":"Log in op Sitebeheer met de opgeslagen beheerdersgegevens."}</p><label class="modal-label">E-mailadres</label><input id="admin-auth-email" type="email" class="modal-input" autocomplete="username" placeholder="E-mailadres"><label class="modal-label">Wachtwoord</label><input id="admin-auth-password" type="password" class="modal-input" autocomplete="current-password" placeholder="Wachtwoord"><div class="modal-error" id="admin-auth-error"></div><div class="modal-actions"><button class="btn-secondary" data-a="adminAuthCancel">Annuleren</button><button class="btn-primary" data-a="adminAuthSubmit">${first?"Instellen":"Inloggen"}</button></div></div>`;
+ if(!document.getElementById("quizzo-admin-auth-style")){
+  const st=document.createElement("style");st.id="quizzo-admin-auth-style";st.textContent=`
+   #admin-auth-overlay{position:fixed!important;inset:0!important;z-index:2147483000!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:22px!important;box-sizing:border-box!important;background:radial-gradient(circle at 50% 0%,rgba(111,66,193,.42),transparent 48%),linear-gradient(135deg,rgba(19,10,45,.97),rgba(57,20,108,.96))!important;backdrop-filter:blur(14px);animation:qzaFade .22s ease both}
+   #admin-auth-overlay .qza-card{position:relative;width:min(470px,100%);box-sizing:border-box;padding:34px 34px 30px;border:1px solid rgba(255,255,255,.13);border-radius:30px;background:linear-gradient(180deg,rgba(38,27,70,.98),rgba(28,19,54,.98));color:#fff;box-shadow:0 30px 100px rgba(0,0,0,.48),0 0 0 1px rgba(255,255,255,.04) inset;overflow:hidden;animation:qzaUp .28s cubic-bezier(.2,.8,.2,1) both}
+   #admin-auth-overlay .qza-card:before{content:"";position:absolute;width:220px;height:220px;right:-100px;top:-120px;border-radius:50%;background:rgba(121,76,255,.25);filter:blur(5px)}
+   #admin-auth-overlay .qza-close{position:absolute;right:14px;top:14px;width:38px;height:38px;border:0;border-radius:12px;background:rgba(255,255,255,.07);color:#d9d2ec;font-size:22px;cursor:pointer;z-index:2;transition:.15s}
+   #admin-auth-overlay .qza-close:hover{background:rgba(255,255,255,.14);transform:scale(1.04)}
+   #admin-auth-overlay .qza-icon{position:relative;width:64px;height:64px;display:grid;place-items:center;margin:0 auto 18px;border-radius:20px;background:linear-gradient(135deg,#7650e8,#4e2ca8);box-shadow:0 12px 30px rgba(92,54,202,.38);font-size:29px}
+   #admin-auth-overlay .qza-eyebrow{text-align:center;margin:0 0 7px;color:#b9a8e8;font:800 12px/1 Montserrat,system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+   #admin-auth-overlay .qza-title{text-align:center;margin:0;font:900 clamp(28px,6vw,34px)/1.05 Montserrat,system-ui,sans-serif;letter-spacing:-.03em}
+   #admin-auth-overlay .qza-sub{text-align:center;margin:12px auto 24px;max-width:370px;color:#bcb4ce;font:600 14px/1.55 Montserrat,system-ui,sans-serif}
+   #admin-auth-overlay .qza-setup{display:flex;align-items:center;gap:9px;margin:0 0 20px;padding:11px 13px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(255,255,255,.045);color:#ddd5ee;font:700 12px/1.35 Montserrat,system-ui,sans-serif}
+   #admin-auth-overlay .qza-setup-dot{width:9px;height:9px;flex:none;border-radius:50%;background:#9b78ff;box-shadow:0 0 12px rgba(155,120,255,.8)}
+   #admin-auth-overlay .qza-field{margin-top:15px}
+   #admin-auth-overlay .qza-label{display:flex;justify-content:space-between;margin:0 0 8px;color:#eee8f7;font:800 13px/1 Montserrat,system-ui,sans-serif}
+   #admin-auth-overlay .qza-input-wrap{position:relative}
+   #admin-auth-overlay .qza-input{width:100%;height:52px;box-sizing:border-box;padding:0 15px;border:1px solid rgba(255,255,255,.13);border-radius:14px;outline:none;background:rgba(255,255,255,.065);color:#fff;font:700 15px Montserrat,system-ui,sans-serif;transition:.15s}
+   #admin-auth-overlay .qza-input.password{padding-right:54px}
+   #admin-auth-overlay .qza-input::placeholder{color:#8f879f}
+   #admin-auth-overlay .qza-input:focus{border-color:#8b69ef;background:rgba(255,255,255,.09);box-shadow:0 0 0 4px rgba(120,78,225,.16)}
+   #admin-auth-overlay .qza-eye{position:absolute;right:7px;top:7px;width:38px;height:38px;border:0;border-radius:10px;background:transparent;color:#a9a0bb;cursor:pointer;font-size:17px}
+   #admin-auth-overlay .qza-eye:hover{background:rgba(255,255,255,.07);color:#fff}
+   #admin-auth-overlay .qza-error{min-height:20px;margin:9px 2px 0;color:#ff8f9b;font:700 12px/1.45 Montserrat,system-ui,sans-serif}
+   #admin-auth-overlay .qza-actions{display:flex;gap:10px;margin-top:8px}
+   #admin-auth-overlay .qza-btn{width:100%;height:50px;border:0;border-radius:14px;font:900 14px Montserrat,system-ui,sans-serif;cursor:pointer;transition:.15s}
+   #admin-auth-overlay .qza-btn.cancel{background:rgba(255,255,255,.07);color:#d9d2e7}
+   #admin-auth-overlay .qza-btn.cancel:hover{background:rgba(255,255,255,.12)}
+   #admin-auth-overlay .qza-btn.primary{color:#fff;background:linear-gradient(135deg,#7b55ed,#5831bc);box-shadow:0 9px 22px rgba(91,50,190,.32)}
+   #admin-auth-overlay .qza-btn.primary:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(91,50,190,.4)}
+   #admin-auth-overlay .qza-btn:disabled{opacity:.62;cursor:wait;transform:none!important}
+   #admin-auth-overlay .qza-foot{text-align:center;margin:18px 0 0;color:#756c87;font:600 11px Montserrat,system-ui,sans-serif}
+   @keyframes qzaFade{from{opacity:0}to{opacity:1}}
+   @keyframes qzaUp{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+   @media(max-width:520px){#admin-auth-overlay{padding:14px!important}#admin-auth-overlay .qza-card{padding:28px 20px 23px;border-radius:24px}#admin-auth-overlay .qza-actions{flex-direction:column-reverse}#admin-auth-overlay .qza-icon{width:58px;height:58px;border-radius:18px}}
+  `;document.head.appendChild(st);
+ }
+ const o=document.createElement("div");o.id="admin-auth-overlay";o.className="modal-overlay";o.innerHTML=`<div class="qza-card" role="dialog" aria-modal="true" aria-labelledby="qza-title">
+   <button type="button" class="qza-close" data-a="adminAuthCancel" aria-label="Sluiten">×</button>
+   <div class="qza-icon">⚙️</div>
+   <div class="qza-eyebrow">QUIZZO • BEHEER</div>
+   <h2 class="qza-title" id="qza-title">${first?"Sitebeheer instellen":"Sitebeheer"}</h2>
+   <p class="qza-sub">${first?"Maak de vaste beheerderslogin aan. Deze gegevens worden vanaf nu gebruikt om Sitebeheer te openen.":"Log in om toegang te krijgen tot het volledige Sitebeheer."}</p>
+   ${first?'<div class="qza-setup"><span class="qza-setup-dot"></span><span>Eerste configuratie · je gegevens worden voor Sitebeheer opgeslagen</span></div>':""}
+   <div class="qza-field"><label class="qza-label" for="admin-auth-email">E-mailadres</label><input id="admin-auth-email" class="qza-input" type="email" autocomplete="username" placeholder="jouw@email.nl"></div>
+   <div class="qza-field"><label class="qza-label" for="admin-auth-password">Wachtwoord</label><div class="qza-input-wrap"><input id="admin-auth-password" class="qza-input password" type="password" autocomplete="current-password" placeholder="Je beheerderswachtwoord"><button type="button" class="qza-eye" id="admin-auth-eye" aria-label="Wachtwoord tonen">◉</button></div></div>
+   <div class="qza-error" id="admin-auth-error" role="alert"></div>
+   <div class="qza-actions"><button type="button" class="qza-btn cancel" data-a="adminAuthCancel">Annuleren</button><button type="button" class="qza-btn primary" data-a="adminAuthSubmit">${first?"Sitebeheer instellen":"Inloggen"}</button></div>
+   <div class="qza-foot">Beveiligde Sitebeheer-toegang · Quizzo</div>
+ </div>`;
  document.body.appendChild(o);
+ const email=o.querySelector("#admin-auth-email"),pw=o.querySelector("#admin-auth-password"),eye=o.querySelector("#admin-auth-eye");
+ eye?.addEventListener("click",()=>{const visible=pw.type==="text";pw.type=visible?"password":"text";eye.textContent=visible?"◉":"◌";eye.setAttribute("aria-label",visible?"Wachtwoord tonen":"Wachtwoord verbergen")});
+ email?.focus();
+ [email,pw].forEach(input=>input?.addEventListener("keydown",e=>{if(e.key==="Enter")act.adminAuthSubmit();if(e.key==="Escape")act.adminAuthCancel()}));
 }
 act.adminAuthCancel=()=>document.getElementById("admin-auth-overlay")?.remove();
 act.adminAuthSubmit=async()=>{

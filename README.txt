@@ -1,10 +1,16 @@
-Quizzo V101 – Sitebeheer krijgt altijd toegang tot alle inhoud
+Quizzo V102 – vernieuwde Sitebeheer-login
 
 Aangepast:
-- Als Sitebeheer actief is, worden ALLE vraagtypes als online beschouwd.
-- Als Sitebeheer actief is, worden ALLE spelmodi als online beschouwd.
-- Als Sitebeheer actief is, zijn ALLE avatars zichtbaar in de avatar-keuze, ook als ze voor gewone spelers offline staan.
-- Dit geldt ook bij het testen van openbare quizzen vanuit Sitebeheer.
-- Voor gewone spelers blijft de bestaande online/offline-beveiliging volledig hetzelfde.
-- De instellingen in Sitebeheer blijven dus bepalen wat gewone spelers zien en kunnen gebruiken.
-- Alleen app.js en index.html zijn aangepast.
+- Sitebeheer opent nu in een volledig apart, modern login-scherm boven de hele Quizzo-interface.
+- Nieuwe donkere/paarse Quizzo-stijl met animatie, afgeronde kaart, icoon en duidelijke hiërarchie.
+- Eerste keer Sitebeheer instellen heeft een aparte duidelijke configuratie-indicatie.
+- E-mailadres en wachtwoord hebben verbeterde invoervelden en focus-effecten.
+- Wachtwoord kan met één knop tijdelijk zichtbaar/verborgen worden gemaakt.
+- Enter werkt om in te loggen; Escape sluit het scherm.
+- Op mobiel past het scherm zich netjes aan en staan de knoppen onder elkaar.
+- Bestaande Sitebeheer-login, opgeslagen beheerdersgegevens en werking van de rest van de site zijn niet gewijzigd.
+- Cacheversies verhoogd naar V102.
+
+Aangepaste bestanden:
+- app.js
+- index.html
