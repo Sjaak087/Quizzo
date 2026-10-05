@@ -290,11 +290,21 @@ const mailKey=e=>e.toLowerCase().replace(/\./g,",");
 const userKey=n=>encodeURIComponent(n.toLowerCase()).replace(/\./g,"%2E");
 async function login(key,name,email){
  user={uid:key,displayName:name,email};
- // Login is intentionally not persisted: after a full refresh the normal login screen appears again.
+ // Het normale Quizzo-account blijft ingelogd na refresh/rejoin.
+ // Sitebeheer blijft bewust apart en wordt nooit opgeslagen.
+ localStorage.setItem("quizzo_user",JSON.stringify(user));
  ADM=null;
  home();
-} 
-user=null;
+}
+try{
+ const savedUser=JSON.parse(localStorage.getItem("quizzo_user")||"null");
+ if(savedUser && savedUser.uid && (savedUser.displayName || savedUser.email)){
+  user={uid:String(savedUser.uid),displayName:String(savedUser.displayName||savedUser.email||""),email:String(savedUser.email||"")};
+ }
+}catch(_){
+ localStorage.removeItem("quizzo_user");
+ user=null;
+}
 setTimeout(home,0);
 function authView(){
  const reg=mode=="reg";

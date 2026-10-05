@@ -1,19 +1,19 @@
-Quizzo V99 - definitieve Sitebeheer permission fix
+Quizzo V100 – normale account-login blijft behouden na refresh
 
 Aangepast:
-- database.rules.json toegevoegd. Dit was de ontbrekende oorzaak van permission_denied: de bestaande Firebase-regels blokkeerden siteSettings, updates en avatarBadges.
-- Sitebeheer kan siteSettings, updates en avatarBadges nu opslaan.
-- Admin kan bestaande quizzen beheren/verwijderen volgens de bestaande quiz-regels.
-- Eerste Sitebeheer-instelling slaat e-mail + wachtwoordhash op onder /admin.
-- Daarna blijft exact die Sitebeheer-login verplicht.
-- Normale Quizzo-login blijft apart.
-- Sitebeheer blijft binnen de normale Quizzo-interface.
-- Foutmeldingen tonen nu ook de echte Firebase-fout in de console.
-- Cacheversie verhoogd naar V99.
+- app.js
+  - Het normale Quizzo-account wordt na succesvol inloggen opgeslagen in localStorage.
+  - Bij refresh/rejoin wordt het normale account automatisch teruggeladen.
+  - De normale gebruiker hoeft dus niet opnieuw in te loggen.
+  - Sitebeheer blijft volledig apart: ADM wordt NIET opgeslagen en wordt bij een refresh/reload opnieuw afgesloten.
+  - Uitloggen via de normale Quizzo-uitlogactie verwijdert het opgeslagen normale account zoals voorheen.
 
-BELANGRIJK:
-1. Upload database.rules.json naar Firebase Realtime Database > Rules en publiceer de regels.
-2. Upload daarna app.js en index.html.
-3. Alleen app.js/index.html/database.rules.json zijn aangepast.
+- index.html
+  - Cacheversie verhoogd naar V100 zodat de nieuwe app.js daadwerkelijk geladen wordt.
 
-Let op: Quizzo gebruikt een eigen login in de database en geen Firebase Authentication. Daarom kan Firebase zonder Auth niet server-side controleren of een Sitebeheer-wachtwoord correct is; de regels laten de Sitebeheer-instellingen daarom schrijven. De Sitebeheer-login zelf blijft wel verplicht in de interface.
+Belangrijk:
+Upload alleen deze twee bestanden als vervanging van je huidige bestanden:
+1. app.js
+2. index.html
+
+De Firebase-regels hoeven voor deze wijziging niet aangepast te worden.
