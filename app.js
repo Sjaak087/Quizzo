@@ -399,7 +399,17 @@ async function openPlayChooser(qz,ownerId,id){
  await loadSiteConfig();
  document.querySelectorAll(".modal").forEach(x=>x.remove());
  const m=document.createElement("div");m.className="modal";
- m.innerHTML=`<div class="card mode-card"><div class="public-mode-badge">🌍 Openbare quiz</div><h2>${esc(qz.title)}</h2><p>Kies hoe je deze quiz wilt spelen. De quiz blijft alleen-lezen voor jou.</p><button class="btn b" data-a="publicSolo" data-owner="${esc(ownerId)}" data-id="${esc(id)}" ${gameOnline("solo")?"":"disabled"}>👤 Alleen spelen ${SITE_CFG.gameTypes?.solo?.new?"<i class="site-new-badge">Nieuw</i>":""}</button><button class="btn g" data-a="publicHost" data-owner="${esc(ownerId)}" data-id="${esc(id)}" ${gameOnline("multiplayer")?"":"disabled"}>🎮 Multiplayer hosten ${SITE_CFG.gameTypes?.multiplayer?.new?"<i class="site-new-badge">Nieuw</i>":""}</button><button class="btn w" data-a="closem">Annuleren</button></div>`;
+ const card=document.createElement("div");
+ card.className="card mode-card";
+ const badge=document.createElement("div"); badge.className="public-mode-badge"; badge.textContent="🌍 Openbare quiz";
+ const title=document.createElement("h2"); title.textContent=qz.title||"Openbare quiz";
+ const info=document.createElement("p"); info.textContent="Kies hoe je deze quiz wilt spelen. De quiz blijft alleen-lezen voor jou.";
+ const solo=document.createElement("button"); solo.className="btn b"; solo.dataset.a="publicSolo"; solo.dataset.owner=ownerId; solo.dataset.id=id; solo.disabled=!gameOnline("solo"); solo.textContent="👤 Alleen spelen";
+ if(SITE_CFG.gameTypes?.solo?.new){const b=document.createElement("i");b.className="site-new-badge";b.textContent="Nieuw";solo.append(" ",b)}
+ const multi=document.createElement("button"); multi.className="btn g"; multi.dataset.a="publicHost"; multi.dataset.owner=ownerId; multi.dataset.id=id; multi.disabled=!gameOnline("multiplayer"); multi.textContent="🎮 Multiplayer hosten";
+ if(SITE_CFG.gameTypes?.multiplayer?.new){const b=document.createElement("i");b.className="site-new-badge";b.textContent="Nieuw";multi.append(" ",b)}
+ const close=document.createElement("button"); close.className="btn w"; close.dataset.a="closem"; close.textContent="Annuleren";
+ card.append(badge,title,info,solo,multi,close); m.append(card);
  document.body.append(m);
 }
 function publicQuestionHtml(q,i){

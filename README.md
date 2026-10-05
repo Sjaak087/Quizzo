@@ -1,8 +1,11 @@
-# Quizzo v92 – foutfix
+# Quizzo v93
+
+Foutfix voor de Sitebeheer-update.
 
 Aangepast:
-- Cacheversies verhoogd van v91 naar v92 voor `style.css`, `avatars.js` en `app.js`, zodat een oude gecachte JavaScript-versie niet opnieuw wordt geladen.
-- Een inline Quizzo-favicon toegevoegd, zodat de browser niet meer automatisch `favicon.ico` probeert te laden en de 404 verdwijnt.
-- De bestaande V91-functionaliteit en sitebeheer-code verder niet aangepast.
+- `app.js`: de problematische grote template literal rond regel 402 is vervangen door normale DOM-opbouw. Dit voorkomt de `Unexpected identifier 'site'` syntaxfout.
+- `index.html`: alle cacheversies verhoogd naar v93.
+- `index.html`: expliciete favicon toegevoegd.
+- `favicon.ico`: echte favicon toegevoegd zodat de `/favicon.ico` 404 verdwijnt.
 
-Gebruik: vervang alleen `index.html` en gebruik de meegeleverde README.
+Alleen gewijzigde/nieuwe bestanden zitten in deze ZIP.
