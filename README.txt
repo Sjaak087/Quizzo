@@ -1,9 +1,12 @@
-Quizzo V111 – Schuifregelaar zichtbaar in singleplayer
+Quizzo – V112 Schuifregelaar
 
-Fix:
-- De Schuifregelaar ontbrak in het singleplayer-vraagscherm.
-- Singleplayer gebruikt nu hetzelfde volledige Schuifregelaar-scherm als multiplayer.
-- De bestaande interne stapberekening, afgeronde waarden en puntentelling blijven behouden.
+Aangepast:
+- Schuifregelaar kan nu meer dan 100 posities gebruiken.
+- De automatisch gekozen stapgrootte gebruikt nette waarden zoals 1, 2, 5, 10, 20, 50, 100, 500, 1000 enzovoort in plaats van willekeurige stapgroottes.
+- Het juiste antwoord wordt altijd als exacte positie opgenomen, ook wanneer het niet precies op de normale stapverdeling valt.
+- Puntenverdeling gewijzigd naar 80% afstand en 20% tijd.
+- Bestaande Schuifregelaar-vragen blijven ondersteund.
 
-Aangepast bestand:
+Bestanden in deze ZIP:
 - app.js
+- README.txt
