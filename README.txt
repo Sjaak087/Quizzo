@@ -1,12 +1,11 @@
-Quizzo – V112 Schuifregelaar
+Quizzo V113 – Schuifregelaar fix
 
 Aangepast:
-- Schuifregelaar kan nu meer dan 100 posities gebruiken.
-- De automatisch gekozen stapgrootte gebruikt nette waarden zoals 1, 2, 5, 10, 20, 50, 100, 500, 1000 enzovoort in plaats van willekeurige stapgroottes.
-- Het juiste antwoord wordt altijd als exacte positie opgenomen, ook wanneer het niet precies op de normale stapverdeling valt.
-- Puntenverdeling gewijzigd naar 80% afstand en 20% tijd.
-- Bestaande Schuifregelaar-vragen blijven ondersteund.
+- Singleplayer toont na de laatste vraag weer correct het podium in plaats van het spel direct te verwijderen.
+- Schuifregelaar gebruikt nette stapgroottes van 1/2/5 x 10^n.
+- De zichtbare schaal bestaat uit afgeronde waarden zoals 500, 1000, 1500, 2000 wanneer de gekozen stap dat toelaat.
+- Het juiste antwoord wordt altijd exact op de schaal opgenomen; de schaal kiest daarvoor automatisch een geschikte nette stap.
+- Maximaal 1000 schuifposities.
 
-Bestanden in deze ZIP:
+Aangepast bestand:
 - app.js
-- README.txt

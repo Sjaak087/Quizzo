@@ -505,21 +505,21 @@ act.play=async d=>{
 /* ---------- Editor ---------- */
 const newQ=(type="quiz")=>type==="tf"?{type:"tf",text:"",time:20,points:1000,doublePoints:false,leaderboard:true,a:["Waar","Niet waar"],correct:-1}:type==="dia"?{type:"dia",text:"",info:"",time:10,points:1000,doublePoints:false,leaderboard:true,a:[],correct:-1}:type==="typing"?{type:"typing",text:"",time:20,points:1000,doublePoints:false,leaderboard:true,a:[""],correct:-1}:type==="slider"?{type:"slider",text:"",time:30,points:1000,doublePoints:false,leaderboard:true,a:[],start:1,end:100,correctValue:50,correctStep:-1}:{type:"quiz",text:"",time:20,points:1000,doublePoints:false,leaderboard:true,a:["","","",""],correct:-1};
 const niceSliderStep=v=>{const n=Math.max(1,Number(v)||1);const p=10**Math.floor(Math.log10(n));const base=n/p;const m=base<=1?1:base<=2?2:base<=5?5:10;return Math.max(1,Math.round(m*p))};
+const sliderNiceCandidates=()=>{const out=[];for(let e=0;e<=15;e++){const p=10**e;out.push(p,2*p,5*p)}return [...new Set(out)].sort((a,b)=>b-a)};
 const sliderInfo=q=>{
- const start=Number(q.start),end=Number(q.end),correct=Number(q.correctValue);
+ const start=Number(q.start),end=Number(q.end),rawCorrect=Number(q.correctValue);
  if(!Number.isFinite(start)||!Number.isFinite(end)||start<1||end<start)return {count:0,step:0,values:[]};
- const span=end-start;
- if(span===0)return {count:1,step:0,values:[start]};
- const targetCount=Math.min(1000,Math.max(101,Math.ceil(span/Math.max(1,span/500))));
- const rawStep=span/Math.max(1,targetCount-1);
- let step=niceSliderStep(rawStep);
+ const correct=Number.isFinite(rawCorrect)?Math.max(start,Math.min(end,Math.round(rawCorrect))):start;
+ if(start===end)return {count:1,step:0,values:[start]};
+ const span=end-start,preferred=niceSliderStep(span/500),candidates=sliderNiceCandidates();
+ let step=candidates.find(v=>v<=preferred&&correct%v===0&&Math.floor(end/v)-Math.ceil(start/v)+1<=1000);
+ if(!step)step=candidates.find(v=>correct%v===0&&Math.floor(end/v)-Math.ceil(start/v)+1<=1000);
+ if(!step)step=1;
+ let first=Math.ceil(start/step)*step,last=Math.floor(end/step)*step;
+ if(first>last){first=start;last=end;step=1}
  const values=[];
- for(let v=start;v<=end;v+=step){values.push(v);if(values.length>10000)break}
- if(values[values.length-1]!==end && values.length<10000)values.push(end);
- if(Number.isFinite(correct)){
-   const c=Math.max(start,Math.min(end,Math.floor(correct)));
-   if(!values.includes(c))values.push(c);
- }
+ for(let v=first;v<=last;v+=step){values.push(v);if(values.length>1000)break}
+ if(!values.includes(correct))values.push(correct);
  values.sort((a,b)=>a-b);
  return {count:values.length,step,values};
 };
@@ -706,12 +706,12 @@ const startQuestion=(ni)=>{
 act.next=()=>{
  if(G.state==="slide"){
   const q=QS()[G.q],last=G.q+1>=QS().length;
-  if(last)return remove(ref(db,"games/"+CODE));
+  if(last)return G.mode==="solo"?update(ref(db,"games/"+CODE),{state:"end"}):remove(ref(db,"games/"+CODE));
   return q.leaderboard===false?startQuestion(G.q+1):update(ref(db,"games/"+CODE),{state:"board"});
  }
  if(G.state==="reveal"){
   const q=QS()[G.q],last=G.q+1>=QS().length;
-  if(last)return remove(ref(db,"games/"+CODE));
+  if(last)return G.mode==="solo"?update(ref(db,"games/"+CODE),{state:"end"}):remove(ref(db,"games/"+CODE));
   return q.leaderboard===false?startQuestion(G.q+1):update(ref(db,"games/"+CODE),{state:"board"});
  }
  if(G.state=="board")return startQuestion(G.q+1);
