@@ -1,9 +1,19 @@
-Quizzo V106
+Quizzo – Schuifregelaar vraagtype
 
-Aangepast:
-- De automatische update controle ververst de pagina niet meer constant.
-- Quizzo controleert nu slechts elke 30 seconden of er een nieuwere versie beschikbaar is.
-- Bij een echte nieuwe versie wordt één keer naar de nieuwe versie gegaan.
-- De Quizzo buildversie staat op 105 zodat de huidige V105-deployment niet in een refresh-loop terechtkomt.
+Aangepast bestand:
+- app.js
 
-ZIP bevat alleen de aangepaste bestanden en deze README.
+Toegevoegd:
+- Nieuw vraagtype: Schuifregelaar.
+- Je stelt een vraag, begin- en eindnummer in.
+- Quizzo berekent automatisch maximaal 100 gelijk verdeelde stappen.
+- In de editor kies je de juiste stap met een schuifregelaar.
+- Spelers schuiven tijdens het spelen naar hun gekozen waarde en versturen daarna hun antwoord.
+- Punten zijn vooral gebaseerd op hoe dicht de speler bij de juiste stap zit (90%) en veel minder op tijd (10%).
+- Dubbele punten blijven werken.
+- Het vraagtype staat ook in Sitebeheer onder Beheer > Vraagtypes, inclusief Online/Offline en Nieuw-badge.
+- Sitebeheer kan quizzen met dit vraagtype testen.
+
+Let op:
+- Zet "Schuifregelaar" in Sitebeheer op ONLINE voordat gewone spelers dit vraagtype kunnen gebruiken.
+- De ZIP bevat alleen het aangepaste bestand en deze README.
