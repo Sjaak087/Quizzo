@@ -1,14 +1,17 @@
-Quizzo V103 – Sitebeheer login gefixt en Quizzo-stijl verbeterd
+Quizzo V104 – Uitloggen en automatische versie-update
 
 Aangepast:
-- De Sitebeheer-knop werkte niet door een verkeerde CSS-selector in app.js. Dit is gefixt: de echte primaire knop (.qza-btn.primary) wordt nu correct gevonden en uitgeschakeld tijdens het inloggen.
-- De aparte Sitebeheer-login blijft een fullscreen overlay.
-- De vormgeving is aangepast naar een duidelijkere Quizzo-look: Quizzo-paars, witte kaart, speelse afgeronde vormen, paarse knop met diepte en Quizzo-achtige kleurcombinatie.
-- Het Sitebeheer-scherm heeft nu een kroon als centraal icoon en duidelijke QUIZZO • SITEBEHEER branding.
-- Wachtwoord tonen/verbergen en Enter om in te loggen blijven werken.
-- De normale Quizzo-login en overige Sitebeheer-functionaliteit zijn niet aangepast.
-- Cacheversies zijn verhoogd naar V103.
+- De knop "Uitloggen" bij het normale Quizzo-account logt nu alleen het Quizzo-account uit.
+- De aparte Sitebeheer-sessie wordt NIET meer automatisch beëindigd wanneer je je Quizzo-account uitlogt.
+- De aparte Sitebeheer-knop/uitlogfunctie blijft verantwoordelijk voor het afsluiten van Sitebeheer.
+- Quizzo controleert bij het starten automatisch of de live index.html een nieuwere app-versie aanbiedt.
+- Als een nieuwere versie beschikbaar is, wordt de pagina automatisch vernieuwd met de nieuwste versie, zodat een oude browsercache niet blijft hangen.
+- Cacheversies zijn verhoogd naar V104.
 
 Aangepaste bestanden:
 - app.js
 - index.html
+
+Let op:
+- Upload zowel app.js als index.html naar GitHub Pages.
+- Bij een volgende versie moet de app.js-versie en de cacheversies in index.html opnieuw worden verhoogd; de automatische controle gebruikt die versie om updates te herkennen.

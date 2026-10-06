@@ -1,5 +1,26 @@
 /* QUIZZO V80: exact V67 images embedded in this file to eliminate GitHub Pages 404s. */
 import {db, ref, get, set, update, remove, push, onValue, serverTimestamp} from "./firebase.js";
+const QUIZZO_BUILD_VERSION=104;
+
+// Controleert bij het starten of GitHub Pages al een nieuwere Quizzo-versie aanbiedt.
+// De live index.html wordt zonder browsercache opgehaald. Bij een hogere versie wordt
+// de pagina automatisch opnieuw geopend, waarna de nieuwe app.js/style/avatars geladen worden.
+async function checkForNewerQuizzoVersion(){
+  try{
+    const r=await fetch(`./index.html?quizzo_version_check=${Date.now()}`,{cache:"no-store"});
+    if(!r.ok)return;
+    const html=await r.text();
+    const m=html.match(/app\.js\?v=(\d+)/);
+    const latest=Number(m?.[1]||0);
+    if(latest>QUIZZO_BUILD_VERSION){
+      const u=new URL(location.href);
+      u.searchParams.set("quizzo_update",String(latest));
+      location.replace(u.href);
+    }
+  }catch(_){}
+}
+checkForNewerQuizzoVersion();
+
 
 window.__quizzoStarted = true;
 
@@ -330,7 +351,7 @@ function authView(){
     login(key,u.username,u.email)}
   }catch(err){toast(typeof err=="string"?err:em(err));btn.disabled=false}}}
 act.mode=()=>{mode=mode=="reg"?"login":"reg";authView()};
-act.out=()=>{localStorage.removeItem("quizzo_user");sessionStorage.removeItem("quizzo_adm");ADM=null;user=null;tab="join";home()};
+act.out=()=>{localStorage.removeItem("quizzo_user");user=null;tab="join";home()};
 
 /* ---------- Home ---------- */
 function home(){
@@ -904,7 +925,6 @@ act.usave=async()=>{if(!ADM)return;const t=$("#ut")?.value.trim(),d=$("#ud")?.va
 act.uedit=d=>{if(!ADM)return;EDITU=d.id;updateEditorHtml()};act.ucancel=()=>{EDITU=null;adminTab="updates";loadUpdates().then(()=>{renderAdminTabs();renderUpdateLogAdmin()})};
 act.udel=async d=>{if(!ADM||!confirm("Deze update verwijderen?"))return;try{await priv({[`updates/${d.id}`]:null})}catch(e){return adminFail(e)}if(EDITU===d.id)EDITU=null;LOGL=await loadUpdates();renderUpdateLogAdmin()};
 act.back=act.adminClose;
-act.out=act.adminLogout;
 
 /* ---------- Global interaction + boot ---------- */
 
