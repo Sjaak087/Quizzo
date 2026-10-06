@@ -1,19 +1,20 @@
-Quizzo – Schuifregelaar vraagtype
+QUIZZO V108 – Schuifregelaar verbeterd
 
-Aangepast bestand:
+Aangepast:
+- De Schuifregelaar gebruikt in de quiz een volledige, schermvullende antwoordweergave.
+- Het juiste antwoord in de quiz-editor wordt nu gewoon als een cijfer ingevuld.
+- De interne stapgrootte wordt automatisch berekend en nergens aan spelers getoond.
+- De waarden op de schuifregelaar worden afgerond op tientallen waar dat mogelijk is.
+- De interne berekening blijft maximaal 100 posities gebruiken.
+- Punten blijven vooral gebaseerd op afstand (90%) en veel minder op tijd (10%).
+- De duidelijke NIEUW-badge staat nu zichtbaar rechtsboven op het vraagtype zelf.
+- De NIEUW-badge is ook duidelijk zichtbaar in Sitebeheer bij Vraagtypes.
+- Bestaande Schuifregelaar-vragen blijven compatibel; oude correcte stapwaarden worden automatisch omgezet naar een correct cijfer.
+- index.html is bijgewerkt naar app.js?v=108 zodat de nieuwe app-versie direct wordt geladen.
+
+Bestanden in deze ZIP:
 - app.js
+- index.html
+- README.txt
 
-Toegevoegd:
-- Nieuw vraagtype: Schuifregelaar.
-- Je stelt een vraag, begin- en eindnummer in.
-- Quizzo berekent automatisch maximaal 100 gelijk verdeelde stappen.
-- In de editor kies je de juiste stap met een schuifregelaar.
-- Spelers schuiven tijdens het spelen naar hun gekozen waarde en versturen daarna hun antwoord.
-- Punten zijn vooral gebaseerd op hoe dicht de speler bij de juiste stap zit (90%) en veel minder op tijd (10%).
-- Dubbele punten blijven werken.
-- Het vraagtype staat ook in Sitebeheer onder Beheer > Vraagtypes, inclusief Online/Offline en Nieuw-badge.
-- Sitebeheer kan quizzen met dit vraagtype testen.
-
-Let op:
-- Zet "Schuifregelaar" in Sitebeheer op ONLINE voordat gewone spelers dit vraagtype kunnen gebruiken.
-- De ZIP bevat alleen het aangepaste bestand en deze README.
+Upload deze bestanden naar dezelfde map als je huidige Quizzo-bestanden. Er zijn geen andere bestanden gewijzigd.
