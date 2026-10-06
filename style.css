@@ -1163,3 +1163,21 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
  .slider-reveal-track{margin-left:4px;margin-right:4px}
  .slider-reveal-caption{justify-content:flex-start}
 }
+
+/* Multiplayer host: host watches, players answer. */
+.host-question-panel{width:min(900px,94vw);box-sizing:border-box;text-align:center;padding:clamp(24px,5vw,52px);border-radius:24px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
+.host-question-panel h1{font-size:clamp(30px,5vw,62px);line-height:1.1;margin:10px 0 26px}
+.host-question-kicker{font-size:13px;letter-spacing:.16em;font-weight:1000;opacity:.78}
+.host-question-panel .hbar,.host-question-panel .tbar{width:min(760px,100%);margin-left:auto;margin-right:auto}
+.host-answer-count{margin:24px 0 10px;font-size:clamp(22px,3vw,32px)}
+.host-question-panel p{margin:0 auto;max-width:700px;font-weight:700;line-height:1.5;opacity:.82}
+@media(max-width:700px){.host-question-panel{width:94vw;padding:24px 16px}.host-question-panel h1{font-size:clamp(28px,8vw,42px)}}
+
+/* Multiplayer host: host watches, players answer. */
+.host-question-panel{width:min(900px,94vw);box-sizing:border-box;text-align:center;padding:clamp(24px,5vw,52px);border-radius:24px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
+.host-question-panel h1{font-size:clamp(30px,5vw,62px);line-height:1.1;margin:10px 0 26px}
+.host-question-kicker{font-size:13px;letter-spacing:.16em;font-weight:1000;opacity:.78}
+.host-question-panel .hbar,.host-question-panel .tbar{width:min(760px,100%);margin-left:auto;margin-right:auto}
+.host-answer-count{margin:24px 0 10px;font-size:clamp(22px,3vw,32px)}
+.host-question-panel p{margin:0 auto;max-width:700px;font-weight:700;line-height:1.5;opacity:.82}
+@media(max-width:700px){.host-question-panel{width:94vw;padding:24px 16px}.host-question-panel h1{font-size:clamp(28px,8vw,42px)}}

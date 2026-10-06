@@ -1,6 +1,6 @@
 /* QUIZZO V80: exact V67 images embedded in this file to eliminate GitHub Pages 404s. */
 import {db, ref, get, set, update, remove, push, onValue, serverTimestamp} from "./firebase.js";
-const QUIZZO_BUILD_VERSION=114;
+const QUIZZO_BUILD_VERSION=115;
 
 // Controleert bij het starten of GitHub Pages al een nieuwere Quizzo-versie aanbiedt.
 // De live index.html wordt zonder browsercache opgehaald. Bij een hogere versie wordt
@@ -723,20 +723,20 @@ const startQuestion=(ni)=>{
 act.next=()=>{
  if(G.state==="slide"){
   const q=QS()[G.q],last=G.q+1>=QS().length;
-  if(last)return G.mode==="solo"?update(ref(db,"games/"+CODE),{state:"end"}):remove(ref(db,"games/"+CODE));
+  if(last)return update(ref(db,"games/"+CODE),{state:"end"});
   return q.leaderboard===false?startQuestion(G.q+1):update(ref(db,"games/"+CODE),{state:"board"});
  }
  if(G.state==="reveal"){
   const q=QS()[G.q],last=G.q+1>=QS().length;
-  if(last)return G.mode==="solo"?update(ref(db,"games/"+CODE),{state:"end"}):remove(ref(db,"games/"+CODE));
+  if(last)return update(ref(db,"games/"+CODE),{state:"end"});
   return q.leaderboard===false?startQuestion(G.q+1):update(ref(db,"games/"+CODE),{state:"board"});
  }
  if(G.state=="board")return startQuestion(G.q+1);
 };
 act.close=()=>remove(ref(db,"games/"+CODE));
-act.ans=d=>{if(G.state!="question"||now()>end()||ANS()[user.uid])return;const q=QS()[G.q];if(q.type==="typing")return act.typingSubmit();if(q.type==="slider")return act.sliderSubmit();set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{c:+d.i,t:now()})};
-act.sliderSubmit=()=>{if(G.state!=="question"||now()>end()||ANS()[user.uid]||QS()[G.q]?.type!=="slider")return;const input=$("#sliderInput");if(input)set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{v:+input.value,t:now()})};
-act.typingSubmit=()=>{if(G.state!=="question"||now()>end()||ANS()[user.uid]||!isTyping())return;const input=$("#typingInput");const value=input?.value?.trim()||"";if(!value)return toast("Typ eerst een antwoord in.");set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{v:value,t:now()})};
+act.ans=d=>{if(HOST&&G.mode!=="solo")return;if(G.state!="question"||now()>end()||ANS()[user.uid])return;const q=QS()[G.q];if(q.type==="typing")return act.typingSubmit();if(q.type==="slider")return act.sliderSubmit();set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{c:+d.i,t:now()})};
+act.sliderSubmit=()=>{if(HOST&&G.mode!=="solo")return;if(G.state!=="question"||now()>end()||ANS()[user.uid]||QS()[G.q]?.type!=="slider")return;const input=$("#sliderInput");if(input)set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{v:+input.value,t:now()})};
+act.typingSubmit=()=>{if(HOST&&G.mode!=="solo")return;if(G.state!=="question"||now()>end()||ANS()[user.uid]||!isTyping())return;const input=$("#typingInput");const value=input?.value?.trim()||"";if(!value)return toast("Typ eerst een antwoord in.");set(ref(db,`games/${CODE}/answers/${G.q}/${user.uid}`),{v:value,t:now()})};
 document.addEventListener("submit",e=>{if(e.target?.id==="typingForm"){e.preventDefault();act.typingSubmit()}});
 const sorted=()=>P().sort((a,b)=>(b.score||0)-(a.score||0));
 function rankMap(scores){return Object.fromEntries(P().sort((a,b)=>(scores[b.id]??(b.score||0))-(scores[a.id]??(a.score||0))).map((p,i)=>[p.id,i+1]))}
@@ -807,7 +807,7 @@ function paint(){
   if(G.state=="lobby")h=`<div class="stage"><h2>${esc(G.quiz.title)}</h2><div>Ga naar <b>Quiz joinen</b> en vul de code in</div><div class="code">${CODE}</div><div><b>${P().length}</b> spelers</div><div class="chips">${P().map(p=>`<span class="player-chip">${avatarMarkup(p,34)}<b>${esc(p.name)}</b></span>`).join("")||"Wachten op spelers..."}</div><button class="btn g" data-a="start" ${P().length?"":"disabled"}>Quiz starten</button> <button class="btn w" data-a="close">Annuleren</button></div>`;
   else if(G.state=="countdown")h=countdown(true);
   else if(G.state=="slide")h=slideView();
-  else if(G.state=="question")h=ANS()[user.uid]?`<div class="center"><div class="big-msg">Antwoord verstuurd</div>Wachten op de uitslag...</div>`:q.type==="slider"?`<div class="stage answer-screen slider-player"><div class="typing-question"><div class="typing-kicker">↔️ SCHUIFREGELAAR</div><h1>${esc(q.text)}</h1><p>Schuif de marker naar jouw beste schatting en verstuur daarna je antwoord.</p></div><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">Kies je waarde</div></div><div class="tbar"><div id="tb"></div></div><div class="slider-play-wrap"><div class="slider-play-value-wrap"><span class="slider-play-value" id="sliderPlayValue">${esc(String(sliderValue(q,Math.floor(Math.max(0,sliderInfo(q).count-1)/2))))}</span></div><input id="sliderInput" class="slider-play" type="range" min="0" max="${Math.max(0,sliderInfo(q).count-1)}" step="1" value="${Math.floor(Math.max(0,sliderInfo(q).count-1)/2)}" aria-label="Kies je antwoord"><div class="slider-range-labels"><span>${esc(String(sliderValue(q,0)))}</span><span>${esc(String(sliderValue(q,sliderInfo(q).count-1)))}</span></div><div class="slider-play-hint">Gebruik ook de pijltjestoetsen voor kleine stapjes.</div><button class="btn g slider-submit" data-a="sliderSubmit">Antwoord versturen</button></div></div>`:q.type==="typing"?`<div class="stage answer-screen typing-player"><div class="typing-question"><div class="typing-kicker">⌨️ TYPEN</div><h1>${esc(q.text)}</h1><p>Typ het antwoord zo goed mogelijk.</p></div><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">Typ je antwoord</div></div><div class="tbar"><div id="tb"></div></div><form id="typingForm" class="typing-form"><input id="typingInput" autocomplete="off" maxlength="160" placeholder="Typ hier je antwoord..." autofocus><button class="btn g typing-submit" type="submit">Antwoord versturen</button></form><p class="typing-note">Hoofdletters en leestekens maken niet uit.</p></div>`:`<div class="stage answer-screen"><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">${SOLO?"Kies je antwoord":"Kijk naar de host zijn scherm"}</div></div><div class="tbar"><div id="tb"></div></div><div class="agrid big ${q.type=='tf'?"tf":""}">${q.a.map((t,i)=>`<button class="ans ${cols(q)[i]}" data-a="ans" data-i="${i}"><span>${syms(q)[i]}</span><em>${esc(t)}</em></button>`).join("")}</div></div>`;
+  else if(G.state=="question")h=`<div class="stage host-question-panel"><div class="host-question-kicker">🎮 HOSTMODUS</div><h1>${esc(q.text)}</h1><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">Spelers zijn aan het antwoorden</div></div><div class="tbar"><div id="tb"></div></div><div class="host-answer-count"><b>${Object.keys(ANS()).length}</b> / <b>${P().length}</b> spelers hebben geantwoord</div><p>Je kunt als host niet zelf antwoorden. Zodra iedereen klaar is of de tijd om is, verschijnt de uitslag.</p></div>`;
   else if(G.state=="reveal"){
    const ps=P();
    if(q.type==="slider"){
@@ -826,6 +826,7 @@ function paint(){
   else if(G.state=="reveal")h=phoneSuccess(SOLO?(G.q+1<QS().length?(q.leaderboard===false?"Volgende vraag":"Naar tussenstand"):"Podium bekijken"):"");
   else if(G.state=="board")h=SOLO?`<div class="center leaderboard solo-board"><h1>Tussenstand</h1>${boardRows(sorted().slice(0,5))}<button class="btn b" data-a="next">Volgende vraag</button></div>`:`<div class="center"><div class="big-msg">Plek ${rank}</div><div>${me?.score||0} punten</div></div>`;
   else if(SOLO){const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn pod-player pod-player-${i+1}" style="--pod-player-delay:${["2s","2.8s","1.2s"][i]}">${avatarMarkup(t[i],72)}<b>${esc(t[i].name)}</b><small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><button class="btn r" data-a="close">Terug naar mijn quizzen</button></div>`;}
+  else if(G.state==="end"){const t=sorted().slice(0,3);h=`<div class="stage"><h1>Podium 🏆</h1><div class="pod">${[1,0,2].map(i=>t[i]?`<div class="pl"><div class="pn pod-player pod-player-${i+1}" style="--pod-player-delay:${["2s","2.8s","1.2s"][i]}">${avatarMarkup(t[i],72)}<b>${esc(t[i].name)}</b><small>${t[i].score||0}</small></div><div class="blk p${i+1}">${i+1}</div></div>`:"").join("")}</div><p>Wachten tot de host de quiz afsluit...</p></div>`;}
   else h=`<div class="center"><div class="big-msg">${rank<=3?["🥇","🥈","🥉"][rank-1]:""} Plek ${rank}</div><div>${me?.score||0} punten</div><p>Wachten tot de host afsluit...</p></div>`}
  A.innerHTML=h;
  if(G.state==="countdown"&&q.type!=="dia"&&q.doublePoints){setTimeout(()=>$(".countdown-title.after-bonus")?.classList.add("title-live"),DOUBLE_BONUS_INTRO_MS)}
