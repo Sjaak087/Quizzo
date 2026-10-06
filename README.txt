@@ -1,17 +1,24 @@
-Quizzo V104 – Uitloggen en automatische versie-update
+Quizzo V105 – Vaste Sitebeheer-login voor alle accounts
 
 Aangepast:
-- De knop "Uitloggen" bij het normale Quizzo-account logt nu alleen het Quizzo-account uit.
-- De aparte Sitebeheer-sessie wordt NIET meer automatisch beëindigd wanneer je je Quizzo-account uitlogt.
-- De aparte Sitebeheer-knop/uitlogfunctie blijft verantwoordelijk voor het afsluiten van Sitebeheer.
-- Quizzo controleert bij het starten automatisch of de live index.html een nieuwere app-versie aanbiedt.
-- Als een nieuwere versie beschikbaar is, wordt de pagina automatisch vernieuwd met de nieuwste versie, zodat een oude browsercache niet blijft hangen.
-- Cacheversies zijn verhoogd naar V104.
+- Sitebeheer gebruikt nu een volledig aparte, vaste login: e-mailadres + wachtwoord.
+- De Sitebeheer-login is NIET het wachtwoord van een normaal Quizzo-account.
+- De eerste keer dat Sitebeheer wordt geopend, moet de beheerder één keer een e-mailadres en wachtwoord instellen.
+- Deze gegevens worden opgeslagen onder /siteAdmin en worden daarna voor ALLE Quizzo-accounts gebruikt.
+- Een normaal Quizzo-account kan dus niet met zijn eigen wachtwoord Sitebeheer openen.
+- De oude /admin-opslag wordt niet meer gebruikt, zodat deze versie opnieuw een aparte Sitebeheer-login kan laten instellen.
+- De normale Quizzo-login blijft losstaan van Sitebeheer.
+- De normale knop Uitloggen logt alleen het Quizzo-account uit; Sitebeheer heeft een eigen uitlogactie.
+- Automatische versie-update uit V104 blijft behouden.
+- Cacheversies zijn verhoogd naar V105.
+
+BELANGRIJK:
+1. Upload database.rules.json naar Firebase Realtime Database > Rules en klik Publish.
+2. Upload daarna app.js en index.html.
+3. Bij de eerste keer Sitebeheer openen stel je de vaste Sitebeheer-e-mail en het vaste Sitebeheer-wachtwoord in.
+4. Iedereen gebruikt daarna precies diezelfde Sitebeheer-login, ongeacht welk Quizzo-account is ingelogd.
 
 Aangepaste bestanden:
 - app.js
 - index.html
-
-Let op:
-- Upload zowel app.js als index.html naar GitHub Pages.
-- Bij een volgende versie moet de app.js-versie en de cacheversies in index.html opnieuw worden verhoogd; de automatische controle gebruikt die versie om updates te herkennen.
+- database.rules.json

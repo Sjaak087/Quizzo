@@ -24,10 +24,6 @@
         ".write": true
       }
     },
-    "admin": {
-      ".read": true,
-      ".write": "!data.exists()"
-    },
     "siteSettings": {
       ".read": true,
       ".write": true
@@ -43,6 +39,10 @@
       "$id": {
         ".write": true
       }
+    },
+    "siteAdmin": {
+      ".read": true,
+      ".write": "!data.exists()"
     }
   }
 }

@@ -860,13 +860,13 @@ function adminAuthOverlay(mode){
    <div class="qza-icon">👑</div>
    <div class="qza-eyebrow">QUIZZO • SITEBEHEER</div>
    <h2 class="qza-title" id="qza-title">${first?"Sitebeheer instellen":"Sitebeheer"}</h2>
-   <p class="qza-sub">${first?"Maak de vaste beheerderslogin aan. Deze gegevens worden vanaf nu gebruikt om Sitebeheer te openen.":"Log in om toegang te krijgen tot het volledige Sitebeheer."}</p>
-   ${first?'<div class="qza-setup"><span class="qza-setup-dot"></span><span>Eerste configuratie · je gegevens worden voor Sitebeheer opgeslagen</span></div>':""}
+   <p class="qza-sub">${first?"Maak de vaste beheerderslogin aan. Deze gegevens worden één keer ingesteld en zijn daarna de vaste Sitebeheer-login voor alle Quizzo-accounts.":"Gebruik de vaste Sitebeheer-login. Dit is niet je Quizzo-account."}</p>
+   ${first?'<div class="qza-setup"><span class="qza-setup-dot"></span><span>Eerste configuratie · deze login geldt voor alle Quizzo-accounts</span></div>':""}
    <div class="qza-field"><label class="qza-label" for="admin-auth-email">E-mailadres</label><input id="admin-auth-email" class="qza-input" type="email" autocomplete="username" placeholder="jouw@email.nl"></div>
    <div class="qza-field"><label class="qza-label" for="admin-auth-password">Wachtwoord</label><div class="qza-input-wrap"><input id="admin-auth-password" class="qza-input password" type="password" autocomplete="current-password" placeholder="Je beheerderswachtwoord"><button type="button" class="qza-eye" id="admin-auth-eye" aria-label="Wachtwoord tonen">◉</button></div></div>
    <div class="qza-error" id="admin-auth-error" role="alert"></div>
    <div class="qza-actions"><button type="button" class="qza-btn cancel" data-a="adminAuthCancel">Annuleren</button><button type="button" class="qza-btn primary" data-a="adminAuthSubmit">${first?"Sitebeheer instellen":"Inloggen"}</button></div>
-   <div class="qza-foot">Beveiligde Sitebeheer-toegang · Quizzo</div>
+   <div class="qza-foot">Vaste Sitebeheer-login · voor alle Quizzo-accounts</div>
  </div>`;
  document.body.appendChild(o);
  const email=o.querySelector("#admin-auth-email"),pw=o.querySelector("#admin-auth-password"),eye=o.querySelector("#admin-auth-eye");
@@ -882,12 +882,12 @@ act.adminAuthSubmit=async()=>{
  if(!btn)return;
  btn.disabled=true;
  try{
-  const adminEmailSnap=await get(ref(db,"admin/email"));
+  const adminEmailSnap=await get(ref(db,"siteAdmin/email"));
   const adminEmail=adminEmailSnap.val();
-  const a=adminEmail?{email:adminEmail,salt:(await get(ref(db,"admin/salt"))).val(),hash:(await get(ref(db,"admin/hash"))).val()}:null;
+  const a=adminEmail?{email:adminEmail,salt:(await get(ref(db,"siteAdmin/salt"))).val(),hash:(await get(ref(db,"siteAdmin/hash"))).val()}:null;
   if(!a){
    const salt=hex(crypto.getRandomValues(new Uint8Array(16))),hash=await hashPw(pw,salt);
-   await set(ref(db,"admin"),{email,salt,hash,createdAt:Date.now()});
+   await set(ref(db,"siteAdmin"),{email,salt,hash,createdAt:Date.now()});
    ADM={uid:user?.uid||null,email};
   }else{
    if(String(a.email||"").toLowerCase()!==email || !a.salt || !a.hash || a.hash!==await hashPw(pw,a.salt))throw new Error("E-mailadres of wachtwoord klopt niet.");
@@ -899,7 +899,7 @@ act.adminAuthSubmit=async()=>{
 act.admin=async()=>{
  if(!user)return authView();
  if(ADM){tab="admin";home();return}
- try{const a=(await get(ref(db,"admin"))).val();adminAuthOverlay(a?"login":"setup")}catch(e){toast(em(e)||"Sitebeheer kan niet worden gecontroleerd.")}
+ try{const a=(await get(ref(db,"siteAdmin"))).val();adminAuthOverlay(a?"login":"setup")}catch(e){toast(em(e)||"Sitebeheer kan niet worden gecontroleerd.")}
 };
 act.adminClose=()=>{EDITU=null;tab="join";home()};
 act.adminLogout=()=>{ADM=null;EDITU=null;ADMIN_EDIT=null;Q=null;QID=null;tab="join";home();toast("Sitebeheer afgesloten.")};
@@ -918,7 +918,7 @@ act.adminTestHost=async d=>{if(!ADM)return;try{await loadSiteConfig();if(!gameOn
 act.adminEditQuiz=async d=>{if(!ADM)return;try{const owner=d.owner,id=d.id,v=(await get(ref(db,`quizzes/${owner}/${id}`))).val();if(!v)return toast("Deze quiz bestaat niet meer.");Q={title:v.title||"",description:v.description||"",theme:safeTheme(v.theme),public:v.public!==false,creatorName:v.creatorName||"Quizzo speler",questions:arr(v.questions).map(q=>({...q,a:q.type==="dia"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false}))};QID=id;ADMIN_EDIT={ownerId:owner,id};SEL=Math.max(0,Q.questions.length?0:-1);editorView()}catch(e){toast(em(e))}};
 async function renderAdminQuizzes(){const c=$("#adminPanel");if(!c)return;let rows=[];try{const all=(await get(ref(db,"quizzes"))).val()||{};Object.entries(all).forEach(([owner,qs])=>Object.entries(qs||{}).forEach(([id,q])=>q&&typeof q==="object"&&rows.push({owner,id,q})));}catch(e){return c.innerHTML=`<section class="admin-card"><h2>Openbare quizzen</h2><p>De quizdatabase kon niet geladen worden.</p></section>`}rows.sort((a,b)=>(Number(b.q.updated)||0)-(Number(a.q.updated)||0));c.innerHTML=`<section class="admin-card"><div class="admin-card-head"><div><span class="eyebrow">QUIZZEN</span><h2>Alle quizzen</h2><p>Elke opgeslagen quiz staat hier. Je kunt ze openen en aanpassen.</p></div><span class="admin-count">${rows.length} quizzen</span></div><div class="admin-quiz-list">${rows.map(x=>`<div class="admin-quiz-row"><div class="admin-quiz-info"><div class="admin-quiz-title"><b>${esc(x.q.title||"Naamloze quiz")}</b><span class="admin-visibility ${x.q.public===false?"private":"public"}">${x.q.public===false?"🔒 Privé":"🌍 Openbaar"}</span></div><small>👤 ${esc(x.q.creatorName||x.owner)} · ${arr(x.q.questions).length} onderdelen</small></div><div class="admin-quiz-actions"><button class="btn b sm" data-a="adminEditQuiz" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Bewerken</button>${gameOnline("solo")?`<button class="btn g sm" data-a="adminTestSolo" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Test solo</button>`:""}${gameOnline("multiplayer")?`<button class="btn g sm" data-a="adminTestHost" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Test host</button>`:""}<button class="btn r sm" data-a="adminDeleteQuiz" data-owner="${esc(x.owner)}" data-id="${esc(x.id)}">Verwijderen</button></div></div>`).join("")||`<div class="admin-empty">Nog geen quizzen.</div>`}</div></section>`}
 act.adminDeleteQuiz=async d=>{if(!ADM||!confirm("Deze quiz definitief verwijderen?"))return;try{await priv({[`quizzes/${d.owner}/${d.id}`]:null,[`siteSettings/quizAccess/${d.owner}/${d.id}`]:null});toast("Quiz verwijderd.");renderAdminQuizzes()}catch(e){adminFail(e)}};
-act.asetup=async()=>{const e=$("#ae")?.value.trim().toLowerCase(),p=$("#ap")?.value;if(!/^\S+@\S+\.\S+$/.test(e||""))return toast("Vul een geldig e-mailadres in.");if((p||"").length<6)return toast("Wachtwoord: minimaal 6 tekens.");if(p!==$("#ap2")?.value)return toast("De wachtwoorden zijn niet gelijk.");const salt=hex(crypto.getRandomValues(new Uint8Array(16))),hash=await hashPw(p,salt);try{await set(ref(db,"admin"),{email:e,salt,hash});ADM=hash;toast("Beheerder ingesteld!");act.admin()}catch(err){toast("Beheerder instellen mislukt. Controleer de Firebase-regels.")}};
+act.asetup=async()=>{const e=$("#ae")?.value.trim().toLowerCase(),p=$("#ap")?.value;if(!/^\S+@\S+\.\S+$/.test(e||""))return toast("Vul een geldig e-mailadres in.");if((p||"").length<6)return toast("Wachtwoord: minimaal 6 tekens.");if(p!==$("#ap2")?.value)return toast("De wachtwoorden zijn niet gelijk.");const salt=hex(crypto.getRandomValues(new Uint8Array(16))),hash=await hashPw(p,salt);try{await set(ref(db,"siteAdmin"),{email:e,salt,hash});ADM=hash;toast("Beheerder ingesteld!");act.admin()}catch(err){toast("Beheerder instellen mislukt. Controleer de Firebase-regels.")}};
 act.alogin=async()=>{toast("Sitebeheer gebruikt je normale Quizzo-account. Log eerst normaal in.")};
 act.newUpdate=()=>{if(!ADM)return;EDITU=null;updateEditorHtml()};
 act.usave=async()=>{if(!ADM)return;const t=$("#ut")?.value.trim(),d=$("#ud")?.value,h=$("#uh")?.value,b=$("#ub")?.value.trim();if(!t||!d||!h||!b)return toast("Vul titel, datum, tijd en beschrijving in.");const id=EDITU||push(ref(db,"updates")).key;try{await priv({[`updates/${id}`]:{title:t,date:d,time:h,body:b}})}catch(e){return adminFail(e)}EDITU=null;toast("Update opgeslagen!");adminTab="updates";LOGL=await loadUpdates();renderAdminTabs();renderUpdateLogAdmin()};
