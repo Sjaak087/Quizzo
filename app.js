@@ -1,6 +1,6 @@
 /* QUIZZO V80: exact V67 images embedded in this file to eliminate GitHub Pages 404s. */
 import {db, ref, get, set, update, remove, push, onValue, serverTimestamp} from "./firebase.js";
-const QUIZZO_BUILD_VERSION=104;
+const QUIZZO_BUILD_VERSION=105;
 
 // Controleert bij het starten of GitHub Pages al een nieuwere Quizzo-versie aanbiedt.
 // De live index.html wordt zonder browsercache opgehaald. Bij een hogere versie wordt

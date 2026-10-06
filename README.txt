@@ -1,24 +1,9 @@
-Quizzo V105 – Vaste Sitebeheer-login voor alle accounts
+Quizzo V106
 
 Aangepast:
-- Sitebeheer gebruikt nu een volledig aparte, vaste login: e-mailadres + wachtwoord.
-- De Sitebeheer-login is NIET het wachtwoord van een normaal Quizzo-account.
-- De eerste keer dat Sitebeheer wordt geopend, moet de beheerder één keer een e-mailadres en wachtwoord instellen.
-- Deze gegevens worden opgeslagen onder /siteAdmin en worden daarna voor ALLE Quizzo-accounts gebruikt.
-- Een normaal Quizzo-account kan dus niet met zijn eigen wachtwoord Sitebeheer openen.
-- De oude /admin-opslag wordt niet meer gebruikt, zodat deze versie opnieuw een aparte Sitebeheer-login kan laten instellen.
-- De normale Quizzo-login blijft losstaan van Sitebeheer.
-- De normale knop Uitloggen logt alleen het Quizzo-account uit; Sitebeheer heeft een eigen uitlogactie.
-- Automatische versie-update uit V104 blijft behouden.
-- Cacheversies zijn verhoogd naar V105.
+- De automatische update controle ververst de pagina niet meer constant.
+- Quizzo controleert nu slechts elke 30 seconden of er een nieuwere versie beschikbaar is.
+- Bij een echte nieuwe versie wordt één keer naar de nieuwe versie gegaan.
+- De Quizzo buildversie staat op 105 zodat de huidige V105-deployment niet in een refresh-loop terechtkomt.
 
-BELANGRIJK:
-1. Upload database.rules.json naar Firebase Realtime Database > Rules en klik Publish.
-2. Upload daarna app.js en index.html.
-3. Bij de eerste keer Sitebeheer openen stel je de vaste Sitebeheer-e-mail en het vaste Sitebeheer-wachtwoord in.
-4. Iedereen gebruikt daarna precies diezelfde Sitebeheer-login, ongeacht welk Quizzo-account is ingelogd.
-
-Aangepaste bestanden:
-- app.js
-- index.html
-- database.rules.json
+ZIP bevat alleen de aangepaste bestanden en deze README.
