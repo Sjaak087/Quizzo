@@ -1,6 +1,6 @@
 /* QUIZZO V80: exact V67 images embedded in this file to eliminate GitHub Pages 404s. */
 import {db, ref, get, set, update, remove, push, onValue, serverTimestamp} from "./firebase.js";
-const QUIZZO_BUILD_VERSION=115;
+const QUIZZO_BUILD_VERSION=116;
 
 // Controleert bij het starten of GitHub Pages al een nieuwere Quizzo-versie aanbiedt.
 // De live index.html wordt zonder browsercache opgehaald. Bij een hogere versie wordt
@@ -526,13 +526,16 @@ const sliderInfo=q=>{
 const sliderValue=(q,i)=>{const x=sliderInfo(q);return x.values[Math.max(0,Math.min(x.count-1,Number(i)||0))]};
 const sliderCorrectIndex=q=>{const x=sliderInfo(q);if(!x.count)return -1;const target=Number.isFinite(Number(q.correctValue))?Number(q.correctValue):(Number.isInteger(q.correctStep)?sliderValue(q,q.correctStep):x.values[0]);let best=0,bestD=Infinity;x.values.forEach((v,i)=>{const d=Math.abs(v-target);if(d<bestD){bestD=d;best=i}});return best};
 const sliderCorrectValue=q=>{const x=sliderInfo(q);const idx=sliderCorrectIndex(q);return idx>=0?x.values[idx]:0};
+const sliderTolerance=q=>{const start=Number(q.start),end=Number(q.end),span=Math.max(0,end-start);return Math.max(1,Math.min(span||1,10))};
+const sliderRange=q=>{const correct=sliderCorrectValue(q),tol=sliderTolerance(q),start=Number(q.start),end=Number(q.end);return {min:Math.max(start,correct-tol),max:Math.min(end,correct+tol),tolerance:tol}};
+const sliderInRange=(q,value)=>{const v=Number(value),r=sliderRange(q);return Number.isFinite(v)&&v>=r.min&&v<=r.max};
 const sliderPositionPercent=(q,value)=>{
  const start=Number(q.start),end=Number(q.end),v=Number(value);
  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||!Number.isFinite(v))return 0;
  return Math.max(0,Math.min(100,((v-start)/(end-start))*100));
 };
-const normalizeQuestion=q=>{const base={...q,a:q.type==="dia"||q.type==="slider"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false};if(q.type!=="slider")return base;const start=Number.isFinite(Number(q.start))&&Number(q.start)>=1?Math.floor(Number(q.start)):1;const end=Number.isFinite(Number(q.end))&&Number(q.end)>=start?Math.floor(Number(q.end)):Math.max(start,100);const correct=Number.isFinite(Number(q.correctValue))?Number(q.correctValue):50;return {...base,start,end,correctValue:Math.max(start,Math.min(end,correct)),correctStep:Number.isInteger(q.correctStep)?q.correctStep:-1}};
-const qOk=q=>q.type==="dia"?q.text.trim()&&q.info.trim()&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.type==="typing"?q.text.trim()&&q.a.some(x=>x.trim())&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.type==="slider"?q.text.trim()&&Number.isInteger(Number(q.start))&&Number.isInteger(Number(q.end))&&Number(q.start)>=1&&Number(q.end)>=Number(q.start)&&Number(q.end)<=Number.MAX_SAFE_INTEGER&&Number.isFinite(Number(q.correctValue))&&Number(q.correctValue)>=Number(q.start)&&Number(q.correctValue)<=Number(q.end)&&sliderInfo(q).count>=2&&q.time>=10&&q.time<=120&&Number.isInteger(q.time):q.text.trim()&&q.a.every(x=>x.trim())&&q.correct>=0&&q.time>=5&&q.time<=120&&Number.isInteger(q.time);
+const normalizeQuestion=q=>{const base={...q,a:q.type==="dia"||q.type==="slider"?[]:arr(q.a),info:q.info||"",time:Number.isInteger(q.time)?q.time:20,points:1000,doublePoints:q.type==="dia"?false:!!q.doublePoints,leaderboard:q.leaderboard!==false};if(q.type!=="slider")return base;const start=Number.isFinite(Number(q.start))&&Number(q.start)>=1?Math.floor(Number(q.start)):1;const end=Number.isFinite(Number(q.end))&&Number(q.end)>=start?Math.floor(Number(q.end)):Math.max(start,100);const correct=Number.isFinite(Number(q.correctValue))?Number(q.correctValue):50;const tolerance=Math.max(1,Math.min(end-start||1,10));return {...base,start,end,correctValue:Math.max(start,Math.min(end,correct)),tolerance,correctStep:Number.isInteger(q.correctStep)?q.correctStep:-1}};
+const qOk=q=>q.type==="dia"?q.text.trim()&&q.info.trim()&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.type==="typing"?q.text.trim()&&q.a.some(x=>x.trim())&&q.time>=5&&q.time<=120&&Number.isInteger(q.time):q.type==="slider"?q.text.trim()&&Number.isInteger(Number(q.start))&&Number.isInteger(Number(q.end))&&Number(q.start)>=1&&Number(q.end)>=Number(q.start)&&Number(q.end)<=Number.MAX_SAFE_INTEGER&&Number.isFinite(Number(q.correctValue))&&Number(q.correctValue)>=Number(q.start)&&Number(q.correctValue)<=Number(q.end)&&sliderInfo(q).count>=2&&Number.isInteger(Number(q.tolerance))&&Number(q.tolerance)>=1&&Number(q.tolerance)<=Number(q.end)-Number(q.start)&&q.time>=10&&q.time<=120&&Number.isInteger(q.time):q.text.trim()&&q.a.every(x=>x.trim())&&q.correct>=0&&q.time>=5&&q.time<=120&&Number.isInteger(q.time);
 const valid=()=>Q.title.trim()&&Q.questions.length&&Q.questions.every(qOk);
 function editorView(){
  applyTheme(Q.theme);
@@ -556,7 +559,7 @@ function mainQ(){
  const q=Q.questions[SEL];
  if(!q)return $("#main").innerHTML=`<div class="empty"><div class="big-msg">Nog geen vragen</div><p>Voeg je eerste vraag toe.</p><button class="btn b" data-a="newq">+ Vraag toevoegen</button></div>`;
  if(q.type==="dia"){$("#main").innerHTML=`<div class="slide-editor card"><div class="type-badge dia">🖼️ DIA</div><input class="qbig" data-f="text" placeholder="Titel van de dia" value="${esc(q.text)}"><textarea class="qinfo" data-f="info" rows="8" placeholder="Schrijf hier de informatie die je wilt laten zien...">${esc(q.info||"")}</textarea><div class="opts"><label>Duur van de dia (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label></div><div class="slide-preview"><div class="slide-kicker">DIA</div><h2>${esc(q.text)||"Jouw titel"}</h2><p>${esc(q.info)||"Jouw informatie verschijnt hier."}</p></div></div>`;return}
- if(q.type==="slider"){const si=sliderInfo(q);const correct=Number.isFinite(Number(q.correctValue))?Number(q.correctValue):sliderCorrectValue(q);$("#main").innerHTML=`<div class="slider-editor"><div class="type-badge slider">↔️ SCHUIFREGELAAR</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}"><div class="slider-settings-grid"><label>Begin nummer<input type="number" min="1" max="9007199254740991" step="1" data-f="start" value="${Number.isFinite(Number(q.start))?q.start:1}"></label><label>Eind nummer<input type="number" min="1" max="9007199254740991" step="1" data-f="end" value="${Number.isFinite(Number(q.end))?q.end:100}"></label><label>Tijd (10-120 sec)<input type="number" min="10" max="120" data-f="time" value="${q.time}"></label></div><div class="slider-correct-box"><b>Juiste antwoord</b><input class="slider-correct-input" type="number" min="${Number(q.start)||1}" max="${Number(q.end)||100}" step="1" data-f="correctValue" value="${Number.isFinite(correct)?correct:""}" placeholder="Typ het juiste cijfer"><small>Spelers zien alleen de automatisch berekende, afgeronde waarden op de schuifregelaar. De interne stapgrootte blijft verborgen.</small></div><div class="opts"><div class="fixed-points"><span>Punten</span><b>1000</b><small>80% op afstand, 20% op tijd.</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double">${q.doublePoints?"✓ ":""}Dubbele punten</button></div></div>`;return}
+ if(q.type==="slider"){const si=sliderInfo(q);const correct=Number.isFinite(Number(q.correctValue))?Number(q.correctValue):sliderCorrectValue(q);$("#main").innerHTML=`<div class="slider-editor"><div class="type-badge slider">↔️ SCHUIFREGELAAR</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}"><div class="slider-settings-grid"><label>Begin nummer<input type="number" min="1" max="9007199254740991" step="1" data-f="start" value="${Number.isFinite(Number(q.start))?q.start:1}"></label><label>Eind nummer<input type="number" min="1" max="9007199254740991" step="1" data-f="end" value="${Number.isFinite(Number(q.end))?q.end:100}"></label><label>Goede range (±)<input type="number" min="1" max="9007199254740991" step="1" data-f="tolerance" value="10"></label><label>Tijd (10-120 sec)<input type="number" min="10" max="120" data-f="time" value="${q.time}"></label></div><div class="slider-correct-box"><b>Juiste antwoord</b><input class="slider-correct-input" type="number" min="${Number(q.start)||1}" max="${Number(q.end)||100}" step="1" data-f="correctValue" value="${Number.isFinite(correct)?correct:""}" placeholder="Typ het juiste cijfer"><small>Een antwoord is goed als het binnen deze range valt. Spelers zien de juiste waarde en range pas bij de uitslag.</small></div><div class="opts"><div class="fixed-points"><span>Punten</span><b>1000</b><small>80% op afstand, 20% op tijd.</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double">${q.doublePoints?"✓ ":""}Dubbele punten</button></div></div>`;return}
  if(q.type==="typing"){$("#main").innerHTML=`<div class="type-badge typing">⌨️ TYPEN</div><input class="qbig" data-f="text" placeholder="Typ hier je vraag" value="${esc(q.text)}">
  <div class="opts"><label>Tijd om te antwoorden (5-120 sec)<input type="number" min="5" max="120" data-f="time" value="${q.time}"></label><div class="fixed-points"><span>Vaste punten</span><b>1000</b><small>Maximaal 1000 • daalt per milliseconde</small></div><button class="btn ${q.doublePoints?"g":"w"} double-toggle ${q.doublePoints?"active":""}" data-a="double" title="${q.doublePoints?"Dubbele punten staan aan":"Dubbele punten staan uit"}">${q.doublePoints?"✓ ":""}Dubbele punten</button></div>
  <div class="typing-answers card"><div class="typing-answer-head"><div><b>Goede antwoorden</b><small>Hoofdletters en leestekens worden genegeerd.</small></div><button class="btn b sm" data-a="addtypeanswer">+ Antwoord toevoegen</button></div><div class="typing-answer-list">${q.a.map((t,i)=>`<div class="typing-answer-row"><span class="typing-index">${i+1}</span><input data-f="a" data-i="${i}" maxlength="160" placeholder="Goed antwoord ${i+1}" value="${esc(t)}"><button class="btn w sm icon-btn" data-a="deltypeanswer" data-i="${i}" ${q.a.length<=1?"disabled":""} aria-label="Antwoord verwijderen">×</button></div>`).join("")}</div></div>
@@ -570,10 +573,10 @@ document.addEventListener("input",e=>{const t=e.target,f=t.dataset.f;if(!f||!Q)r
  if(f=="settingsTitle"){Q.title=t.value;const qt=document.querySelector(".qtitle");if(qt)qt.value=t.value;saveBtn();return;}
  if(f=="settingsDescription"){Q.description=t.value;return;}
  if(f=="title")Q.title=t.value;else if(f=="text")q.text=t.value;else if(f=="info")q.info=t.value;else if(f=="time")q.time=t.value===""?NaN:+t.value;
- else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;else if(f=="start")q.start=Math.max(1,Math.floor(+t.value||0));else if(f=="end")q.end=Math.max(1,Math.floor(+t.value||0));else if(f=="correctStep")q.correctStep=+t.value;else if(f=="correctValue")q.correctValue=t.value===""?NaN:+t.value;
+ else if(f=="a")q.a[+t.dataset.i]=t.value;else if(f=="correct")q.correct=+t.dataset.i;else if(f=="start")q.start=Math.max(1,Math.floor(+t.value||0));else if(f=="end")q.end=Math.max(1,Math.floor(+t.value||0));else if(f=="correctStep")q.correctStep=+t.value;else if(f=="tolerance")q.tolerance=Math.max(1,Math.floor(+t.value||1));else if(f=="correctValue")q.correctValue=t.value===""?NaN:+t.value;
  side();saveBtn()});
 document.addEventListener("input",e=>{if(e.target?.id==="sliderInput"){const q=G&&QS()[G.q],el=$("#sliderPlayValue");if(el&&q?.type==="slider")el.textContent=String(sliderValue(q,+e.target.value));return}});
-document.addEventListener("change",e=>{const f=e.target?.dataset?.f;if(Q&&f==="correctValue"){Q.questions[SEL].correctValue=e.target.value===""?NaN:+e.target.value;saveBtn();return}if(Q&&f==="correctStep"){Q.questions[SEL].correctStep=+e.target.value;saveBtn();return}if(Q&&(f==="start"||f==="end")&&Q.questions[SEL]?.type==="slider"){Q.questions[SEL][f]=Math.max(1,Math.floor(+e.target.value||0));mainQ();saveBtn();return}
+document.addEventListener("change",e=>{const f=e.target?.dataset?.f;if(Q&&f==="correctValue"){Q.questions[SEL].correctValue=e.target.value===""?NaN:+e.target.value;saveBtn();return}if(Q&&f==="correctStep"){Q.questions[SEL].correctStep=+e.target.value;saveBtn();return}if(Q&&(f==="start"||f==="end"||f==="tolerance")&&Q.questions[SEL]?.type==="slider"){const sq=Q.questions[SEL];sq[f]=Math.max(1,Math.floor(+e.target.value||0));if(f==="start"||f==="end"){const span=Math.max(1,Number(sq.end)-Number(sq.start));sq.tolerance=Math.max(1,Math.min(span,Number(sq.tolerance)||Math.max(1,Math.round(span*0.05))));sq.correctValue=Math.max(Number(sq.start),Math.min(Number(sq.end),Number(sq.correctValue)||Number(sq.start)));}else{sq.tolerance=Math.max(1,Math.min(Math.max(1,Number(sq.end)-Number(sq.start)),sq.tolerance));}mainQ();saveBtn();return}
  const cb=e.target.closest?.(".side-leaderboard-between input[type=\"checkbox\"]");
  if(!cb||!Q)return;
  const i=Number(cb.dataset.i);
@@ -662,7 +665,7 @@ const QS=()=>arr(G.quiz.questions).map(q=>({...q,a:arr(q.a)})),P=()=>Object.entr
 const ANS=()=>G.answers?.[G.q]||{},MAX_POINTS=1000,pointsFor=q=>q.type==="dia"?0:MAX_POINTS*(q.doublePoints?2:1),earnedPointsFor=(q,answerAt)=>{if(q.type==="dia"||!Number.isFinite(answerAt))return 0;const started=Number(G.startedAt);const total=Math.max(1,Number(q.time)*1000);const remaining=Math.max(0,Math.min(total,started+total-Number(answerAt)));const base=Math.floor(MAX_POINTS*remaining/total);return base*(q.doublePoints?2:1)},introDuration=q=>INTRO_MS+(q.type!=="dia"&&q.doublePoints?DOUBLE_BONUS_INTRO_MS:0),end=()=>G.startedAt+QS()[G.q].time*1000,introEnd=()=>G.countdownStartedAt+introDuration(QS()[G.q]),isSlide=()=>QS()[G.q]?.type==="dia",isTyping=()=>QS()[G.q]?.type==="typing";
 const normalizeAnswer=v=>String(v??"").normalize("NFKC").toLocaleLowerCase("nl-NL").replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
 const typingCorrect=(q,a)=>{const value=normalizeAnswer(a?.v??a?.value??"");return !!value&&q.a.some(x=>normalizeAnswer(x)===value)};
-const sliderScore=(q,a)=>{const si=sliderInfo(q);if(!si.count||!Number.isFinite(Number(a?.v)))return 0;const chosen=sliderValue(q,+a.v),correct=sliderCorrectValue(q),span=Math.max(1,Number(q.end)-Number(q.start)),distance=Math.abs(chosen-correct),proximity=Math.max(0,1-distance/span);const total=Math.max(1,Number(q.time)*1000),remaining=Math.max(0,Math.min(total,Number(G.startedAt)+total-Number(a?.t)));const timeFactor=remaining/total;const base=Math.floor(MAX_POINTS*(proximity*0.8+timeFactor*0.2));return base*(q.doublePoints?2:1)};
+const sliderScore=(q,a)=>{const si=sliderInfo(q);if(!si.count||!Number.isFinite(Number(a?.v)))return 0;const chosen=sliderValue(q,+a.v),correct=sliderCorrectValue(q),range=sliderRange(q),distance=Math.abs(chosen-correct);if(distance>range.tolerance)return 0;const proximity=Math.max(0,1-distance/Math.max(1,range.tolerance));const total=Math.max(1,Number(q.time)*1000),remaining=Math.max(0,Math.min(total,Number(G.startedAt)+total-Number(a?.t)));const timeFactor=remaining/total;const base=Math.floor(MAX_POINTS*(proximity*0.8+timeFactor*0.2));return base*(q.doublePoints?2:1)};
 const setTimerBar=(el,ratio)=>{
  if(!el)return;
  const r=Math.max(0,Math.min(1,ratio));
@@ -702,12 +705,15 @@ async function reveal(){if(busy)return;busy=true;const q=QS()[G.q];
   const a=ans[p.id];
   const submitted=!!a&&a.t<=end()+1500;
   const sliderAnswer=submitted&&q.type==="slider"&&Number.isFinite(Number(a.v));
-  const sliderExact=sliderAnswer&&Number(sliderValue(q,+a.v))===Number(sliderCorrectValue(q));
-  const ok=q.type==="slider"?sliderAnswer:q.type==="typing"?submitted&&typingCorrect(q,a):submitted&&a.c===q.correct;
+  const sliderChosen=sliderAnswer?sliderValue(q,+a.v):null;
+  const sliderExact=sliderAnswer&&Number(sliderChosen)===Number(sliderCorrectValue(q));
+  const sliderGood=sliderAnswer&&sliderInRange(q,sliderChosen);
+  const ok=q.type==="slider"?sliderGood:q.type==="typing"?submitted&&typingCorrect(q,a):submitted&&a.c===q.correct;
   const earned=q.type==="slider"?(sliderAnswer?sliderScore(q,a):0):(ok?earnedPointsFor(q,Number(a?.t)):0);
   u[`players/${p.id}/ok`]=ok;
   u[`players/${p.id}/sliderExact`]=!!sliderExact;
-  u[`players/${p.id}/sliderValue`]=sliderAnswer?sliderValue(q,+a.v):null;
+  u[`players/${p.id}/sliderInRange`]=!!sliderGood;
+  u[`players/${p.id}/sliderValue`]=sliderAnswer?sliderChosen:null;
   u[`players/${p.id}/earnedPoints`]=earned;
   u[`players/${p.id}/score`]=(p.score||0)+earned
  });
@@ -767,26 +773,26 @@ function paint(){
  const tiles=(cls,rev)=>{
  if(q.type==="slider"){
   const si=sliderInfo(q),correct=sliderCorrectValue(q),players=P().map(p=>({p,a:ANS()[p.id]})).filter(x=>Number.isFinite(Number(x.a?.v)));
-  const exactPlayers=players.filter(x=>Number(x.p.sliderValue??sliderValue(q,+x.a.v))===Number(correct));
+  const range=sliderRange(q),exactPlayers=players.filter(x=>Number(x.p.sliderValue??sliderValue(q,+x.a.v))===Number(correct)),goodPlayers=players.filter(x=>sliderInRange(q,Number(x.p.sliderValue??sliderValue(q,+x.a.v))));
   const markers=players.map((x,i)=>{
    const value=Number.isFinite(Number(x.p.sliderValue))?Number(x.p.sliderValue):sliderValue(q,+x.a.v);
-   const exact=value===Number(correct);
-   return `<span class="slider-reveal-marker ${exact?"exact":""}" style="left:${sliderPositionPercent(q,value)}%" title="${esc(x.p.name)}: ${esc(String(value))}"><i></i></span>`;
+   const exact=value===Number(correct),good=sliderInRange(q,value);
+   return `<span class="slider-reveal-marker ${exact?"exact":good?"in-range":"out-range"}" style="left:${sliderPositionPercent(q,value)}%" title="${esc(x.p.name)}: ${esc(String(value))}"><i></i></span>`;
   }).join("");
   const playerRows=players.map(x=>{
    const value=Number.isFinite(Number(x.p.sliderValue))?Number(x.p.sliderValue):sliderValue(q,+x.a.v);
-   const exact=value===Number(correct);
+   const exact=value===Number(correct),good=sliderInRange(q,value);
    const points=Number(x.p.earnedPoints||0);
-   return `<div class="slider-reveal-player ${exact?"exact":""}"><span class="slider-reveal-player-name">${avatarMarkup(x.p,34,exact?"happy":"")}<b>${esc(x.p.name)}</b></span><span class="slider-reveal-player-value">${esc(String(value))}</span><span class="slider-reveal-player-points">${points?`+${points}`:"0"}</span><span class="slider-reveal-player-status">${exact?"✓ Goed":"Niet exact"}</span></div>`;
+   return `<div class="slider-reveal-player ${exact?"exact":good?"in-range":"out-range"}"><span class="slider-reveal-player-name">${avatarMarkup(x.p,34,exact?"happy":"")}<b>${esc(x.p.name)}</b></span><span class="slider-reveal-player-value">${esc(String(value))}</span><span class="slider-reveal-player-points">${points?`+${points}`:"0"}</span><span class="slider-reveal-player-status">${exact?"✓ Exact":good?"✓ Goed binnen range":"✕ Buiten range"}</span></div>`;
   }).join("");
   return `<div class="slider-reveal">
-   <div class="slider-reveal-top"><div><span class="typing-kicker">↔️ SCHUIFREGELAAR</span><h2>${esc(q.text)}</h2></div><div class="slider-correct-badge">✓ JUISTE WAARDE <b>${esc(String(correct))}</b></div></div>
+   <div class="slider-reveal-top"><div><span class="typing-kicker">↔️ SCHUIFREGELAAR</span><h2>${esc(q.text)}</h2></div><div class="slider-correct-badge">✓ JUISTE WAARDE <b>${esc(String(correct))}</b><small>Goede range: ${esc(String(range.min))} t/m ${esc(String(range.max))} (±${esc(String(range.tolerance))})</small></div></div>
    <div class="slider-reveal-scale">
-    <div class="slider-reveal-track"><div class="slider-reveal-correct" style="left:${sliderPositionPercent(q,correct)}%"><span>✓</span></div>${markers}</div>
+    <div class="slider-reveal-track"><div class="slider-reveal-range" style="left:${sliderPositionPercent(q,range.min)}%;width:${Math.max(0,sliderPositionPercent(q,range.max)-sliderPositionPercent(q,range.min))}%"></div><div class="slider-reveal-correct" style="left:${sliderPositionPercent(q,correct)}%"><span>✓</span></div>${markers}</div>
     <div class="slider-reveal-scale-labels"><span>${esc(String(q.start))}</span><span>${esc(String(q.end))}</span></div>
     <div class="slider-reveal-caption"><span><i class="slider-dot player"></i> Antwoorden van spelers</span><span><i class="slider-dot correct"></i> Juiste waarde</span></div>
    </div>
-   <div class="slider-reveal-summary"><b>${exactPlayers.length}</b> exact goed · <b>${players.length}</b> antwoord${players.length===1?"":"en"}</div>
+   <div class="slider-reveal-summary"><b>${goodPlayers.length}</b> goed binnen range · <b>${exactPlayers.length}</b> exact · <b>${players.length}</b> antwoord${players.length===1?"":"en"}</div>
    <div class="slider-reveal-list">${playerRows||`<div class="slider-reveal-empty">Nog geen geldige antwoorden.</div>`}</div>
   </div>`;
  }if(q.type==="typing"){const answered=Object.values(ANS()).filter(a=>a?.v!=null).length;return `<div class="typing-host-panel"><div class="typing-host-icon">⌨️</div><div><h2>${rev?"Goede antwoorden":"Typen"}</h2><p>${rev?q.a.filter(x=>x.trim()).map(x=>`<span class="accepted-chip">${esc(x)}</span>`).join(""):`Spelers typen zelf een woord of zin.`}</p><small>${answered} antwoord${answered===1?"":"en"}</small></div></div>`;}return q.a.map((t,i)=>{const n=Object.values(ANS()).filter(a=>a.c==i).length;return `<div class="ans ${cols(q)[i]} ${rev&&i!=q.correct?"dim":""}><span>${rev&&i==q.correct?"✓":syms(q)[i]}</span><em>${esc(t)}</em>${rev?`<span class="n">${n}</span>`:""}</div>`}).join("")};
@@ -796,18 +802,19 @@ function paint(){
   const sliderResult=q?.type==="slider";
   const hasAnswer=sliderResult?Number.isFinite(Number(me?.sliderValue)):!!me?.ok;
   const exact=sliderResult?!!me?.sliderExact:!!me?.ok;
-  const tone=hasAnswer?(exact?"ok":"near"):"no";
-  const title=sliderResult?(exact?"Exact goed!":hasAnswer?"Je zat er dichtbij!":"Geen antwoord"):(me?.ok?"Goed gedaan!":"Helaas!");
-  const icon=hasAnswer?(exact?"✓":"≈"):"✕";
+  const inRange=sliderResult?!!me?.sliderInRange:!!me?.ok;
+  const tone=hasAnswer?(inRange?"ok":"near"):"no";
+  const title=sliderResult?(inRange?(exact?"Exact goed!":"Goed binnen de range!"):hasAnswer?"Buiten de range":"Geen antwoord"):(me?.ok?"Goed gedaan!":"Helaas!");
+  const icon=hasAnswer?(inRange?"✓":"✕"):"✕";
   const points=hasAnswer?`+${me?.earnedPoints??0} punten`:"Geen punten";
-  return `<div class="full ${tone} phone-result"><div class="stage"><div class="phone-result-avatar">${avatarMarkup(me,100,exact?"happy":hasAnswer?"thinking":"sad")}</div><div class="result-icon">${icon}</div><div class="big-msg">${title}</div><div class="result-points">${points}</div>${sliderResult&&hasAnswer?`<p class="slider-result-detail">Jouw antwoord: <b>${esc(String(me?.sliderValue))}</b> · Juiste antwoord: <b>${esc(String(sliderCorrectValue(q)))}</b></p>`:""}<p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
+  return `<div class="full ${tone} phone-result"><div class="stage"><div class="phone-result-avatar">${avatarMarkup(me,100,exact?"happy":hasAnswer?"thinking":"sad")}</div><div class="result-icon">${icon}</div><div class="big-msg">${title}</div><div class="result-points">${points}</div>${sliderResult&&hasAnswer?`<p class="slider-result-detail">Jouw antwoord: <b>${esc(String(me?.sliderValue))}</b> · Juiste antwoord: <b>${esc(String(sliderCorrectValue(q)))}</b> · Goede range: <b>${esc(String(sliderRange(q).min))} t/m ${esc(String(sliderRange(q).max))}</b></p>`:""}<p>Totaal: ${me?.score||0} punten</p>${buttonLabel?`<button class="btn b result-next" data-a="next">${buttonLabel}</button>`:""}</div></div>`;
  };
  let h="";
  if(HOST&&!SOLO){
   if(G.state=="lobby")h=`<div class="stage"><h2>${esc(G.quiz.title)}</h2><div>Ga naar <b>Quiz joinen</b> en vul de code in</div><div class="code">${CODE}</div><div><b>${P().length}</b> spelers</div><div class="chips">${P().map(p=>`<span class="player-chip">${avatarMarkup(p,34)}<b>${esc(p.name)}</b></span>`).join("")||"Wachten op spelers..."}</div><button class="btn g" data-a="start" ${P().length?"":"disabled"}>Quiz starten</button> <button class="btn w" data-a="close">Annuleren</button></div>`;
   else if(G.state=="countdown")h=countdown(true);
   else if(G.state=="slide")h=slideView();
-  else if(G.state=="question")h=`<div class="stage host-question-panel"><div class="host-question-kicker">🎮 HOSTMODUS</div><h1>${esc(q.text)}</h1><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">Spelers zijn aan het antwoorden</div></div><div class="tbar"><div id="tb"></div></div><div class="host-answer-count"><b>${Object.keys(ANS()).length}</b> / <b>${P().length}</b> spelers hebben geantwoord</div><p>Je kunt als host niet zelf antwoorden. Zodra iedereen klaar is of de tijd om is, verschijnt de uitslag.</p></div>`;
+  else if(G.state=="question")h=`<div class="stage host-question-panel"><div class="host-question-kicker">🎮 HOSTMODUS</div><h1>${esc(q.text)}</h1><div class="hbar"><div class="tcirc" id="tm"></div><div class="answer-label">Spelers zijn aan het antwoorden</div></div><div class="tbar"><div id="tb"></div></div>${q.type==="slider"?`<div class="host-slider-scale"><div class="host-slider-value"><b>${esc(String(q.start))}</b><span>Schuifregelaar · juiste waarde verborgen</span><b>${esc(String(q.end))}</b></div><div class="host-slider-track"><i style="left:0%"></i><i style="left:100%"></i></div></div>`:q.type==="typing"?`<div class="host-answer-options"><div class="host-answer-option">⌨️ Spelers typen hun antwoord</div></div>`:`<div class="host-answer-options">${q.a.map((t,i)=>`<div class="host-answer-option ${cols(q)[i]}"><span>${syms(q)[i]}</span><b>${esc(t)}</b></div>`).join("")}</div>`}<div class="host-answer-count"><b>${Object.keys(ANS()).length}</b> / <b>${P().length}</b> spelers hebben geantwoord</div><p>Je ziet de vraag en antwoorden, maar je kunt als host niets indienen. De juiste oplossing verschijnt pas bij de uitslag.</p></div>`;
   else if(G.state=="reveal"){
    const ps=P();
    if(q.type==="slider"){

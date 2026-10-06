@@ -1181,3 +1181,14 @@ body.has-theme-scene{background:transparent!important;background-image:none!impo
 .host-answer-count{margin:24px 0 10px;font-size:clamp(22px,3vw,32px)}
 .host-question-panel p{margin:0 auto;max-width:700px;font-weight:700;line-height:1.5;opacity:.82}
 @media(max-width:700px){.host-question-panel{width:94vw;padding:24px 16px}.host-question-panel h1{font-size:clamp(28px,8vw,42px)}}
+/* V116 slider host + range feedback */
+.host-answer-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:22px auto;max-width:900px;width:100%}
+.host-answer-option{display:flex;align-items:center;gap:12px;padding:16px 18px;border:2px solid rgba(255,255,255,.16);border-radius:16px;background:rgba(255,255,255,.07);text-align:left;min-height:56px;box-sizing:border-box}
+.host-answer-option span{font-size:24px;min-width:28px;text-align:center}.host-answer-option b{font-size:18px}
+.host-slider-scale{width:100%;max-width:900px;margin:24px auto 18px;padding:18px 0}.host-slider-value{display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:900}.host-slider-value span{font-size:13px;opacity:.7;text-align:center}.host-slider-track{height:12px;margin:16px 8px 0;border-radius:999px;background:rgba(255,255,255,.16);position:relative}.host-slider-track i{position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:#fff;transform:translate(-50%,-50%)}
+.slider-correct-badge small{display:block;margin-top:5px;font-size:12px;opacity:.8;font-weight:800}
+.slider-reveal-track{overflow:visible!important}
+.slider-reveal-range{position:absolute;top:50%;height:18px;transform:translateY(-50%);border-radius:999px;background:rgba(64,190,93,.35);box-shadow:0 0 0 2px rgba(64,190,93,.12)}
+.slider-reveal-marker.in-range i{background:#26890c}.slider-reveal-marker.out-range i{background:#c93434}
+.slider-reveal-player.in-range .slider-reveal-player-status{color:#26890c}.slider-reveal-player.out-range .slider-reveal-player-status{color:#c93434}
+@media(max-width:700px){.host-answer-options{grid-template-columns:1fr}.host-answer-option{min-height:50px}.host-slider-value{font-size:14px}.host-slider-value span{font-size:11px}}
