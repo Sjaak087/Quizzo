@@ -1,12 +1,11 @@
-Quizzo V117 – schuifregelaar punten/range
+Quizzo V118 – schuifregelaar range in stappen
 
 Aangepast:
-- De goede range van de schuifregelaar is nu standaard en vast ingesteld op ±10 (voor schalen die kleiner zijn dan 10 wordt de range automatisch begrensd door de schaal).
-- Een antwoord binnen ±10 is goed; buiten ±10 is het antwoord fout en krijgt het 0 punten.
-- Binnen de goede range geldt afstand tot het juiste antwoord voor de score: hoe verder van het juiste antwoord, hoe minder punten.
-- Het exacte juiste antwoord levert meer punten op dan bijvoorbeeld een antwoord dat 3 of 8 stappen afwijkt.
-- Tijd blijft als tweede factor meetellen, zodat sneller antwoorden binnen dezelfde afstand meer punten kunnen opleveren.
-- De juiste waarde en de range worden bij de uitslag getoond.
-- Bestaande schuifvragen worden bij het laden/normaliseren eveneens op ±10 gezet.
-- Host kan in multiplayer de vraag en antwoorden zien, maar kan zelf geen antwoord indienen.
-- Host ziet live hoeveel spelers al hebben geantwoord.
+- De goede range is nu gebaseerd op 10 SCHUIFSTAPPEN, niet op 10 numerieke eenheden.
+- De bestaande stapgrootte van de schuifregelaar bepaalt dus hoeveel numerieke afstand 10 stappen betekenen.
+- Voorbeeld: stapgrootte 1 => 10 stappen = ±10; stapgrootte 5 => 10 stappen = ±50.
+- De range wordt berekend vanaf de daadwerkelijke slider-posities rond het juiste antwoord.
+- Binnen de 10 stappen blijven antwoorden goed, maar hoe meer stappen je van het juiste antwoord zit, hoe minder punten je krijgt.
+- Buiten 10 stappen krijg je 0 punten.
+- Bij de uitslag wordt de numerieke range én “±10 stappen” getoond.
+- De vorige multiplayer-hostfunctionaliteit en het podium blijven behouden.
